@@ -3,7 +3,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { OnboardingProvider } from "@/context/OnboardingContext";
 import Index from "./pages/Index";
+import SignUp from "./pages/SignUp";
+import NameSetup from "./pages/onboarding/NameSetup";
+import NameConfirm from "./pages/onboarding/NameConfirm";
+import SchoolSetup from "./pages/onboarding/SchoolSetup";
+import SchoolConfirm from "./pages/onboarding/SchoolConfirm";
+import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -11,15 +18,22 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <OnboardingProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/onboarding/name" element={<NameSetup />} />
+            <Route path="/onboarding/name-confirm" element={<NameConfirm />} />
+            <Route path="/onboarding/school" element={<SchoolSetup />} />
+            <Route path="/onboarding/school-confirm" element={<SchoolConfirm />} />
+            <Route path="/welcome" element={<Welcome />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </OnboardingProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
