@@ -12,6 +12,10 @@ import NameSetup from "./pages/onboarding/NameSetup";
 import NameConfirm from "./pages/onboarding/NameConfirm";
 import SchoolSetup from "./pages/onboarding/SchoolSetup";
 import SchoolConfirm from "./pages/onboarding/SchoolConfirm";
+import Subscription from "./pages/Subscription";
+import Dashboard from "./pages/Dashboard";
+import Explore from "./pages/Explore";
+import Profile from "./pages/Profile";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +37,10 @@ const App = () => (
               <Route path="/onboarding/name-confirm" element={<NameConfirm />} />
               <Route path="/onboarding/school" element={<SchoolSetup />} />
               <Route path="/onboarding/school-confirm" element={<SchoolConfirm />} />
+              <Route path="/subscription" element={<Subscription />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/welcome" element={<Welcome />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

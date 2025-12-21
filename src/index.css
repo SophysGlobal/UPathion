@@ -129,21 +129,21 @@
   }
 
   .animate-float {
-    animation: float 6s ease-in-out infinite;
+    animation: float 5s ease-in-out infinite;
   }
 
   .animate-float-delayed {
+    animation: float 5s ease-in-out infinite;
+    animation-delay: 1s;
+  }
+
+  .animate-float-slow {
     animation: float 6s ease-in-out infinite;
     animation-delay: 2s;
   }
 
-  .animate-float-slow {
-    animation: float 8s ease-in-out infinite;
-    animation-delay: 4s;
-  }
-
   .animate-pulse-soft {
-    animation: pulse-soft 4s ease-in-out infinite;
+    animation: pulse-soft 3s ease-in-out infinite;
   }
 }
 

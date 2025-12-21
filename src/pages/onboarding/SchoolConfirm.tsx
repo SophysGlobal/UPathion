@@ -11,10 +11,10 @@ const SchoolConfirm = () => {
   const { data } = useOnboarding();
 
   const handleConfirm = () => {
-    toast.success("Welcome to Campfire! 🔥", {
-      description: "Your profile is all set up. Time to connect with your community!",
+    toast.success("Welcome to UPathion!", {
+      description: "Your profile is all set up. Let's explore your options!",
     });
-    navigate("/welcome");
+    navigate("/subscription");
   };
 
   return (
