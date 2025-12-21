@@ -9,13 +9,6 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUpWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
-  sendEmailOtp: (email: string) => Promise<{ error: Error | null }>;
-  verifyOtp: (
-    email: string,
-    token: string,
-    type?: 'signup' | 'magiclink'
-  ) => Promise<{ error: Error | null }>;
-  resendOtp: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -75,37 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
-  const sendEmailOtp = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    });
-    return { error };
-  };
-
-  const verifyOtp = async (
-    email: string,
-    token: string,
-    type: 'signup' | 'magiclink' = 'signup'
-  ) => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type,
-    });
-    return { error };
-  };
-
-  const resendOtp = async (email: string) => {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-    });
-    return { error };
-  };
-
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -119,9 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
-        sendEmailOtp,
-        verifyOtp,
-        resendOtp,
         signOut,
       }}
     >
