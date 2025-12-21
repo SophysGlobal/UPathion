@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
@@ -6,15 +6,27 @@ import Divider from "@/components/Divider";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignIn = () => {
-    toast.info("Google Sign In would be implemented with backend integration");
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      navigate("/onboarding/name");
+    }
+  }, [user, loading, navigate]);
+
+  const handleGoogleSignIn = async () => {
+    const { error } = await signInWithGoogle();
+    if (error) {
+      toast.error(error.message || "Failed to sign in with Google");
+    }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -24,16 +36,35 @@ const SignIn = () => {
       return;
     }
     setIsLoading(true);
-    // Simulate sign in
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/onboarding/name");
-    }, 1000);
+    
+    const { error } = await signInWithEmail(email, password);
+    
+    setIsLoading(false);
+    
+    if (error) {
+      if (error.message.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password");
+      } else {
+        toast.error(error.message || "Failed to sign in");
+      }
+      return;
+    }
+    
+    navigate("/onboarding/name");
   };
 
   const handleForgotPassword = () => {
     toast.info("Password reset flow would be implemented here");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <AnimatedBackground />
+        <div className="text-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
