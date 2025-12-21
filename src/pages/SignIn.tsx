@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
+  const { signInWithGoogle, signInWithEmail, sendEmailOtp, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -29,19 +29,48 @@ const SignIn = () => {
     }
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
+  const sendCodeAndGo = async () => {
+    setIsLoading(true);
+
+    const { error } = await sendEmailOtp(email);
+
+    setIsLoading(false);
+
+    if (error) {
+      toast.error(error.message || "Failed to send sign-in code");
       return;
     }
+
+    toast.success("We sent a 6-digit code to your email");
+    navigate("/verify-email", { state: { email, flow: "signin" } });
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email) {
+      toast.error("Please enter your email");
+      return;
+    }
+
+    // Passwordless sign-in (email code)
+    if (!password) {
+      await sendCodeAndGo();
+      return;
+    }
+
     setIsLoading(true);
-    
+
     const { error } = await signInWithEmail(email, password);
-    
+
     setIsLoading(false);
-    
+
     if (error) {
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        await sendCodeAndGo();
+        return;
+      }
+
       if (error.message.includes("Invalid login credentials")) {
         toast.error("Invalid email or password");
       } else {
@@ -49,7 +78,7 @@ const SignIn = () => {
       }
       return;
     }
-    
+
     navigate("/onboarding/name");
   };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
@@ -14,21 +14,52 @@ import {
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyOtp, resendOtp, user, loading } = useAuth();
+  const { verifyOtp, resendOtp, sendEmailOtp, user, loading } = useAuth();
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  
-  // Get email from navigation state
-  const email = location.state?.email || "";
 
-  // Redirect if no email or already logged in
+  // Get email + flow from navigation state
+  const email = location.state?.email || "";
+  const flow: "signup" | "signin" =
+    location.state?.flow === "signin" ? "signin" : "signup";
+  const backPath = flow === "signin" ? "/signin" : "/signup";
+  const otpType: "signup" | "magiclink" =
+    flow === "signin" ? "magiclink" : "signup";
+
+  const didAutoSendRef = useRef(false);
+
+  // Redirect if no email
   useEffect(() => {
     if (!email) {
-      navigate("/signup");
+      navigate(backPath);
     }
-  }, [email, navigate]);
+  }, [email, backPath, navigate]);
 
+  // Auto-send code when arriving on this screen
+  useEffect(() => {
+    if (!email || didAutoSendRef.current) return;
+
+    didAutoSendRef.current = true;
+    setIsResending(true);
+
+    (async () => {
+      const { error } =
+        flow === "signin" ? await sendEmailOtp(email) : await resendOtp(email);
+
+      setIsResending(false);
+
+      if (error) {
+        didAutoSendRef.current = false;
+        toast.error(error.message || "Failed to send verification code");
+        return;
+      }
+
+      toast.success("Verification code sent!");
+    })();
+  }, [email, flow, resendOtp, sendEmailOtp]);
+
+  // Redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
       navigate("/onboarding/name");
@@ -42,7 +73,7 @@ const VerifyEmail = () => {
     }
 
     setIsLoading(true);
-    const { error } = await verifyOtp(email, otp);
+    const { error } = await verifyOtp(email, otp, otpType);
     setIsLoading(false);
 
     if (error) {
@@ -50,13 +81,14 @@ const VerifyEmail = () => {
       return;
     }
 
-    toast.success("Email verified successfully!");
+    toast.success(flow === "signin" ? "Signed in!" : "Email verified successfully!");
     navigate("/onboarding/name");
   };
 
   const handleResend = async () => {
     setIsResending(true);
-    const { error } = await resendOtp(email);
+    const { error } =
+      flow === "signin" ? await sendEmailOtp(email) : await resendOtp(email);
     setIsResending(false);
 
     if (error) {
@@ -136,14 +168,14 @@ const VerifyEmail = () => {
           </button>
         </div>
 
-        {/* Back to Sign Up */}
+        {/* Back */}
         <div className="text-center pt-4 border-t border-border animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <GradientButton 
             variant="default"
-            onClick={() => navigate("/signup")}
+            onClick={() => navigate(backPath)}
             className="w-full"
           >
-            Back to Sign Up
+            {flow === "signin" ? "Back to Sign In" : "Back to Sign Up"}
           </GradientButton>
         </div>
       </div>
