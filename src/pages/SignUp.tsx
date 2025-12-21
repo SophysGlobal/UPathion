@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
@@ -6,16 +6,28 @@ import Divider from "@/components/Divider";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { signInWithGoogle, signUpWithEmail, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignUp = () => {
-    toast.info("Google Sign Up would be implemented with backend integration");
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      navigate("/onboarding/name");
+    }
+  }, [user, loading, navigate]);
+
+  const handleGoogleSignUp = async () => {
+    const { error } = await signInWithGoogle();
+    if (error) {
+      toast.error(error.message || "Failed to sign up with Google");
+    }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -32,13 +44,34 @@ const SignUp = () => {
       toast.error("Password must be at least 8 characters");
       return;
     }
+    
     setIsLoading(true);
-    // Simulate sign up
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/onboarding/name");
-    }, 1000);
+    
+    const { error } = await signUpWithEmail(email, password);
+    
+    setIsLoading(false);
+    
+    if (error) {
+      if (error.message.includes("User already registered")) {
+        toast.error("An account with this email already exists. Please sign in instead.");
+      } else {
+        toast.error(error.message || "Failed to create account");
+      }
+      return;
+    }
+    
+    toast.success("Account created! Please check your email to confirm your account.");
+    navigate("/signin");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <AnimatedBackground />
+        <div className="text-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
@@ -135,7 +168,7 @@ const SignUp = () => {
           <p className="text-muted-foreground text-sm">Already have an account?</p>
           <GradientButton 
             variant="default"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/signin")}
             className="w-full"
           >
             Sign In
