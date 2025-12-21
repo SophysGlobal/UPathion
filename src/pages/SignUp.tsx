@@ -60,8 +60,8 @@ const SignUp = () => {
       return;
     }
     
-    toast.success("Check your email for a verification code!");
-    navigate("/verify-email", { state: { email, flow: "signup" } });
+    toast.success("Account created! You can now sign in.");
+    navigate("/signin");
   };
 
   if (loading) {
