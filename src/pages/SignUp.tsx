@@ -60,8 +60,8 @@ const SignUp = () => {
       return;
     }
     
-    toast.success("Account created! Please check your email to confirm your account.");
-    navigate("/signin");
+    toast.success("Check your email for a verification code!");
+    navigate("/verify-email", { state: { email } });
   };
 
   if (loading) {

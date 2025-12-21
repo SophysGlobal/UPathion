@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
+import VerifyEmail from "./pages/VerifyEmail";
 import NameSetup from "./pages/onboarding/NameSetup";
 import NameConfirm from "./pages/onboarding/NameConfirm";
 import SchoolSetup from "./pages/onboarding/SchoolSetup";
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/onboarding/name" element={<NameSetup />} />
               <Route path="/onboarding/name-confirm" element={<NameConfirm />} />
               <Route path="/onboarding/school" element={<SchoolSetup />} />
