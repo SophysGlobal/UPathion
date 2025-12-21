@@ -61,7 +61,7 @@ const SignUp = () => {
     }
     
     toast.success("Check your email for a verification code!");
-    navigate("/verify-email", { state: { email } });
+    navigate("/verify-email", { state: { email, flow: "signup" } });
   };
 
   if (loading) {
