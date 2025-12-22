@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
+import AnimatedBackground from "@/components/AnimatedBackground";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { School, Settings, LogOut, ChevronRight } from "lucide-react";
+import { School, Settings, LogOut, ChevronRight, User } from "lucide-react";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -21,24 +22,26 @@ const Profile = () => {
   };
 
   const menuItems = [
-    { icon: Settings, label: "Edit Profile", action: () => {} },
-    { icon: School, label: "School Info", action: () => {} },
-    { icon: Settings, label: "Settings", action: () => {} },
+    { icon: User, label: "Edit Profile", action: () => {} },
+    { icon: School, label: "School Info", action: () => navigate("/school-info") },
+    { icon: Settings, label: "Settings", action: () => navigate("/settings") },
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background/80 pb-20 relative">
+      <AnimatedBackground />
+      
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="flex items-center justify-between px-6 py-3">
           <Logo showText={false} />
         </div>
       </header>
 
-      <main className="px-6 py-6 space-y-6">
+      <main className="relative z-10 px-6 py-6 space-y-6">
         {/* Profile Card */}
         <div className="gradient-border animate-fade-in">
-          <div className="bg-card rounded-lg p-6 text-center">
+          <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
             <div className="flex justify-center mb-4">
               <ProfileAvatar 
                 avatarUrl={profile?.avatar_url} 
@@ -74,7 +77,7 @@ const Profile = () => {
               onClick={item.action}
               className="w-full gradient-border group"
             >
-              <div className="bg-card rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary">
+              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
                 <div className="flex items-center gap-3">
                   <item.icon className="w-5 h-5 text-primary" />
                   <span className="font-medium text-foreground">{item.label}</span>
