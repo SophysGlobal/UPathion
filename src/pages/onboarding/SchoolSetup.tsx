@@ -53,13 +53,13 @@ const SchoolSetup = () => {
         </div>
 
         {/* Title */}
-        <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">Where do you go?</h1>
           <p className="text-muted-foreground">Tell us about your school</p>
         </div>
 
         {/* School Type Selection */}
-        <div className="grid grid-cols-2 gap-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="grid grid-cols-2 gap-4 animate-fade-in">
           <button
             onClick={() => setSchoolType('high_school')}
             className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center gap-2 ${
@@ -91,7 +91,7 @@ const SchoolSetup = () => {
 
         {/* Form */}
         <div className="space-y-4">
-          <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="space-y-2 animate-fade-in">
             <label className="text-sm font-medium text-foreground">School Name</label>
             <GradientInput
               type="text"
@@ -102,7 +102,7 @@ const SchoolSetup = () => {
           </div>
           
           {schoolType && (
-            <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="space-y-2 animate-fade-in">
               <label className="text-sm font-medium text-foreground">
                 {schoolType === 'high_school' ? 'Grade' : 'Year'}
               </label>
@@ -124,7 +124,7 @@ const SchoolSetup = () => {
           )}
 
           {schoolType === 'college' && (
-            <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <div className="space-y-2 animate-fade-in">
               <label className="text-sm font-medium text-foreground">
                 Major(s) <span className="text-muted-foreground">(optional)</span>
               </label>
@@ -137,7 +137,7 @@ const SchoolSetup = () => {
             </div>
           )}
 
-          <div className="animate-fade-in pt-2" style={{ animationDelay: '0.6s' }}>
+          <div className="animate-fade-in pt-2">
             <GradientButton 
               variant="filled" 
               className="w-full"
@@ -149,7 +149,7 @@ const SchoolSetup = () => {
         </div>
 
         {/* Progress indicator */}
-        <div className="flex justify-center gap-2 pt-4 animate-fade-in" style={{ animationDelay: '0.7s' }}>
+        <div className="flex justify-center gap-2 pt-4 animate-fade-in">
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />

@@ -37,7 +37,7 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <div className="grid grid-cols-3 gap-3 animate-fade-in">
           {quickStats.map((stat) => (
             <div key={stat.label} className="gradient-border">
               <div className="bg-card rounded-lg p-3 text-center">
@@ -50,7 +50,7 @@ const Dashboard = () => {
         </div>
 
         {/* Getting Started */}
-        <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="gradient-border animate-fade-in">
           <div className="bg-card rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-accent" />
@@ -80,7 +80,7 @@ const Dashboard = () => {
         </div>
 
         {/* Empty State for Feed */}
-        <div className="text-center py-8 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <div className="text-center py-8 animate-fade-in">
           <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
             <Users className="w-8 h-8 text-muted-foreground" />
           </div>

@@ -75,7 +75,7 @@ const Subscription = () => {
         </div>
 
         {/* Header */}
-        <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">
             Unlock <span className="gradient-text">Premium</span>
           </h1>
@@ -85,7 +85,7 @@ const Subscription = () => {
         </div>
 
         {/* Toggle */}
-        <div className="flex justify-center animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="flex justify-center animate-fade-in">
           <div className="flex items-center gap-2 p-1 bg-secondary rounded-full">
             <button
               onClick={() => setIsYearly(false)}
@@ -113,7 +113,7 @@ const Subscription = () => {
         </div>
 
         {/* Pricing Card */}
-        <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <div className="gradient-border animate-fade-in">
           <div className="bg-card rounded-lg p-6 text-center space-y-2">
             <div className="flex items-baseline justify-center gap-1">
               <span className="text-4xl font-bold gradient-text">
@@ -140,7 +140,6 @@ const Subscription = () => {
             <div 
               key={benefit.title}
               className="flex items-start gap-3 animate-fade-in"
-              style={{ animationDelay: `${0.2 + index * 0.05}s` }}
             >
               <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
                 <benefit.icon className="w-5 h-5 text-primary" />
@@ -155,7 +154,7 @@ const Subscription = () => {
         </div>
 
         {/* CTA */}
-        <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+        <div className="animate-fade-in">
           <GradientButton 
             variant="filled" 
             size="lg"
@@ -167,7 +166,7 @@ const Subscription = () => {
         </div>
 
         {/* Terms */}
-        <p className="text-center text-xs text-muted-foreground animate-fade-in" style={{ animationDelay: '0.45s' }}>
+        <p className="text-center text-xs text-muted-foreground animate-fade-in">
           Cancel anytime. Terms apply.
         </p>
       </div>

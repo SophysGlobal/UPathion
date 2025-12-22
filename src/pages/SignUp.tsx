@@ -84,13 +84,13 @@ const SignUp = () => {
         </div>
 
         {/* Welcome text */}
-        <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">Join Campfire</h1>
           <p className="text-muted-foreground">Create your account to get started</p>
         </div>
 
         {/* Google Sign Up */}
-        <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="animate-fade-in">
           <GradientButton 
             className="w-full" 
             onClick={handleGoogleSignUp}
@@ -118,13 +118,13 @@ const SignUp = () => {
         </div>
 
         {/* Divider */}
-        <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+        <div className="animate-fade-in">
           <Divider text="or" />
         </div>
 
         {/* Form */}
         <form onSubmit={handleSignUp} className="space-y-4">
-          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-fade-in">
             <GradientInput
               type="email"
               placeholder="Email address"
@@ -133,7 +133,7 @@ const SignUp = () => {
             />
           </div>
           
-          <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div className="animate-fade-in">
             <GradientInput
               type="password"
               placeholder="Password"
@@ -142,7 +142,7 @@ const SignUp = () => {
             />
           </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
+          <div className="animate-fade-in">
             <GradientInput
               type="password"
               placeholder="Confirm password"
@@ -151,7 +151,7 @@ const SignUp = () => {
             />
           </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: '0.7s' }}>
+          <div className="animate-fade-in">
             <GradientButton 
               type="submit" 
               variant="filled" 
@@ -164,7 +164,7 @@ const SignUp = () => {
         </form>
 
         {/* Sign In Link */}
-        <div className="text-center space-y-3 pt-4 border-t border-border animate-fade-in" style={{ animationDelay: '0.8s' }}>
+        <div className="text-center space-y-3 pt-4 border-t border-border animate-fade-in">
           <p className="text-muted-foreground text-sm">Already have an account?</p>
           <GradientButton 
             variant="default"
