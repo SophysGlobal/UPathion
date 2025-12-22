@@ -22,6 +22,8 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          is_premium: boolean
+          subscription_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -31,6 +33,8 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          is_premium?: boolean
+          subscription_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -40,6 +44,8 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          is_premium?: boolean
+          subscription_ends_at?: string | null
           updated_at?: string
         }
         Relationships: []

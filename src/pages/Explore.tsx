@@ -1,5 +1,6 @@
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
+import PremiumChatFAB from "@/components/PremiumChatFAB";
 import { Search, Filter, Users, BookOpen, Calendar, MapPin } from "lucide-react";
 import { GradientInput } from "@/components/ui/GradientInput";
 
@@ -15,12 +16,12 @@ const Explore = () => {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
-          <Logo />
+        <div className="flex items-center justify-between px-6 py-3">
+          <Logo showText={false} />
         </div>
       </header>
 
-      <main className="px-4 py-6 max-w-md mx-auto space-y-6">
+      <main className="px-6 py-6 space-y-6">
         {/* Search */}
         <div className="animate-fade-in">
           <div className="relative">
@@ -36,14 +37,14 @@ const Explore = () => {
         </div>
 
         {/* Categories */}
-        <div className="grid grid-cols-4 gap-2 animate-fade-in">
+        <div className="grid grid-cols-4 gap-3 animate-fade-in">
           {categories.map((category) => (
             <button
               key={category.label}
               className="gradient-border group"
             >
-              <div className="bg-card rounded-lg p-3 text-center transition-colors group-hover:bg-secondary">
-                <category.icon className="w-6 h-6 text-primary mx-auto mb-1" />
+              <div className="bg-card rounded-lg p-4 text-center transition-colors group-hover:bg-secondary">
+                <category.icon className="w-6 h-6 text-primary mx-auto mb-2" />
                 <p className="text-xs text-foreground font-medium">{category.label}</p>
               </div>
             </button>
@@ -52,16 +53,17 @@ const Explore = () => {
 
         {/* Empty State */}
         <div className="text-center py-12 animate-fade-in">
-          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-            <Search className="w-8 h-8 text-muted-foreground" />
+          <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+            <Search className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h3 className="font-medium text-foreground mb-1">Explore Your Community</h3>
+          <h3 className="font-medium text-foreground mb-2">Explore Your Community</h3>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto">
             Search for people, join groups, discover events, and find places around your school
           </p>
         </div>
       </main>
 
+      <PremiumChatFAB />
       <BottomNav />
     </div>
   );
