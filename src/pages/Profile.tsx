@@ -3,12 +3,16 @@ import { useOnboarding } from "@/context/OnboardingContext";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
+import PremiumChatFAB from "@/components/PremiumChatFAB";
+import ProfileAvatar from "@/components/ProfileAvatar";
 import { GradientButton } from "@/components/ui/GradientButton";
-import { User, School, Settings, LogOut, ChevronRight } from "lucide-react";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { School, Settings, LogOut, ChevronRight } from "lucide-react";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { data } = useOnboarding();
+  const { profile } = useUserProfile();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -17,7 +21,7 @@ const Profile = () => {
   };
 
   const menuItems = [
-    { icon: User, label: "Edit Profile", action: () => {} },
+    { icon: Settings, label: "Edit Profile", action: () => {} },
     { icon: School, label: "School Info", action: () => {} },
     { icon: Settings, label: "Settings", action: () => {} },
   ];
@@ -26,20 +30,24 @@ const Profile = () => {
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3 max-w-md mx-auto">
-          <Logo />
+        <div className="flex items-center justify-between px-6 py-3">
+          <Logo showText={false} />
         </div>
       </header>
 
-      <main className="px-4 py-6 max-w-md mx-auto space-y-6">
+      <main className="px-6 py-6 space-y-6">
         {/* Profile Card */}
         <div className="gradient-border animate-fade-in">
           <div className="bg-card rounded-lg p-6 text-center">
-            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
-              <User className="w-10 h-10 text-muted-foreground" />
+            <div className="flex justify-center mb-4">
+              <ProfileAvatar 
+                avatarUrl={profile?.avatar_url} 
+                isPremium={profile?.is_premium ?? false}
+                size="lg"
+              />
             </div>
             <h2 className="text-xl font-bold text-foreground">
-              {data.fullName || user?.email?.split('@')[0] || 'User'}
+              {data.fullName || profile?.display_name || user?.email?.split('@')[0] || 'User'}
             </h2>
             {data.username && (
               <p className="text-sm text-primary">@{data.username}</p>
@@ -50,14 +58,19 @@ const Profile = () => {
             {data.major && (
               <p className="text-xs text-muted-foreground">{data.major}</p>
             )}
+            {profile?.is_premium && (
+              <span className="inline-block mt-2 px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
+                Premium Member
+              </span>
+            )}
           </div>
         </div>
 
         {/* Menu Items */}
-        <div className="space-y-2 animate-fade-in">
-          {menuItems.map((item) => (
+        <div className="space-y-3 animate-fade-in">
+          {menuItems.map((item, index) => (
             <button
-              key={item.label}
+              key={index}
               onClick={item.action}
               className="w-full gradient-border group"
             >
@@ -85,6 +98,7 @@ const Profile = () => {
         </div>
       </main>
 
+      <PremiumChatFAB />
       <BottomNav />
     </div>
   );

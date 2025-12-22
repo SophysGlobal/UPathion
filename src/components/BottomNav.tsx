@@ -1,15 +1,17 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Compass, User } from "lucide-react";
+import { Home, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ProfileAvatar from "@/components/ProfileAvatar";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { profile } = useUserProfile();
 
   const navItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: Compass, label: "Explore", path: "/explore" },
-    { icon: User, label: "Profile", path: "/profile" },
   ];
 
   return (
@@ -39,6 +41,27 @@ const BottomNav = () => {
             </button>
           );
         })}
+        
+        {/* Profile with avatar */}
+        <button
+          onClick={() => navigate("/profile")}
+          className={cn(
+            "flex flex-col items-center gap-1 px-6 py-2 transition-all duration-200",
+            location.pathname === "/profile" 
+              ? "text-primary" 
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <ProfileAvatar 
+            avatarUrl={profile?.avatar_url} 
+            isPremium={profile?.is_premium ?? false}
+            size="sm"
+          />
+          <span className="text-xs font-medium">Profile</span>
+          {location.pathname === "/profile" && (
+            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
+          )}
+        </button>
       </div>
     </nav>
   );
