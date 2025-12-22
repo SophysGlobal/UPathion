@@ -46,14 +46,14 @@ const NameSetup = () => {
         </div>
 
         {/* Title */}
-        <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">Let's get to know you</h1>
           <p className="text-muted-foreground">Tell us a bit about yourself</p>
         </div>
 
         {/* Form */}
         <div className="space-y-6">
-          <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <div className="space-y-2 animate-fade-in">
             <label className="text-sm font-medium text-foreground">Full Name</label>
             <GradientInput
               type="text"
@@ -63,7 +63,7 @@ const NameSetup = () => {
             />
           </div>
           
-          <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="space-y-2 animate-fade-in">
             <label className="text-sm font-medium text-foreground">Username</label>
             <GradientInput
               type="text"
@@ -76,7 +76,7 @@ const NameSetup = () => {
             </p>
           </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-fade-in">
             <GradientButton 
               variant="filled" 
               className="w-full"
@@ -88,7 +88,7 @@ const NameSetup = () => {
         </div>
 
         {/* Progress indicator */}
-        <div className="flex justify-center gap-2 pt-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+        <div className="flex justify-center gap-2 pt-4 animate-fade-in">
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />

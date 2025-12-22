@@ -84,13 +84,13 @@ const SignIn = () => {
         </div>
 
         {/* Welcome text */}
-        <div className="text-center space-y-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
           <p className="text-muted-foreground">Sign in to connect with your school community</p>
         </div>
 
         {/* Google Sign In */}
-        <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="animate-fade-in">
           <GradientButton 
             className="w-full" 
             onClick={handleGoogleSignIn}
@@ -118,13 +118,13 @@ const SignIn = () => {
         </div>
 
         {/* Divider */}
-        <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+        <div className="animate-fade-in">
           <Divider text="or" />
         </div>
 
         {/* Form */}
         <form onSubmit={handleSignIn} className="space-y-4">
-          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <div className="animate-fade-in">
             <GradientInput
               type="email"
               placeholder="Email address"
@@ -133,7 +133,7 @@ const SignIn = () => {
             />
           </div>
           
-          <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div className="animate-fade-in">
             <GradientInput
               type="password"
               placeholder="Password"
@@ -142,7 +142,7 @@ const SignIn = () => {
             />
           </div>
 
-          <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
+          <div className="animate-fade-in">
             <GradientButton 
               type="submit" 
               variant="filled" 
@@ -155,7 +155,7 @@ const SignIn = () => {
         </form>
 
         {/* Forgot Password */}
-        <div className="text-center animate-fade-in" style={{ animationDelay: '0.7s' }}>
+        <div className="text-center animate-fade-in">
           <button
             onClick={handleForgotPassword}
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -165,7 +165,7 @@ const SignIn = () => {
         </div>
 
         {/* Sign Up Link */}
-        <div className="text-center space-y-3 pt-4 border-t border-border animate-fade-in" style={{ animationDelay: '0.8s' }}>
+        <div className="text-center space-y-3 pt-4 border-t border-border animate-fade-in">
           <p className="text-muted-foreground text-sm">Don't have an account?</p>
           <GradientButton 
             variant="default"

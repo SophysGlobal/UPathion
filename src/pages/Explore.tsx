@@ -36,7 +36,7 @@ const Explore = () => {
         </div>
 
         {/* Categories */}
-        <div className="grid grid-cols-4 gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <div className="grid grid-cols-4 gap-2 animate-fade-in">
           {categories.map((category) => (
             <button
               key={category.label}
@@ -51,7 +51,7 @@ const Explore = () => {
         </div>
 
         {/* Empty State */}
-        <div className="text-center py-12 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="text-center py-12 animate-fade-in">
           <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
             <Search className="w-8 h-8 text-muted-foreground" />
           </div>

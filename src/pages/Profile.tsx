@@ -54,7 +54,7 @@ const Profile = () => {
         </div>
 
         {/* Menu Items */}
-        <div className="space-y-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <div className="space-y-2 animate-fade-in">
           {menuItems.map((item) => (
             <button
               key={item.label}
@@ -73,7 +73,7 @@ const Profile = () => {
         </div>
 
         {/* Sign Out */}
-        <div className="pt-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="pt-4 animate-fade-in">
           <GradientButton
             variant="ghost"
             className="w-full text-destructive hover:bg-destructive/10"
