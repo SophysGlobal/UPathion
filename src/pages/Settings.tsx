@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import BottomNav from "@/components/BottomNav";
-import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Switch } from "@/components/ui/switch";
@@ -10,9 +9,40 @@ import { ChevronLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, Mail, Trash
 import { useState } from "react";
 import { toast } from "sonner";
 
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+  
+  return (
+    <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-lg">
+      <button
+        onClick={() => setTheme('light')}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+          theme === 'light' 
+            ? 'bg-card text-foreground shadow-sm' 
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        <Sun className="w-3.5 h-3.5" />
+        Light
+      </button>
+      <button
+        onClick={() => setTheme('dark')}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+          theme === 'dark' 
+            ? 'bg-card text-foreground shadow-sm' 
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        <Moon className="w-3.5 h-3.5" />
+        Dark
+      </button>
+    </div>
+  );
+};
+
 const Settings = () => {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const { signOut } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -28,14 +58,9 @@ const Settings = () => {
       items: [
         {
           icon: theme === 'dark' ? Moon : Sun,
-          label: "Dark Mode",
-          description: "Switch between light and dark themes",
-          action: (
-            <Switch 
-              checked={theme === 'dark'} 
-              onCheckedChange={toggleTheme}
-            />
-          ),
+          label: "Theme",
+          description: "Choose your preferred color scheme",
+          action: <ThemeToggle />,
         },
       ],
     },
