@@ -114,7 +114,7 @@ const Subscription = () => {
 
         {/* Pricing Card */}
         <div className="gradient-border animate-fade-in">
-          <div className="bg-card rounded-lg p-6 text-center space-y-2">
+          <div className="bg-card/80 backdrop-blur-sm rounded-lg p-6 text-center space-y-2">
             <div className="flex items-baseline justify-center gap-1">
               <span className="text-4xl font-bold gradient-text">
                 ${isYearly ? yearlyMonthlyEquivalent : monthlyPrice.toFixed(2)}
@@ -139,9 +139,9 @@ const Subscription = () => {
           {benefits.map((benefit, index) => (
             <div 
               key={benefit.title}
-              className="flex items-start gap-3 animate-fade-in"
+              className="flex items-start gap-3 animate-fade-in bg-card/60 backdrop-blur-sm rounded-lg p-3"
             >
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-secondary/70 flex items-center justify-center flex-shrink-0">
                 <benefit.icon className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1">
