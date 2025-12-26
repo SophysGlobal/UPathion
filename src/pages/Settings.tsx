@@ -10,28 +10,45 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
-  
+  const { theme, resolvedTheme, setTheme } = useTheme();
+
+  const active = (t: "system" | "light" | "dark") =>
+    theme === t
+      ? "bg-card text-foreground shadow-sm"
+      : "text-muted-foreground hover:text-foreground";
+
   return (
     <div className="flex items-center gap-1 p-1 bg-secondary/50 rounded-lg">
       <button
-        onClick={() => setTheme('light')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-          theme === 'light' 
-            ? 'bg-card text-foreground shadow-sm' 
-            : 'text-muted-foreground hover:text-foreground'
-        }`}
+        type="button"
+        onClick={() => setTheme("system")}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${active(
+          "system"
+        )}`}
+        aria-pressed={theme === "system"}
+      >
+        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-border" />
+        System
+        <span className="text-[10px] text-muted-foreground">({resolvedTheme})</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setTheme("light")}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${active(
+          "light"
+        )}`}
+        aria-pressed={theme === "light"}
       >
         <Sun className="w-3.5 h-3.5" />
         Light
       </button>
       <button
-        onClick={() => setTheme('dark')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-          theme === 'dark' 
-            ? 'bg-card text-foreground shadow-sm' 
-            : 'text-muted-foreground hover:text-foreground'
-        }`}
+        type="button"
+        onClick={() => setTheme("dark")}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${active(
+          "dark"
+        )}`}
+        aria-pressed={theme === "dark"}
       >
         <Moon className="w-3.5 h-3.5" />
         Dark
@@ -42,7 +59,7 @@ const ThemeToggle = () => {
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
+  const { theme, resolvedTheme } = useTheme();
   const { signOut } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -57,9 +74,9 @@ const Settings = () => {
       title: "Appearance",
       items: [
         {
-          icon: theme === 'dark' ? Moon : Sun,
+          icon: resolvedTheme === "dark" ? Moon : Sun,
           label: "Theme",
-          description: "Choose your preferred color scheme",
+          description: "Choose light, dark, or follow your device",
           action: <ThemeToggle />,
         },
       ],
@@ -176,24 +193,25 @@ const Settings = () => {
               {section.title}
             </h2>
             <div className="space-y-2">
-              {section.items.map((item, itemIndex) => (
-                <button
-                  key={item.label}
-                  onClick={item.onClick}
-                  disabled={!item.onClick}
-                  className="w-full gradient-border group"
-                >
-                  <div className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-all ${item.onClick ? 'group-hover:bg-secondary/50' : ''}`}>
+              {section.items.map((item) => {
+                const row = (
+                  <div
+                    className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-all ${
+                      item.onClick ? "group-hover:bg-secondary/50" : ""
+                    }`}
+                  >
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        item.destructive 
-                          ? 'bg-destructive/20' 
-                          : 'bg-primary/20'
-                      }`}>
-                        <item.icon className={`w-5 h-5 ${item.destructive ? 'text-destructive' : 'text-primary'}`} />
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          item.destructive ? "bg-destructive/20" : "bg-primary/20"
+                        }`}
+                      >
+                        <item.icon
+                          className={`w-5 h-5 ${item.destructive ? "text-destructive" : "text-primary"}`}
+                        />
                       </div>
                       <div className="text-left">
-                        <p className={`font-medium ${item.destructive ? 'text-destructive' : 'text-foreground'}`}>
+                        <p className={`font-medium ${item.destructive ? "text-destructive" : "text-foreground"}`}>
                           {item.label}
                         </p>
                         <p className="text-xs text-muted-foreground">{item.description}</p>
@@ -201,8 +219,23 @@ const Settings = () => {
                     </div>
                     {item.action}
                   </div>
-                </button>
-              ))}
+                );
+
+                return item.onClick ? (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={item.onClick}
+                    className="w-full gradient-border group"
+                  >
+                    {row}
+                  </button>
+                ) : (
+                  <div key={item.label} className="w-full gradient-border">
+                    {row}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
