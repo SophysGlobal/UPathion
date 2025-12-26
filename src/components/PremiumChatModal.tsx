@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -12,8 +13,6 @@ interface PremiumChatModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/premium-chat`;
 
 const PremiumChatModal = ({ open, onOpenChange }: PremiumChatModalProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -38,11 +37,16 @@ const PremiumChatModal = ({ open, onOpenChange }: PremiumChatModalProps) => {
     let assistantContent = "";
 
     try {
-      const resp = await fetch(CHAT_URL, {
+      // Get the session for auth token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      const resp = await fetch("https://bnbzduurgsdyfylywyhr.supabase.co/functions/v1/premium-chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          "Authorization": `Bearer ${token || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuYnpkdXVyZ3NkeWZ5bHl3eWhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyODA1NTksImV4cCI6MjA4MTg1NjU1OX0.cnZYlyE4gjOCnon4_H3ogfl1omI5gI0dvllwPMuLYk0"}`,
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuYnpkdXVyZ3NkeWZ5bHl3eWhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyODA1NTksImV4cCI6MjA4MTg1NjU1OX0.cnZYlyE4gjOCnon4_H3ogfl1omI5gI0dvllwPMuLYk0",
         },
         body: JSON.stringify({ messages: [...messages, userMsg] }),
       });
