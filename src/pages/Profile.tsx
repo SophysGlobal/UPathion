@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useNavigate } from "react-router-dom";
@@ -8,13 +9,15 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { School, Settings, LogOut, ChevronRight, User } from "lucide-react";
+import UpgradeModal from "@/components/UpgradeModal";
+import { School, Settings, LogOut, ChevronRight, User, Crown } from "lucide-react";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { data } = useOnboarding();
   const { profile } = useUserProfile();
   const navigate = useNavigate();
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -40,7 +43,7 @@ const Profile = () => {
 
       <main className="relative z-10 px-6 py-6 space-y-6">
         {/* Profile Card */}
-        <div className="gradient-border animate-fade-in">
+        <div className="gradient-border animate-fade-in" style={{ animationDelay: '0ms' }}>
           <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
             <div className="flex justify-center mb-4">
               <ProfileAvatar 
@@ -61,21 +64,30 @@ const Profile = () => {
             {data.major && (
               <p className="text-xs text-muted-foreground">{data.major}</p>
             )}
-            {profile?.is_premium && (
+            {profile?.is_premium ? (
               <span className="inline-block mt-2 px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
                 Premium Member
               </span>
+            ) : (
+              <button
+                onClick={() => setUpgradeOpen(true)}
+                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                <Crown className="w-4 h-4" />
+                Upgrade to Premium
+              </button>
             )}
           </div>
         </div>
 
         {/* Menu Items */}
-        <div className="space-y-3 animate-fade-in">
+        <div className="space-y-3">
           {menuItems.map((item, index) => (
             <button
               key={index}
               onClick={item.action}
-              className="w-full gradient-border group"
+              className="w-full gradient-border group animate-fade-in"
+              style={{ animationDelay: `${(index + 1) * 50}ms` }}
             >
               <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
                 <div className="flex items-center gap-3">
@@ -89,7 +101,7 @@ const Profile = () => {
         </div>
 
         {/* Sign Out */}
-        <div className="pt-4 animate-fade-in">
+        <div className="pt-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
           <GradientButton
             variant="ghost"
             className="w-full text-destructive hover:bg-destructive/10"
@@ -101,6 +113,7 @@ const Profile = () => {
         </div>
       </main>
 
+      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
       <PremiumChatFAB />
       <BottomNav />
     </div>
