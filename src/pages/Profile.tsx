@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useNavigate } from "react-router-dom";
@@ -24,12 +24,12 @@ const Profile = () => {
     navigate("/");
   };
 
-  const menuItems = [
-    { icon: User, label: "Edit Profile", action: () => {} },
-    { icon: School, label: "School Info", action: () => navigate("/school-info") },
-    { icon: Settings, label: "Settings", action: () => navigate("/settings") },
-    ...(profile?.is_premium ? [] : [{ icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true) }]),
-  ];
+  const menuItems = useMemo(() => [
+    { icon: User, label: "Edit Profile", action: () => {}, hidden: false },
+    { icon: School, label: "School Info", action: () => navigate("/school-info"), hidden: false },
+    { icon: Settings, label: "Settings", action: () => navigate("/settings"), hidden: false },
+    { icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: profile?.is_premium ?? false },
+  ], [profile?.is_premium]);
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
@@ -75,9 +75,9 @@ const Profile = () => {
 
         {/* Menu Items */}
         <div className="space-y-3">
-          {menuItems.map((item, index) => (
+          {menuItems.filter(item => !item.hidden).map((item, index) => (
             <button
-              key={index}
+              key={item.label}
               onClick={item.action}
               className="w-full gradient-border group animate-fade-in"
             >
