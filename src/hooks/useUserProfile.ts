@@ -10,13 +10,21 @@ interface UserProfile {
 
 export const useUserProfile = () => {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile>({
+    display_name: null,
+    avatar_url: null,
+    is_premium: false,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) {
-        setProfile(null);
+        setProfile({
+          display_name: null,
+          avatar_url: null,
+          is_premium: false,
+        });
         setLoading(false);
         return;
       }
@@ -26,13 +34,25 @@ export const useUserProfile = () => {
           .from("profiles")
           .select("display_name, avatar_url, is_premium")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
-        setProfile(data);
+        if (data) {
+          setProfile(data);
+        } else {
+          setProfile({
+            display_name: null,
+            avatar_url: null,
+            is_premium: false,
+          });
+        }
       } catch (err) {
         console.error("Error fetching profile:", err);
-        setProfile(null);
+        setProfile({
+          display_name: null,
+          avatar_url: null,
+          is_premium: false,
+        });
       } finally {
         setLoading(false);
       }

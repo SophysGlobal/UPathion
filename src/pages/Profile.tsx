@@ -28,8 +28,8 @@ const Profile = () => {
     { icon: User, label: "Edit Profile", action: () => {}, hidden: false },
     { icon: School, label: "School Info", action: () => navigate("/school-info"), hidden: false },
     { icon: Settings, label: "Settings", action: () => navigate("/settings"), hidden: false },
-    { icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: profile?.is_premium ?? false },
-  ], [profile?.is_premium]);
+    { icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: profile.is_premium },
+  ], [profile.is_premium]);
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
@@ -48,13 +48,13 @@ const Profile = () => {
           <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
             <div className="flex justify-center mb-4">
               <ProfileAvatar
-                avatarUrl={profile?.avatar_url}
-                isPremium={profile?.is_premium ?? false}
+                avatarUrl={profile.avatar_url}
+                isPremium={profile.is_premium}
                 size="lg"
               />
             </div>
             <h2 className="text-xl font-bold text-foreground">
-              {data.fullName || profile?.display_name || user?.email?.split('@')[0] || 'User'}
+              {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
             </h2>
             {data.username && (
               <p className="text-sm text-primary">@{data.username}</p>
@@ -65,11 +65,13 @@ const Profile = () => {
             {data.major && (
               <p className="text-xs text-muted-foreground">{data.major}</p>
             )}
-            {profile?.is_premium && (
-              <span className="inline-block mt-2 px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
-                Premium Member
-              </span>
-            )}
+            <div className="h-6 mt-2">
+              {profile.is_premium && (
+                <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
+                  Premium Member
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
