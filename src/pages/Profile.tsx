@@ -15,7 +15,7 @@ import { School, Settings, LogOut, ChevronRight, User, Crown } from "lucide-reac
 const Profile = () => {
   const { user, signOut } = useAuth();
   const { data } = useOnboarding();
-  const { profile } = useUserProfile();
+  const { profile, loading } = useUserProfile();
   const navigate = useNavigate();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
@@ -24,12 +24,23 @@ const Profile = () => {
     navigate("/");
   };
 
-  const menuItems = useMemo(() => [
-    { icon: User, label: "Edit Profile", action: () => {}, hidden: false },
-    { icon: School, label: "School Info", action: () => navigate("/school-info"), hidden: false },
-    { icon: Settings, label: "Settings", action: () => navigate("/settings"), hidden: false },
-    { icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: profile.is_premium },
-  ], [profile.is_premium]);
+  const menuItems = useMemo(() => {
+    const items = [
+      { icon: User, label: "Edit Profile", action: () => {}, hidden: false },
+      { icon: School, label: "School Info", action: () => navigate("/school-info"), hidden: false },
+      { icon: Settings, label: "Settings", action: () => navigate("/settings"), hidden: false },
+    ];
+
+    if (!loading) {
+      if (profile.is_premium) {
+        items.push({ icon: Crown, label: "Manage Your Plan", action: () => navigate("/subscription"), hidden: false });
+      } else {
+        items.push({ icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: false });
+      }
+    }
+
+    return items;
+  }, [profile.is_premium, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
@@ -47,11 +58,13 @@ const Profile = () => {
         <div className="gradient-border animate-fade-in">
           <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
             <div className="flex justify-center mb-4">
-              <ProfileAvatar
-                avatarUrl={profile.avatar_url}
-                isPremium={profile.is_premium}
-                size="lg"
-              />
+              {!loading && (
+                <ProfileAvatar
+                  avatarUrl={profile.avatar_url}
+                  isPremium={profile.is_premium}
+                  size="lg"
+                />
+              )}
             </div>
             <h2 className="text-xl font-bold text-foreground">
               {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
@@ -65,34 +78,38 @@ const Profile = () => {
             {data.major && (
               <p className="text-xs text-muted-foreground">{data.major}</p>
             )}
-            <div className="h-6 mt-2">
-              {profile.is_premium && (
-                <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
-                  Premium Member
-                </span>
-              )}
-            </div>
+            {!loading && (
+              <div className="h-6 mt-2">
+                {profile.is_premium && (
+                  <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
+                    Premium Member
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Menu Items */}
-        <div className="space-y-3">
-          {menuItems.filter(item => !item.hidden).map((item, index) => (
-            <button
-              key={item.label}
-              onClick={item.action}
-              className="w-full gradient-border group animate-fade-in"
-            >
-              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
-                <div className="flex items-center gap-3">
-                  <item.icon className="w-5 h-5 text-primary" />
-                  <span className="font-medium text-foreground">{item.label}</span>
+        {!loading && (
+          <div className="space-y-3">
+            {menuItems.filter(item => !item.hidden).map((item) => (
+              <button
+                key={item.label}
+                onClick={item.action}
+                className="w-full gradient-border group animate-fade-in"
+              >
+                <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
+                  <div className="flex items-center gap-3">
+                    <item.icon className="w-5 h-5 text-primary" />
+                    <span className="font-medium text-foreground">{item.label}</span>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Sign Out */}
         <div className="pt-4 animate-fade-in">
