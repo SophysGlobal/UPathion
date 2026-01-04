@@ -33,12 +33,10 @@ const Profile = () => {
       { icon: Settings, label: "Settings", action: () => navigate("/settings"), hidden: false },
     ];
 
-    if (isReady) {
-      if (profile.is_premium) {
-        items.push({ icon: Crown, label: "Manage Your Plan", action: () => navigate("/subscription"), hidden: false });
-      } else {
-        items.push({ icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: false });
-      }
+    if (profile.is_premium) {
+      items.push({ icon: Crown, label: "Manage Your Plan", action: () => navigate("/settings/plan"), hidden: false });
+    } else {
+      items.push({ icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: false });
     }
 
     return items;

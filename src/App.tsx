@@ -18,6 +18,7 @@ import Dashboard from "./pages/Dashboard";
 import Explore from "./pages/Explore";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import PlanManagement from "./pages/PlanManagement";
 import SchoolInfo from "./pages/SchoolInfo";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
@@ -46,6 +47,7 @@ const App = () => (
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/settings/plan" element={<PlanManagement />} />
                 <Route path="/school-info" element={<SchoolInfo />} />
                 <Route path="/welcome" element={<Welcome />} />
                 <Route path="*" element={<NotFound />} />

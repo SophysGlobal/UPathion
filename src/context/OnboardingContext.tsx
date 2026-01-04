@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface OnboardingData {
   fullName: string;
@@ -31,16 +32,13 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const [data, setData] = useState<OnboardingData>(defaultData);
-  const [loading, setLoading] = useState(true);
+  const [localOverrides, setLocalOverrides] = useState<Partial<OnboardingData>>({});
+  const initialDataRef = useRef<OnboardingData>(defaultData);
 
-  useEffect(() => {
-    const loadOnboardingData = async () => {
-      if (!user) {
-        setData(defaultData);
-        setLoading(false);
-        return;
-      }
+  const { data: fetchedData, isLoading } = useQuery({
+    queryKey: ['onboarding-data', user?.id],
+    queryFn: async (): Promise<OnboardingData> => {
+      if (!user?.id) return defaultData;
 
       try {
         const { data: userData, error } = await supabase
@@ -51,30 +49,39 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
 
         if (error) throw error;
 
-        setData((prev) => ({
-          ...prev,
+        const result = {
+          ...defaultData,
           fullName: userData?.display_name || '',
-        }));
+        };
+        
+        initialDataRef.current = result;
+        return result;
       } catch (err) {
         console.error('Error loading onboarding data:', err);
-      } finally {
-        setLoading(false);
+        return defaultData;
       }
-    };
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
+  });
 
-    loadOnboardingData();
-  }, [user]);
-
-  const updateData = (updates: Partial<OnboardingData>) => {
-    setData((prev) => ({ ...prev, ...updates }));
+  // Merge fetched data with local overrides
+  const data: OnboardingData = {
+    ...(fetchedData ?? defaultData),
+    ...localOverrides,
   };
 
-  const resetData = () => {
-    setData(defaultData);
-  };
+  const updateData = useCallback((updates: Partial<OnboardingData>) => {
+    setLocalOverrides((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const resetData = useCallback(() => {
+    setLocalOverrides({});
+  }, []);
 
   return (
-    <OnboardingContext.Provider value={{ data, updateData, resetData, loading }}>
+    <OnboardingContext.Provider value={{ data, updateData, resetData, loading: isLoading }}>
       {children}
     </OnboardingContext.Provider>
   );

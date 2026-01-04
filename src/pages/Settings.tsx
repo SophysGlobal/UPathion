@@ -188,12 +188,16 @@ const Settings = () => {
 
       <main className="relative z-10 px-6 py-6 space-y-6">
         {settingsSections.map((section, sectionIndex) => (
-          <div key={section.title} className="animate-fade-in" style={{ animationDelay: `${sectionIndex * 0.05}s` }}>
+          <div 
+            key={section.title} 
+            className="animate-fade-in" 
+            style={{ animationDelay: `${sectionIndex * 0.04}s`, animationFillMode: 'both' }}
+          >
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
               {section.title}
             </h2>
             <div className="space-y-2">
-              {section.items.map((item) => {
+              {section.items.map((item, itemIndex) => {
                 const row = (
                   <div
                     className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-all ${
