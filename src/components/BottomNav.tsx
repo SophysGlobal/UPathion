@@ -3,8 +3,9 @@ import { Home, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { memo } from "react";
 
-const BottomNav = () => {
+const BottomNav = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useUserProfile();
@@ -65,6 +66,8 @@ const BottomNav = () => {
       </div>
     </nav>
   );
-};
+});
+
+BottomNav.displayName = "BottomNav";
 
 export default BottomNav;
