@@ -28,19 +28,19 @@ const Profile = () => {
 
   const menuItems = useMemo(() => {
     const items = [
-      { icon: User, label: "Edit Profile", action: () => {}, hidden: false },
+      { icon: User, label: "Edit Profile", action: () => navigate("/edit-profile"), hidden: false },
       { icon: School, label: "School Info", action: () => navigate("/school-info"), hidden: false },
       { icon: Settings, label: "Settings", action: () => navigate("/settings"), hidden: false },
     ];
 
-    if (profile.is_premium) {
-      items.push({ icon: Crown, label: "Manage Your Plan", action: () => navigate("/settings/plan"), hidden: false });
-    } else {
+    if (isReady && profile.is_premium) {
+      items.push({ icon: Crown, label: "Manage Your Plan", action: () => navigate("/plan-management"), hidden: false });
+    } else if (isReady) {
       items.push({ icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: false });
     }
 
     return items;
-  }, [profile.is_premium, isReady, navigate]);
+  }, [profile.is_premium, isReady, navigate])
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">

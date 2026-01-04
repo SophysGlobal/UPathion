@@ -58,114 +58,143 @@ Known for its commitment to research and community engagement, the institution h
       </header>
 
       <main className="relative z-10 px-6 py-6 space-y-6">
-        {/* School Header */}
-        <div className="animate-fade-in gradient-border">
-          <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <Building2 className="w-8 h-8 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-foreground">{schoolData.name}</h2>
-                <p className="text-sm text-primary font-medium">{schoolData.type}</p>
-                <div className="flex items-center gap-2 mt-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-sm">{schoolData.location}</span>
+        {[
+          {
+            key: "header",
+            element: (
+              <div className="gradient-border">
+                <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-8 h-8 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-foreground">{schoolData.name}</h2>
+                      <p className="text-sm text-primary font-medium">{schoolData.type}</p>
+                      <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-sm">{schoolData.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm italic text-accent mt-4">"{schoolData.motto}"</p>
                 </div>
               </div>
-            </div>
-            <p className="text-sm italic text-accent mt-4">"{schoolData.motto}"</p>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          {schoolData.highlights.map((stat) => (
-            <div key={stat.label} className="gradient-border">
-              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-3 text-center">
-                <stat.icon className="w-5 h-5 text-primary mx-auto mb-1" />
-                <p className="text-sm font-bold text-foreground">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
+            ),
+          },
+          {
+            key: "stats",
+            element: (
+              <div className="grid grid-cols-4 gap-3">
+                {schoolData.highlights.map((stat) => (
+                  <div key={stat.label} className="gradient-border">
+                    <div className="bg-card/90 backdrop-blur-sm rounded-lg p-3 text-center">
+                      <stat.icon className="w-5 h-5 text-primary mx-auto mb-1" />
+                      <p className="text-sm font-bold text-foreground">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* About */}
-        <div className="animate-fade-in gradient-border" style={{ animationDelay: '0.2s' }}>
-          <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
-            <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
-              <BookOpen className="w-5 h-5 text-primary" />
-              About
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-              {schoolData.description}
-            </p>
-          </div>
-        </div>
-
-        {/* Key Stats */}
-        <div className="animate-fade-in gradient-border" style={{ animationDelay: '0.3s' }}>
-          <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
-            <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
-              <Award className="w-5 h-5 text-primary" />
-              Key Statistics
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 rounded-lg bg-secondary/50">
-                <p className="text-xs text-muted-foreground">National Ranking</p>
-                <p className="text-lg font-bold text-foreground">{schoolData.ranking}</p>
+            ),
+          },
+          {
+            key: "about",
+            element: (
+              <div className="gradient-border">
+                <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
+                    <BookOpen className="w-5 h-5 text-primary" />
+                    About
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                    {schoolData.description}
+                  </p>
+                </div>
               </div>
-              <div className="p-3 rounded-lg bg-secondary/50">
-                <p className="text-xs text-muted-foreground">Acceptance Rate</p>
-                <p className="text-lg font-bold text-foreground">{schoolData.acceptanceRate}</p>
+            ),
+          },
+          {
+            key: "keyStats",
+            element: (
+              <div className="gradient-border">
+                <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
+                    <Award className="w-5 h-5 text-primary" />
+                    Key Statistics
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground">National Ranking</p>
+                      <p className="text-lg font-bold text-foreground">{schoolData.ranking}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground">Acceptance Rate</p>
+                      <p className="text-lg font-bold text-foreground">{schoolData.acceptanceRate}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground">Student:Faculty</p>
+                      <p className="text-lg font-bold text-foreground">{schoolData.studentToFaculty}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-secondary/50">
+                      <p className="text-xs text-muted-foreground">Total Enrollment</p>
+                      <p className="text-lg font-bold text-foreground">{schoolData.enrollment}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="p-3 rounded-lg bg-secondary/50">
-                <p className="text-xs text-muted-foreground">Student:Faculty</p>
-                <p className="text-lg font-bold text-foreground">{schoolData.studentToFaculty}</p>
+            ),
+          },
+          {
+            key: "departments",
+            element: (
+              <div className="gradient-border">
+                <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
+                    <GraduationCap className="w-5 h-5 text-primary" />
+                    Schools & Departments
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {schoolData.departments.map((dept) => (
+                      <span key={dept} className="px-3 py-1.5 rounded-full bg-primary/20 text-primary text-xs font-medium">
+                        {dept}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="p-3 rounded-lg bg-secondary/50">
-                <p className="text-xs text-muted-foreground">Total Enrollment</p>
-                <p className="text-lg font-bold text-foreground">{schoolData.enrollment}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Departments */}
-        <div className="animate-fade-in gradient-border" style={{ animationDelay: '0.4s' }}>
-          <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
-            <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
-              <GraduationCap className="w-5 h-5 text-primary" />
-              Schools & Departments
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {schoolData.departments.map((dept) => (
-                <span key={dept} className="px-3 py-1.5 rounded-full bg-primary/20 text-primary text-xs font-medium">
-                  {dept}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Website */}
-        <div className="animate-fade-in gradient-border" style={{ animationDelay: '0.5s' }}>
-          <a
-            href={`https://${schoolData.website}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block"
+            ),
+          },
+          {
+            key: "website",
+            element: (
+              <a
+                href={`https://${schoolData.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <div className="gradient-border">
+                  <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-5 h-5 text-primary" />
+                      <span className="text-foreground font-medium">Visit Website</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">{schoolData.website}</span>
+                  </div>
+                </div>
+              </a>
+            ),
+          },
+        ].map((section, sectionIndex) => (
+          <div
+            key={section.key}
+            className="animate-fade-in"
+            style={{ animationDelay: `${sectionIndex * 0.04}s`, animationFillMode: 'both' }}
           >
-            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-primary" />
-                <span className="text-foreground font-medium">Visit Website</span>
-              </div>
-              <span className="text-sm text-muted-foreground">{schoolData.website}</span>
-            </div>
-          </a>
-        </div>
+            {section.element}
+          </div>
+        ))}
       </main>
 
       <PremiumChatFAB />

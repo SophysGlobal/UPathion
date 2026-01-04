@@ -29,7 +29,7 @@ const PlanManagement = () => {
     status: isPremium ? "Active" : "N/A",
     renewalDate: isPremium ? "February 4, 2026" : null,
     platform: "Web",
-    price: isPremium ? "$9.99/month" : "Free",
+    price: isPremium ? "$4.99/month" : "Free",
   };
 
   const handleCancelSubscription = () => {

@@ -17,6 +17,7 @@ import Subscription from "./pages/Subscription";
 import Dashboard from "./pages/Dashboard";
 import Explore from "./pages/Explore";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
 import Settings from "./pages/Settings";
 import PlanManagement from "./pages/PlanManagement";
 import SchoolInfo from "./pages/SchoolInfo";
@@ -46,7 +47,9 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/edit-profile" element={<EditProfile />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/plan-management" element={<PlanManagement />} />
                 <Route path="/settings/plan" element={<PlanManagement />} />
                 <Route path="/school-info" element={<SchoolInfo />} />
                 <Route path="/welcome" element={<Welcome />} />
