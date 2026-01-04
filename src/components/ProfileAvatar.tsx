@@ -1,5 +1,6 @@
 import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState, memo } from "react";
 
 interface ProfileAvatarProps {
   avatarUrl?: string | null;
@@ -26,11 +27,16 @@ const iconClasses = {
   lg: "w-10 h-10",
 };
 
-const ProfileAvatar = ({ avatarUrl, isPremium = false, size = "md", className }: ProfileAvatarProps) => {
+const ProfileAvatar = memo(({ avatarUrl, isPremium = false, size = "md", className }: ProfileAvatarProps) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const showFallback = !avatarUrl || imageError;
+
   return (
     <div
       className={cn(
-        "rounded-full flex items-center justify-center",
+        "rounded-full flex items-center justify-center transition-none",
         ringClasses[size],
         isPremium 
           ? "bg-gradient-to-r from-primary via-accent to-primary animate-spin-slow bg-[length:200%_200%]" 
@@ -42,18 +48,30 @@ const ProfileAvatar = ({ avatarUrl, isPremium = false, size = "md", className }:
         "rounded-full bg-secondary flex items-center justify-center overflow-hidden",
         sizeClasses[size]
       )}>
-        {avatarUrl ? (
+        {!showFallback && (
           <img 
-            src={avatarUrl} 
+            src={avatarUrl!} 
             alt="Profile" 
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full h-full object-cover transition-opacity duration-150",
+              imageLoaded ? "opacity-100" : "opacity-0"
+            )}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageError(true)}
           />
-        ) : (
-          <User className={cn("text-muted-foreground", iconClasses[size])} />
+        )}
+        {(showFallback || !imageLoaded) && (
+          <User className={cn(
+            "text-muted-foreground absolute",
+            iconClasses[size],
+            !showFallback && imageLoaded && "hidden"
+          )} />
         )}
       </div>
     </div>
   );
-};
+});
+
+ProfileAvatar.displayName = "ProfileAvatar";
 
 export default ProfileAvatar;
