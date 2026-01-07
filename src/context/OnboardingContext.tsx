@@ -10,6 +10,8 @@ interface OnboardingData {
   schoolName: string;
   gradeOrYear: string;
   major: string;
+  aspirationalSchool: string;
+  isHighSchool: boolean;
 }
 
 interface OnboardingContextType {
@@ -19,6 +21,16 @@ interface OnboardingContextType {
   loading: boolean;
 }
 
+// Helper to detect if school is high school
+const detectIsHighSchool = (schoolName: string): boolean => {
+  const lowerName = schoolName.toLowerCase();
+  return (
+    lowerName.includes('high school') ||
+    lowerName.includes('highschool') ||
+    /\bhs\b/.test(lowerName) // matches "hs" as a standalone word
+  );
+};
+
 const defaultData: OnboardingData = {
   fullName: '',
   username: '',
@@ -26,6 +38,8 @@ const defaultData: OnboardingData = {
   schoolName: '',
   gradeOrYear: '',
   major: '',
+  aspirationalSchool: '',
+  isHighSchool: false,
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -73,6 +87,10 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateData = useCallback((updates: Partial<OnboardingData>) => {
+    // Auto-detect isHighSchool when schoolName changes
+    if (updates.schoolName !== undefined) {
+      updates.isHighSchool = detectIsHighSchool(updates.schoolName);
+    }
     setLocalOverrides((prev) => ({ ...prev, ...updates }));
   }, []);
 

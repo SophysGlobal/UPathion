@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Compass } from "lucide-react";
+import { Home, Compass, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -12,6 +12,7 @@ const BottomNav = memo(() => {
 
   const navItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
+    { icon: Newspaper, label: "Feed", path: "/feed" },
     { icon: Compass, label: "Explore", path: "/explore" },
   ];
 
