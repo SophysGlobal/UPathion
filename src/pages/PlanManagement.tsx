@@ -117,7 +117,10 @@ const PlanManagement = () => {
 
       <main className="relative z-10 px-6 py-6 space-y-6">
         {/* Current Plan Card */}
-        <div className="gradient-border animate-fade-in">
+        <div 
+          className="gradient-border animate-fade-in"
+          style={{ animationDelay: '0s', animationFillMode: 'both' }}
+        >
           <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
             <div className="flex items-start gap-4">
               <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${
@@ -153,7 +156,10 @@ const PlanManagement = () => {
 
         {/* Premium Benefits (shown for Premium users) */}
         {isPremium && (
-          <div className="animate-fade-in" style={{ animationDelay: '0.05s' }}>
+          <div 
+            className="animate-fade-in" 
+            style={{ animationDelay: '0.04s', animationFillMode: 'both' }}
+          >
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
               Your Benefits
             </h2>
@@ -174,7 +180,10 @@ const PlanManagement = () => {
 
         {/* Subscription Management */}
         {isPremium && (
-          <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <div 
+            className="animate-fade-in" 
+            style={{ animationDelay: '0.08s', animationFillMode: 'both' }}
+          >
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
               Subscription Management
             </h2>
@@ -215,7 +224,10 @@ const PlanManagement = () => {
         )}
 
         {/* Support Section */}
-        <div className="animate-fade-in" style={{ animationDelay: isPremium ? '0.15s' : '0.05s' }}>
+        <div 
+          className="animate-fade-in" 
+          style={{ animationDelay: isPremium ? '0.12s' : '0.04s', animationFillMode: 'both' }}
+        >
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
             Support
           </h2>
@@ -246,7 +258,10 @@ const PlanManagement = () => {
 
         {/* Upgrade CTA for Free users */}
         {!isPremium && !loading && (
-          <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <div 
+            className="animate-fade-in" 
+            style={{ animationDelay: '0.08s', animationFillMode: 'both' }}
+          >
             <button
               onClick={() => navigate("/subscription")}
               className="w-full gradient-border group"

@@ -19,6 +19,16 @@ const SchoolSetup = () => {
   const highSchoolGrades = ["Freshman (9th)", "Sophomore (10th)", "Junior (11th)", "Senior (12th)"];
   const collegeYears = ["Freshman", "Sophomore", "Junior", "Senior", "Graduate Student"];
 
+  // Helper to detect if school is high school
+  const detectIsHighSchool = (name: string): boolean => {
+    const lowerName = name.toLowerCase();
+    return (
+      lowerName.includes('high school') ||
+      lowerName.includes('highschool') ||
+      /\bhs\b/.test(lowerName)
+    );
+  };
+
   const handleContinue = () => {
     if (!schoolType) {
       toast.error("Please select your school type");
@@ -33,13 +43,22 @@ const SchoolSetup = () => {
       return;
     }
     
+    const isHighSchool = detectIsHighSchool(schoolName.trim());
+    
     updateData({ 
       schoolType, 
       schoolName: schoolName.trim(), 
       gradeOrYear,
-      major: major.trim()
+      major: major.trim(),
+      isHighSchool,
     });
-    navigate("/onboarding/school-confirm");
+    
+    // If high school, ask about aspirational school; otherwise go to confirm
+    if (isHighSchool) {
+      navigate("/onboarding/aspirational-school");
+    } else {
+      navigate("/onboarding/school-confirm");
+    }
   };
 
   return (
