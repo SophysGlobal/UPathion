@@ -1,20 +1,63 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { School, GraduationCap, BookOpen, Calendar } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { School, GraduationCap, BookOpen, Calendar, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const SchoolConfirm = () => {
   const navigate = useNavigate();
   const { data } = useOnboarding();
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleConfirm = () => {
-    toast.success("Welcome to UPathion!", {
-      description: "Your profile is all set up. Let's explore your options!",
-    });
-    navigate("/subscription");
+  const handleConfirm = async () => {
+    if (!user?.id) {
+      toast.error("Please sign in to continue");
+      navigate("/signin");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const updates = {
+        display_name: data.fullName || null,
+        username: data.username || null,
+        school_name: data.schoolName || null,
+        school_type: data.schoolType || null,
+        grade_or_year: data.gradeOrYear || null,
+        major: data.major || null,
+        aspirational_school: data.aspirationalSchool || null,
+        is_high_school: data.isHighSchool,
+        onboarding_completed: true,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success("Welcome to UPathion!", {
+        description: "Your profile is all set up. Let's explore!",
+      });
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      if (error.message?.includes('duplicate key') || error.message?.includes('unique')) {
+        toast.error("That username is already taken. Please go back and choose another.");
+      } else {
+        toast.error("Failed to save profile. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -30,7 +73,7 @@ const SchoolConfirm = () => {
         {/* Title */}
         <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">Almost there!</h1>
-          <p className="text-muted-foreground">Confirm your school details</p>
+          <p className="text-muted-foreground">Confirm your details</p>
         </div>
 
         {/* Info Card */}
@@ -79,6 +122,22 @@ const SchoolConfirm = () => {
                 </div>
               </>
             )}
+
+            {data.aspirationalSchool && (
+              <>
+                <div className="h-px bg-border" />
+                
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Dream School</p>
+                    <p className="text-lg font-semibold text-foreground">{data.aspirationalSchool}</p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -88,6 +147,7 @@ const SchoolConfirm = () => {
             variant="default"
             className="flex-1"
             onClick={() => navigate("/onboarding/school")}
+            disabled={isLoading}
           >
             Edit
           </GradientButton>
@@ -95,8 +155,9 @@ const SchoolConfirm = () => {
             variant="filled"
             className="flex-1"
             onClick={handleConfirm}
+            disabled={isLoading}
           >
-            Confirm
+            {isLoading ? "Saving..." : "Confirm"}
           </GradientButton>
         </div>
 

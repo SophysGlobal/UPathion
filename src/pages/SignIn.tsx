@@ -15,10 +15,10 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already logged in
+  // Redirect if already logged in - go to dashboard, not onboarding
   useEffect(() => {
     if (user && !loading) {
-      navigate("/onboarding/name");
+      navigate("/dashboard");
     }
   }, [user, loading, navigate]);
 
@@ -57,7 +57,7 @@ const SignIn = () => {
       return;
     }
 
-    navigate("/onboarding/name");
+    // Successful sign-in will trigger useEffect redirect to dashboard
   };
 
   const handleForgotPassword = () => {

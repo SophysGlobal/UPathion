@@ -16,37 +16,61 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          aspirational_school: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           display_name: string | null
           email: string | null
+          grade_or_year: string | null
           id: string
+          is_high_school: boolean | null
           is_premium: boolean
+          major: string | null
+          onboarding_completed: boolean | null
+          school_name: string | null
+          school_type: string | null
           subscription_ends_at: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
+          aspirational_school?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
+          grade_or_year?: string | null
           id: string
+          is_high_school?: boolean | null
           is_premium?: boolean
+          major?: string | null
+          onboarding_completed?: boolean | null
+          school_name?: string | null
+          school_type?: string | null
           subscription_ends_at?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
+          aspirational_school?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
+          grade_or_year?: string | null
           id?: string
+          is_high_school?: boolean | null
           is_premium?: boolean
+          major?: string | null
+          onboarding_completed?: boolean | null
+          school_name?: string | null
+          school_type?: string | null
           subscription_ends_at?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }

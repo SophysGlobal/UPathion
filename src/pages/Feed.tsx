@@ -1,5 +1,5 @@
 import { useState, useMemo, memo } from "react";
-import { useOnboarding } from "@/context/OnboardingContext";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -226,10 +226,10 @@ PostCard.displayName = 'PostCard';
 type FilterType = 'all' | 'current' | 'aspirational';
 
 const Feed = () => {
-  const { data } = useOnboarding();
+  const { profile } = useProfileCompletion();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
-  const hasAspirationalSchool = !!data.aspirationalSchool;
+  const hasAspirationalSchool = !!profile?.aspirational_school;
 
   const filteredPosts = useMemo(() => {
     if (activeFilter === 'all') {
