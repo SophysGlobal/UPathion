@@ -1,18 +1,8 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import SignIn from "./SignIn";
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && user) {
-      // User is logged in, redirect to dashboard
-      navigate("/dashboard");
-    }
-  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -22,7 +12,9 @@ const Index = () => {
     );
   }
 
-  // Not logged in, show sign in page
+  // AuthGate handles redirect for logged-in users
+  // If we reach here and user is logged in, AuthGate will redirect
+  // If not logged in, show sign in page
   return <SignIn />;
 };
 

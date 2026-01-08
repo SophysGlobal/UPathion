@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
@@ -8,21 +8,17 @@ import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronLeft,
-  User,
   Mail,
   Lock,
   Camera,
   X,
   Trash2,
-  Heart,
-  Globe,
-  Smartphone,
-  Sparkles,
-  Eye,
   ChevronRight,
   GraduationCap,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -48,12 +44,33 @@ import {
 
 // Helper to detect if school is high school
 const detectIsHighSchool = (schoolName: string): boolean => {
+  if (!schoolName) return false;
   const lowerName = schoolName.toLowerCase();
   return (
     lowerName.includes('high school') ||
     lowerName.includes('highschool') ||
     /\bhs\b/.test(lowerName)
   );
+};
+
+// Validation helpers
+const validateUsername = (username: string): string | null => {
+  if (!username) return null; // Optional field
+  if (username.length < 3) return "Username must be at least 3 characters";
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) return "Only letters, numbers, and underscores";
+  return null;
+};
+
+const validateUrl = (url: string): string | null => {
+  if (!url) return null; // Optional
+  try {
+    // Allow URLs without protocol
+    const urlToTest = url.startsWith('http') ? url : `https://${url}`;
+    new URL(urlToTest);
+    return null;
+  } catch {
+    return "Invalid URL format";
+  }
 };
 
 // Popular colleges list for aspirational school dropdown
@@ -90,10 +107,17 @@ const POPULAR_COLLEGES = [
   "University of Wisconsin-Madison",
 ];
 
+interface FormErrors {
+  username?: string;
+  linkedin?: string;
+  website?: string;
+}
+
 const EditProfile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { profile, refetch } = useProfileCompletion();
+  const { profile, isLoading: profileLoading, refetch } = useProfileCompletion();
+  const initializedRef = useRef(false);
 
   const [formData, setFormData] = useState({
     displayName: "",
@@ -115,22 +139,31 @@ const EditProfile = () => {
 
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [aspirationalOpen, setAspirationalOpen] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
 
-  // Initialize form data from profile
+  // Initialize form data from profile - only once when profile loads
   useEffect(() => {
-    if (profile) {
-      setFormData((prev) => ({
-        ...prev,
+    if (profile && !initializedRef.current) {
+      initializedRef.current = true;
+      setFormData({
         displayName: profile.display_name || "",
         username: profile.username || "",
         bio: profile.bio || "",
+        pronouns: "",
         schoolName: profile.school_name || "",
         gradeOrYear: profile.grade_or_year || "",
         major: profile.major || "",
         aspirationalSchool: profile.aspirational_school || "",
-      }));
+        instagram: "",
+        tiktok: "",
+        linkedin: "",
+        website: "",
+        phoneNumber: "",
+        profileVisibility: "public",
+        showSchoolOnProfile: true,
+      });
       setProfilePhoto(profile.avatar_url || null);
     }
   }, [profile]);
@@ -138,12 +171,39 @@ const EditProfile = () => {
   // Compute isHighSchool based on current schoolName
   const isHighSchool = detectIsHighSchool(formData.schoolName);
 
+  // Validate on change
+  const validateField = (field: string, value: string) => {
+    const newErrors = { ...errors };
+    
+    if (field === 'username') {
+      const error = validateUsername(value);
+      if (error) newErrors.username = error;
+      else delete newErrors.username;
+    }
+    if (field === 'linkedin') {
+      const error = validateUrl(value);
+      if (error) newErrors.linkedin = error;
+      else delete newErrors.linkedin;
+    }
+    if (field === 'website') {
+      const error = validateUrl(value);
+      if (error) newErrors.website = error;
+      else delete newErrors.website;
+    }
+    
+    setErrors(newErrors);
+  };
+
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
     setHasChanges(true);
+    
+    if (typeof value === 'string') {
+      validateField(field, value);
+    }
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,7 +226,13 @@ const EditProfile = () => {
   const handleSaveProfile = async () => {
     if (!hasChanges || !user?.id) return;
 
-    setIsLoading(true);
+    // Check for validation errors
+    if (Object.keys(errors).length > 0) {
+      toast.error("Please fix the errors before saving");
+      return;
+    }
+
+    setIsSaving(true);
     try {
       const updates = {
         display_name: formData.displayName || null,
@@ -195,12 +261,13 @@ const EditProfile = () => {
     } catch (error: any) {
       console.error('Error updating profile:', error);
       if (error.message?.includes('duplicate key') || error.message?.includes('unique')) {
+        setErrors(prev => ({ ...prev, username: "Username already taken" }));
         toast.error("That username is already taken");
       } else {
         toast.error("Failed to update profile");
       }
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -247,6 +314,7 @@ const EditProfile = () => {
             description: "Your unique handle (letters, numbers, underscores only)",
             value: formData.username,
             placeholder: "@username",
+            error: errors.username,
           },
           {
             type: "textarea",
@@ -263,7 +331,7 @@ const EditProfile = () => {
             description: "How you identify (optional)",
             value: formData.pronouns,
             options: [
-              { label: "Not specified", value: "" },
+              { label: "Not specified", value: "not_specified" },
               { label: "He/Him", value: "he/him" },
               { label: "She/Her", value: "she/her" },
               { label: "They/Them", value: "they/them" },
@@ -302,14 +370,14 @@ const EditProfile = () => {
             value: formData.gradeOrYear,
             options: isHighSchool
               ? [
-                  { label: "Not specified", value: "" },
+                  { label: "Not specified", value: "not_specified" },
                   { label: "9th Grade (Freshman)", value: "9" },
                   { label: "10th Grade (Sophomore)", value: "10" },
                   { label: "11th Grade (Junior)", value: "11" },
                   { label: "12th Grade (Senior)", value: "12" },
                 ]
               : [
-                  { label: "Not specified", value: "" },
+                  { label: "Not specified", value: "not_specified" },
                   { label: "Freshman", value: "freshman" },
                   { label: "Sophomore", value: "sophomore" },
                   { label: "Junior", value: "junior" },
@@ -360,6 +428,7 @@ const EditProfile = () => {
             description: "Your LinkedIn profile",
             value: formData.linkedin,
             placeholder: "linkedin.com/in/username",
+            error: errors.linkedin,
           },
           {
             type: "text",
@@ -368,6 +437,7 @@ const EditProfile = () => {
             description: "Your personal website or portfolio",
             value: formData.website,
             placeholder: "https://example.com",
+            error: errors.website,
           },
         ],
       },
@@ -423,8 +493,43 @@ const EditProfile = () => {
         ],
       },
     ],
-    [formData, profilePhoto, isHighSchool, user?.email]
+    [formData, profilePhoto, isHighSchool, user?.email, errors]
   );
+
+  // Loading skeleton
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-background/80 pb-20 relative">
+        <AnimatedBackground />
+        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5 text-foreground" />
+              </button>
+              <h1 className="text-lg font-semibold text-foreground">Edit Profile</h1>
+            </div>
+          </div>
+        </header>
+        <main className="relative z-10 px-6 py-6 space-y-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="h-4 w-24" />
+              <div className="gradient-border">
+                <div className="bg-card/90 rounded-lg p-4">
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
@@ -445,10 +550,10 @@ const EditProfile = () => {
             <Button
               size="sm"
               onClick={handleSaveProfile}
-              disabled={isLoading}
+              disabled={isSaving || Object.keys(errors).length > 0}
               className="bg-primary hover:bg-primary/90"
             >
-              {isLoading ? "Saving..." : "Save"}
+              {isSaving ? "Saving..." : "Save"}
             </Button>
           )}
         </div>
@@ -535,8 +640,14 @@ const EditProfile = () => {
                               value={item.value}
                               onChange={(e) => handleInputChange(item.field, e.target.value)}
                               placeholder={item.placeholder || ""}
-                              className="bg-secondary/50 border-border"
+                              className={`bg-secondary/50 border-border ${item.error ? 'border-destructive' : ''}`}
                             />
+                          )}
+                          {item.error && (
+                            <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              {item.error}
+                            </p>
                           )}
                           {item.maxLength && (
                             <p className="text-xs text-muted-foreground mt-1">
@@ -607,15 +718,15 @@ const EditProfile = () => {
                           <p className="font-medium text-foreground text-sm mb-1">{item.label}</p>
                           <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
                           <Select
-                            value={item.value}
+                            value={item.value || ""}
                             onValueChange={(value) => handleInputChange(item.field, value)}
                           >
                             <SelectTrigger className="bg-secondary/50 border-border">
-                              <SelectValue />
+                              <SelectValue placeholder="Select..." />
                             </SelectTrigger>
                             <SelectContent>
                               {item.options.map((option: any) => (
-                                <SelectItem key={option.value} value={option.value}>
+                                <SelectItem key={option.value || "empty"} value={option.value || "not_specified"}>
                                   {option.label}
                                 </SelectItem>
                               ))}
@@ -660,8 +771,8 @@ const EditProfile = () => {
                     <button
                       key={item.label}
                       onClick={item.action}
-                      className="w-full gradient-border group"
                       disabled={item.readOnly}
+                      className="w-full gradient-border group"
                     >
                       <div
                         className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-all ${
