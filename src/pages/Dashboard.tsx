@@ -1,18 +1,41 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useOnboarding } from "@/context/OnboardingContext";
 import { useNavigate } from "react-router-dom";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { data } = useOnboarding();
+  const { profile, isProfileComplete, hasCompletedOnboarding } = useProfileCompletion();
   const navigate = useNavigate();
+  
+  // Show profile prompt only once per session for users who haven't completed onboarding
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
+  const [promptDismissed, setPromptDismissed] = useState(false);
 
-  const firstName = data.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
+  useEffect(() => {
+    // Show prompt if user is logged in, hasn't completed onboarding, and hasn't dismissed
+    if (user && !hasCompletedOnboarding && !isProfileComplete && !promptDismissed) {
+      // Check sessionStorage to avoid showing multiple times per session
+      const dismissed = sessionStorage.getItem('profile-prompt-dismissed');
+      if (!dismissed) {
+        setShowProfilePrompt(true);
+      }
+    }
+  }, [user, hasCompletedOnboarding, isProfileComplete, promptDismissed]);
+
+  const handleSkipPrompt = () => {
+    setShowProfilePrompt(false);
+    setPromptDismissed(true);
+    sessionStorage.setItem('profile-prompt-dismissed', 'true');
+  };
+
+  const firstName = profile?.display_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
 
   const quickStats = [
     { icon: Users, label: "Connections", value: "0" },
@@ -20,12 +43,12 @@ const Dashboard = () => {
     { icon: Calendar, label: "Events", value: "0" },
   ];
 
-  // Check completion status based on onboarding data
+  // Check completion status based on profile data
   const steps = [
     { 
       label: "Complete your profile", 
-      completed: !!(data.fullName && data.username),
-      action: () => navigate("/profile"),
+      completed: isProfileComplete,
+      action: () => navigate("/edit-profile"),
     },
     { 
       label: "Explore your school community", 
@@ -43,6 +66,10 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background/80 pb-20 relative">
       <AnimatedBackground />
       
+      {/* Profile completion prompt for new users */}
+      {showProfilePrompt && (
+        <CompleteProfilePrompt onSkip={handleSkipPrompt} />
+      )}
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="flex items-center justify-between px-6 py-3">

@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -21,6 +22,7 @@ import {
   Sparkles,
   Eye,
   ChevronRight,
+  GraduationCap,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -30,20 +32,78 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+// Helper to detect if school is high school
+const detectIsHighSchool = (schoolName: string): boolean => {
+  const lowerName = schoolName.toLowerCase();
+  return (
+    lowerName.includes('high school') ||
+    lowerName.includes('highschool') ||
+    /\bhs\b/.test(lowerName)
+  );
+};
+
+// Popular colleges list for aspirational school dropdown
+const POPULAR_COLLEGES = [
+  "Harvard University",
+  "Stanford University",
+  "MIT",
+  "Yale University",
+  "Princeton University",
+  "Columbia University",
+  "University of Pennsylvania",
+  "Brown University",
+  "Dartmouth College",
+  "Cornell University",
+  "Duke University",
+  "Northwestern University",
+  "Johns Hopkins University",
+  "Caltech",
+  "University of Chicago",
+  "UCLA",
+  "UC Berkeley",
+  "University of Michigan",
+  "NYU",
+  "Boston University",
+  "Georgetown University",
+  "Carnegie Mellon University",
+  "USC",
+  "University of Virginia",
+  "Georgia Tech",
+  "University of Texas at Austin",
+  "University of Florida",
+  "Ohio State University",
+  "Penn State University",
+  "University of Wisconsin-Madison",
+];
 
 const EditProfile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, refetch } = useProfileCompletion();
 
   const [formData, setFormData] = useState({
-    displayName: profile?.display_name || "",
+    displayName: "",
     username: "",
     bio: "",
     pronouns: "",
     schoolName: "",
-    graduationYear: "",
-    majors: "",
+    gradeOrYear: "",
+    major: "",
+    aspirationalSchool: "",
     instagram: "",
     tiktok: "",
     linkedin: "",
@@ -53,9 +113,30 @@ const EditProfile = () => {
     showSchoolOnProfile: true,
   });
 
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(profile?.avatar_url || null);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [aspirationalOpen, setAspirationalOpen] = useState(false);
+
+  // Initialize form data from profile
+  useEffect(() => {
+    if (profile) {
+      setFormData((prev) => ({
+        ...prev,
+        displayName: profile.display_name || "",
+        username: profile.username || "",
+        bio: profile.bio || "",
+        schoolName: profile.school_name || "",
+        gradeOrYear: profile.grade_or_year || "",
+        major: profile.major || "",
+        aspirationalSchool: profile.aspirational_school || "",
+      }));
+      setProfilePhoto(profile.avatar_url || null);
+    }
+  }, [profile]);
+
+  // Compute isHighSchool based on current schoolName
+  const isHighSchool = detectIsHighSchool(formData.schoolName);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
@@ -83,16 +164,41 @@ const EditProfile = () => {
   };
 
   const handleSaveProfile = async () => {
-    if (!hasChanges) return;
+    if (!hasChanges || !user?.id) return;
 
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const updates = {
+        display_name: formData.displayName || null,
+        username: formData.username || null,
+        bio: formData.bio || null,
+        school_name: formData.schoolName || null,
+        grade_or_year: formData.gradeOrYear || null,
+        major: formData.major || null,
+        aspirational_school: isHighSchool ? (formData.aspirationalSchool || null) : null,
+        is_high_school: isHighSchool,
+        onboarding_completed: true,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      await refetch();
       toast.success("Profile updated successfully");
       setHasChanges(false);
       navigate("/profile");
-    } catch (error) {
-      toast.error("Failed to update profile");
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      if (error.message?.includes('duplicate key') || error.message?.includes('unique')) {
+        toast.error("That username is already taken");
+      } else {
+        toast.error("Failed to update profile");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -173,30 +279,50 @@ const EditProfile = () => {
           {
             type: "text",
             field: "schoolName",
-            label: "School Name",
-            description: "Your school or university",
+            label: "Current School",
+            description: "Your current school or university",
             value: formData.schoolName,
           },
+          ...(isHighSchool
+            ? [
+                {
+                  type: "aspirational",
+                  field: "aspirationalSchool",
+                  label: "Aspirational School",
+                  description: "Where do you aspire to go after high school?",
+                  value: formData.aspirationalSchool,
+                },
+              ]
+            : []),
           {
             type: "select",
-            field: "graduationYear",
-            label: "Graduation Year",
-            description: "When you'll graduate (optional)",
-            value: formData.graduationYear,
-            options: [
-              { label: "Not specified", value: "" },
-              ...Array.from({ length: 10 }, (_, i) => ({
-                label: String(new Date().getFullYear() + i),
-                value: String(new Date().getFullYear() + i),
-              })),
-            ],
+            field: "gradeOrYear",
+            label: isHighSchool ? "Grade" : "Year",
+            description: isHighSchool ? "Your current grade level" : "Your current year",
+            value: formData.gradeOrYear,
+            options: isHighSchool
+              ? [
+                  { label: "Not specified", value: "" },
+                  { label: "9th Grade (Freshman)", value: "9" },
+                  { label: "10th Grade (Sophomore)", value: "10" },
+                  { label: "11th Grade (Junior)", value: "11" },
+                  { label: "12th Grade (Senior)", value: "12" },
+                ]
+              : [
+                  { label: "Not specified", value: "" },
+                  { label: "Freshman", value: "freshman" },
+                  { label: "Sophomore", value: "sophomore" },
+                  { label: "Junior", value: "junior" },
+                  { label: "Senior", value: "senior" },
+                  { label: "Graduate Student", value: "graduate" },
+                ],
           },
           {
             type: "text",
-            field: "majors",
-            label: "Major/Interests",
-            description: "Your field of study or interests",
-            value: formData.majors,
+            field: "major",
+            label: isHighSchool ? "Intended Major / Interests" : "Major / Interests",
+            description: isHighSchool ? "What you're interested in studying" : "Your field of study or interests",
+            value: formData.major,
           },
         ],
       },
@@ -297,7 +423,7 @@ const EditProfile = () => {
         ],
       },
     ],
-    [formData, profilePhoto]
+    [formData, profilePhoto, isHighSchool, user?.email]
   );
 
   return (
@@ -423,6 +549,56 @@ const EditProfile = () => {
                   );
                 }
 
+                if (item.type === "aspirational") {
+                  return (
+                    <div key={item.field} className="gradient-border">
+                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+                        <label className="block">
+                          <div className="flex items-center gap-2 mb-1">
+                            <GraduationCap className="w-4 h-4 text-primary" />
+                            <p className="font-medium text-foreground text-sm">{item.label}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
+                          <Popover open={aspirationalOpen} onOpenChange={setAspirationalOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between bg-secondary/50 border-border"
+                              >
+                                {formData.aspirationalSchool || "Select a school..."}
+                                <ChevronRight className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search schools..." />
+                                <CommandList>
+                                  <CommandEmpty>No school found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {POPULAR_COLLEGES.map((college) => (
+                                      <CommandItem
+                                        key={college}
+                                        value={college}
+                                        onSelect={(value) => {
+                                          handleInputChange("aspirationalSchool", value);
+                                          setAspirationalOpen(false);
+                                        }}
+                                      >
+                                        {college}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </label>
+                      </div>
+                    </div>
+                  );
+                }
+
                 if (item.type === "select") {
                   return (
                     <div key={item.field} className="gradient-border">
@@ -485,16 +661,21 @@ const EditProfile = () => {
                       key={item.label}
                       onClick={item.action}
                       className="w-full gradient-border group"
+                      disabled={item.readOnly}
                     >
                       <div
                         className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-all ${
-                          item.action ? "group-hover:bg-secondary/50" : ""
+                          item.readOnly
+                            ? "opacity-70"
+                            : item.destructive
+                            ? "hover:bg-destructive/10"
+                            : "hover:bg-secondary/50"
                         }`}
                       >
                         <div className="flex items-center gap-4">
                           <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                              item.destructive ? "bg-destructive/20" : "bg-primary/20"
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              item.destructive ? "bg-destructive/20" : "bg-secondary"
                             }`}
                           >
                             <Icon
@@ -514,9 +695,9 @@ const EditProfile = () => {
                             <p className="text-xs text-muted-foreground">{item.description}</p>
                           </div>
                         </div>
-                        {item.action && (
+                        {!item.readOnly && (
                           <ChevronRight
-                            className={`w-5 h-5 ${
+                            className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${
                               item.destructive ? "text-destructive" : "text-muted-foreground"
                             }`}
                           />
@@ -532,8 +713,14 @@ const EditProfile = () => {
           </div>
         ))}
 
-        <div className="text-center pt-4 text-xs text-muted-foreground">
-          <p>Upathion v1.0.0</p>
+        {/* Log Out Button */}
+        <div className="pt-4">
+          <button
+            onClick={handleLogOut}
+            className="w-full py-3 text-center text-destructive font-medium hover:bg-destructive/10 rounded-lg transition-colors"
+          >
+            Log Out
+          </button>
         </div>
       </main>
 

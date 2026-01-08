@@ -16,10 +16,10 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already logged in
+  // Redirect if already logged in - go to dashboard, not onboarding
   useEffect(() => {
     if (user && !loading) {
-      navigate("/onboarding/name");
+      navigate("/dashboard");
     }
   }, [user, loading, navigate]);
 
