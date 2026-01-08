@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
@@ -15,13 +15,7 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already logged in - go to dashboard, not onboarding
-  useEffect(() => {
-    if (user && !loading) {
-      navigate("/dashboard");
-    }
-  }, [user, loading, navigate]);
-
+  // AuthGate handles redirects for logged-in users
   const handleGoogleSignIn = async () => {
     const { error } = await signInWithGoogle();
     if (error) {

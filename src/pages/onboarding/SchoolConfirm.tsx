@@ -44,6 +44,9 @@ const SchoolConfirm = () => {
 
       if (error) throw error;
 
+      // Signal to AuthGate that admin questionnaire is done for this session
+      window.dispatchEvent(new CustomEvent('admin-questionnaire-complete'));
+
       toast.success("Welcome to UPathion!", {
         description: "Your profile is all set up. Let's explore!",
       });
