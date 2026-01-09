@@ -10,62 +10,90 @@ import { useAuth } from "@/context/AuthContext";
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signInWithGoogle, signInWithEmail, user, loading } = useAuth();
+  const { signInWithGoogle, signInWithEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // AuthGate handles redirects for logged-in users
+  const isFormValid = email.trim() !== "" && password.trim() !== "";
+
   const handleGoogleSignIn = async () => {
-    const { error } = await signInWithGoogle();
-    if (error) {
-      toast.error(error.message || "Failed to sign in with Google");
+    setError(null);
+    setIsLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        console.error("Google sign-in error:", error);
+        setError(error.message || "Failed to sign in with Google");
+        toast.error(error.message || "Failed to sign in with Google");
+      }
+      // Redirect handled by OAuth flow
+    } catch (err) {
+      console.error("Unexpected Google sign-in error:", err);
+      setError("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
-    if (!email) {
+    if (!email.trim()) {
+      setError("Please enter your email");
       toast.error("Please enter your email");
       return;
     }
 
-    if (!password) {
+    if (!password.trim()) {
+      setError("Please enter your password");
       toast.error("Please enter your password");
       return;
     }
 
     setIsLoading(true);
 
-    const { error } = await signInWithEmail(email, password);
+    try {
+      const { error } = await signInWithEmail(email, password);
 
-    setIsLoading(false);
-
-    if (error) {
-      if (error.message.includes("Invalid login credentials")) {
-        toast.error("Invalid email or password");
-      } else {
-        toast.error(error.message || "Failed to sign in");
+      if (error) {
+        console.error("Sign-in error:", error);
+        let errorMessage = "Failed to sign in";
+        
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Invalid email or password";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please confirm your email before signing in";
+        } else if (error.message.includes("Too many requests")) {
+          errorMessage = "Too many attempts. Please try again later";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        setError(errorMessage);
+        toast.error(errorMessage);
+        setIsLoading(false);
+        return;
       }
-      return;
-    }
 
-    // Successful sign-in will trigger useEffect redirect to dashboard
+      // Success! AuthGate will handle redirect via auth state change
+      // Keep isLoading true until redirect happens
+      toast.success("Signed in successfully!");
+    } catch (err) {
+      console.error("Unexpected sign-in error:", err);
+      const errorMessage = "An unexpected error occurred. Please try again.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+      setIsLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
     toast.info("Password reset flow would be implemented here");
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <AnimatedBackground />
-        <div className="text-foreground">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
@@ -83,11 +111,19 @@ const SignIn = () => {
           <p className="text-muted-foreground">Sign in to connect with your school community</p>
         </div>
 
+        {/* Error display */}
+        {error && (
+          <div className="animate-fade-in bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+            <p className="text-destructive text-sm text-center">{error}</p>
+          </div>
+        )}
+
         {/* Google Sign In */}
         <div className="animate-fade-in">
           <GradientButton 
             className="w-full" 
             onClick={handleGoogleSignIn}
+            disabled={isLoading}
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path
@@ -123,7 +159,11 @@ const SignIn = () => {
               type="email"
               placeholder="Email address"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError(null);
+              }}
+              disabled={isLoading}
             />
           </div>
           
@@ -132,7 +172,11 @@ const SignIn = () => {
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
+              disabled={isLoading}
             />
           </div>
 
@@ -141,7 +185,7 @@ const SignIn = () => {
               type="submit" 
               variant="filled" 
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || !isFormValid}
             >
               {isLoading ? "Signing in..." : "Sign In"}
             </GradientButton>
@@ -153,6 +197,7 @@ const SignIn = () => {
           <button
             onClick={handleForgotPassword}
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            disabled={isLoading}
           >
             Forgot Password?
           </button>
@@ -165,6 +210,7 @@ const SignIn = () => {
             variant="default"
             onClick={() => navigate("/signup")}
             className="w-full"
+            disabled={isLoading}
           >
             Sign Up
           </GradientButton>
