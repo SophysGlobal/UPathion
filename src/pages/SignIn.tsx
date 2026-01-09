@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
@@ -8,6 +8,8 @@ import { GradientButton } from "@/components/ui/GradientButton";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const SignIn = () => {
   const navigate = useNavigate();
   const { signInWithGoogle, signInWithEmail } = useAuth();
@@ -16,7 +18,7 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isFormValid = email.trim() !== "" && password.trim() !== "";
+  const isFormValid = EMAIL_RE.test(email.trim()) && password.trim() !== "";
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -42,13 +44,22 @@ const SignIn = () => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail) {
       setError("Please enter your email");
       toast.error("Please enter your email");
       return;
     }
 
-    if (!password.trim()) {
+    if (!EMAIL_RE.test(trimmedEmail)) {
+      setError("Please enter a valid email address");
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!trimmedPassword) {
       setError("Please enter your password");
       toast.error("Please enter your password");
       return;
@@ -57,12 +68,12 @@ const SignIn = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await signInWithEmail(email, password);
+      const { error } = await signInWithEmail(trimmedEmail, trimmedPassword);
 
       if (error) {
         console.error("Sign-in error:", error);
         let errorMessage = "Failed to sign in";
-        
+
         if (error.message.includes("Invalid login credentials")) {
           errorMessage = "Invalid email or password";
         } else if (error.message.includes("Email not confirmed")) {
@@ -72,16 +83,15 @@ const SignIn = () => {
         } else if (error.message) {
           errorMessage = error.message;
         }
-        
+
         setError(errorMessage);
         toast.error(errorMessage);
         setIsLoading(false);
         return;
       }
 
-      // Success! AuthGate will handle redirect via auth state change
-      // Keep isLoading true until redirect happens
-      toast.success("Signed in successfully!");
+      // Success: do NOT toast here; AuthGate must transition the app out of this screen.
+      // Keep loading state until this component unmounts due to routing.
     } catch (err) {
       console.error("Unexpected sign-in error:", err);
       const errorMessage = "An unexpected error occurred. Please try again.";
@@ -91,11 +101,24 @@ const SignIn = () => {
     }
   };
 
+  useEffect(() => {
+    if (!isLoading) return;
+
+    // Defensive: if auth succeeded but the app doesn't transition out of this screen,
+    // re-enable the form and show a clear message instead of silently staying stuck.
+    const t = window.setTimeout(() => {
+      setIsLoading(false);
+      const msg = "Sign-in succeeded, but we couldn't redirect. Please refresh and try again.";
+      setError(msg);
+      toast.error(msg);
+    }, 8000);
+
+    return () => window.clearTimeout(t);
+  }, [isLoading]);
+
   const handleForgotPassword = () => {
     toast.info("Password reset flow would be implemented here");
   };
-
-  return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       <AnimatedBackground />
       

@@ -50,10 +50,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
+    // Defensive: ensure local state updates even if onAuthStateChange is delayed
+    if (!error) {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    }
+
     return { error };
   };
 
@@ -70,6 +78,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
   };
 
   return (
