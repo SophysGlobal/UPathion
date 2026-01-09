@@ -36,6 +36,16 @@ const AuthGate = ({ children }: AuthGateProps) => {
   // Track if we've done initial routing decision
   const [hasRouted, setHasRouted] = useState(false);
 
+  // When auth user changes (sign-in/sign-out/refresh), re-run routing deterministically.
+  // Also reset the admin questionnaire flag so admins are forced through onboarding on every app launch/login.
+  useEffect(() => {
+    setHasRouted(false);
+    if (user?.id) {
+      setAdminQuestionnaireDone(false);
+      sessionStorage.removeItem('admin-questionnaire-done');
+    }
+  }, [user?.id]);
+
   const currentPath = location.pathname;
   const isPublicRoute = PUBLIC_ROUTES.includes(currentPath);
   const isOnboardingRoute = ONBOARDING_ROUTES.includes(currentPath);
@@ -64,8 +74,22 @@ const AuthGate = ({ children }: AuthGateProps) => {
       // Admin: go to questionnaire
       if (isAdmin && !adminQuestionnaireDone) {
         navigate('/onboarding/name', { replace: true });
+      } else if (!isAdmin && !hasCompletedOnboarding) {
+        navigate('/onboarding/name', { replace: true });
       } else {
-        // Normal user or admin who completed questionnaire: go to dashboard
+        navigate('/dashboard', { replace: true });
+      }
+      setHasRouted(true);
+      return;
+    }
+
+    // If authenticated and on landing page, treat it as an entry point and route to the correct stack
+    if (currentPath === '/') {
+      if (isAdmin && !adminQuestionnaireDone) {
+        navigate('/onboarding/name', { replace: true });
+      } else if (!isAdmin && !hasCompletedOnboarding) {
+        navigate('/onboarding/name', { replace: true });
+      } else {
         navigate('/dashboard', { replace: true });
       }
       setHasRouted(true);
