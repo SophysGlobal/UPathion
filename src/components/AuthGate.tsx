@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
@@ -33,27 +33,42 @@ const AuthGate = ({ children }: AuthGateProps) => {
     return sessionStorage.getItem('admin-questionnaire-done') === 'true';
   });
 
-  const isLoading = authLoading || (user && (profileLoading || adminLoading));
+  // Track if we've done initial routing decision
+  const [hasRouted, setHasRouted] = useState(false);
+
   const currentPath = location.pathname;
   const isPublicRoute = PUBLIC_ROUTES.includes(currentPath);
   const isOnboardingRoute = ONBOARDING_ROUTES.includes(currentPath);
+  const isAuthRoute = currentPath === '/signin' || currentPath === '/signup';
 
-  useEffect(() => {
-    if (isLoading) return;
+  // Calculate loading state - only wait for dependent queries when user exists
+  const isLoading = authLoading || (user && (profileLoading || adminLoading));
 
+  const performRouting = useCallback(() => {
     // Not authenticated
     if (!user) {
       // Allow public routes
-      if (isPublicRoute) return;
+      if (isPublicRoute) {
+        setHasRouted(true);
+        return;
+      }
       // Redirect to signin for protected routes
       navigate('/signin', { replace: true });
+      setHasRouted(true);
       return;
     }
 
     // User is authenticated
-    // If on public auth routes (signin/signup), redirect to app
-    if (currentPath === '/signin' || currentPath === '/signup') {
-      navigate('/dashboard', { replace: true });
+    // If on auth routes (signin/signup), redirect appropriately
+    if (isAuthRoute) {
+      // Admin: go to questionnaire
+      if (isAdmin && !adminQuestionnaireDone) {
+        navigate('/onboarding/name', { replace: true });
+      } else {
+        // Normal user or admin who completed questionnaire: go to dashboard
+        navigate('/dashboard', { replace: true });
+      }
+      setHasRouted(true);
       return;
     }
 
@@ -62,20 +77,20 @@ const AuthGate = ({ children }: AuthGateProps) => {
       // If not on onboarding route, redirect to start questionnaire
       if (!isOnboardingRoute) {
         navigate('/onboarding/name', { replace: true });
-        return;
       }
-      // If completing the questionnaire (at school-confirm), mark as done
-      // This will be handled by the SchoolConfirm page
+      setHasRouted(true);
+      return;
     }
 
     // Normal users: if already completed onboarding, skip questionnaire
     if (!isAdmin && hasCompletedOnboarding && isOnboardingRoute) {
       navigate('/dashboard', { replace: true });
+      setHasRouted(true);
       return;
     }
 
+    setHasRouted(true);
   }, [
-    isLoading,
     user,
     isAdmin,
     hasCompletedOnboarding,
@@ -83,8 +98,18 @@ const AuthGate = ({ children }: AuthGateProps) => {
     currentPath,
     isPublicRoute,
     isOnboardingRoute,
+    isAuthRoute,
     navigate,
   ]);
+
+  useEffect(() => {
+    if (isLoading) {
+      setHasRouted(false);
+      return;
+    }
+
+    performRouting();
+  }, [isLoading, performRouting]);
 
   // Expose a way for SchoolConfirm to mark admin questionnaire as done
   useEffect(() => {
@@ -99,8 +124,8 @@ const AuthGate = ({ children }: AuthGateProps) => {
     };
   }, []);
 
-  // Show loading screen while checking auth
-  if (isLoading) {
+  // Show loading screen while checking auth or performing initial routing
+  if (isLoading || !hasRouted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <AnimatedBackground />
