@@ -119,6 +119,8 @@ const SignIn = () => {
   const handleForgotPassword = () => {
     toast.info("Password reset flow would be implemented here");
   };
+
+  return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       <AnimatedBackground />
       
