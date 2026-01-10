@@ -11,23 +11,15 @@ import { GraduationCap, School } from "lucide-react";
 const SchoolSetup = () => {
   const navigate = useNavigate();
   const { data, updateData } = useOnboarding();
-  const [schoolType, setSchoolType] = useState<'high_school' | 'college' | ''>(data.schoolType);
+  const [schoolType, setSchoolType] = useState<'high_school' | 'college' | ''>(
+    data.schoolType === 'other' ? '' : data.schoolType
+  );
   const [schoolName, setSchoolName] = useState(data.schoolName);
   const [gradeOrYear, setGradeOrYear] = useState(data.gradeOrYear);
   const [major, setMajor] = useState(data.major);
 
   const highSchoolGrades = ["Freshman (9th)", "Sophomore (10th)", "Junior (11th)", "Senior (12th)"];
   const collegeYears = ["Freshman", "Sophomore", "Junior", "Senior", "Graduate Student"];
-
-  // Helper to detect if school is high school
-  const detectIsHighSchool = (name: string): boolean => {
-    const lowerName = name.toLowerCase();
-    return (
-      lowerName.includes('high school') ||
-      lowerName.includes('highschool') ||
-      /\bhs\b/.test(lowerName)
-    );
-  };
 
   const handleContinue = () => {
     if (!schoolType) {
@@ -43,18 +35,15 @@ const SchoolSetup = () => {
       return;
     }
     
-    const isHighSchool = detectIsHighSchool(schoolName.trim());
-    
     updateData({ 
       schoolType, 
       schoolName: schoolName.trim(), 
       gradeOrYear,
       major: major.trim(),
-      isHighSchool,
     });
     
-    // If high school, ask about aspirational school; otherwise go to confirm
-    if (isHighSchool) {
+    // Route based on EXPLICIT schoolType selection only
+    if (schoolType === 'high_school') {
       navigate("/onboarding/aspirational-school");
     } else {
       navigate("/onboarding/school-confirm");

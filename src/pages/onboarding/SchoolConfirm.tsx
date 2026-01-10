@@ -24,6 +24,7 @@ const SchoolConfirm = () => {
 
     setIsLoading(true);
     try {
+      const isHighSchool = data.schoolType === 'high_school';
       const updates = {
         display_name: data.fullName || null,
         username: data.username || null,
@@ -31,8 +32,8 @@ const SchoolConfirm = () => {
         school_type: data.schoolType || null,
         grade_or_year: data.gradeOrYear || null,
         major: data.major || null,
-        aspirational_school: data.aspirationalSchool || null,
-        is_high_school: data.isHighSchool,
+        aspirational_school: isHighSchool ? (data.aspirationalSchool || null) : null,
+        is_high_school: isHighSchool,
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };

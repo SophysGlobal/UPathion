@@ -42,16 +42,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-// Helper to detect if school is high school
-const detectIsHighSchool = (schoolName: string): boolean => {
-  if (!schoolName) return false;
-  const lowerName = schoolName.toLowerCase();
-  return (
-    lowerName.includes('high school') ||
-    lowerName.includes('highschool') ||
-    /\bhs\b/.test(lowerName)
-  );
-};
 
 // Validation helpers
 const validateUsername = (username: string): string | null => {
@@ -124,6 +114,7 @@ const EditProfile = () => {
     username: "",
     bio: "",
     pronouns: "",
+    schoolType: "" as 'high_school' | 'college' | 'other' | '',
     schoolName: "",
     gradeOrYear: "",
     major: "",
@@ -152,6 +143,7 @@ const EditProfile = () => {
         username: profile.username || "",
         bio: profile.bio || "",
         pronouns: "",
+        schoolType: (profile.school_type as 'high_school' | 'college' | 'other' | '') || "",
         schoolName: profile.school_name || "",
         gradeOrYear: profile.grade_or_year || "",
         major: profile.major || "",
@@ -168,8 +160,8 @@ const EditProfile = () => {
     }
   }, [profile]);
 
-  // Compute isHighSchool based on current schoolName
-  const isHighSchool = detectIsHighSchool(formData.schoolName);
+  // Compute isHighSchool based on EXPLICIT schoolType selection
+  const isHighSchool = formData.schoolType === 'high_school';
 
   // Validate on change
   const validateField = (field: string, value: string) => {
@@ -238,6 +230,7 @@ const EditProfile = () => {
         display_name: formData.displayName || null,
         username: formData.username || null,
         bio: formData.bio || null,
+        school_type: formData.schoolType || null,
         school_name: formData.schoolName || null,
         grade_or_year: formData.gradeOrYear || null,
         major: formData.major || null,
@@ -345,6 +338,19 @@ const EditProfile = () => {
         title: "School & Education",
         items: [
           {
+            type: "select",
+            field: "schoolType",
+            label: "School Type",
+            description: "Are you in high school or college?",
+            value: formData.schoolType,
+            options: [
+              { label: "Not specified", value: "" },
+              { label: "High School", value: "high_school" },
+              { label: "College / University", value: "college" },
+              { label: "Other", value: "other" },
+            ],
+          },
+          {
             type: "text",
             field: "schoolName",
             label: "Current School",
@@ -356,8 +362,8 @@ const EditProfile = () => {
                 {
                   type: "aspirational",
                   field: "aspirationalSchool",
-                  label: "Aspirational School",
-                  description: "Where do you aspire to go after high school?",
+                  label: "Dream School",
+                  description: "Where do you want to go after high school?",
                   value: formData.aspirationalSchool,
                 },
               ]

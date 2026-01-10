@@ -97,7 +97,7 @@ const AspirationalSchool = () => {
 
         {/* Title */}
         <div className="text-center space-y-2 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Where do you aspire to go?</h1>
+          <h1 className="text-3xl font-bold text-foreground">Where do you want to go after high school?</h1>
           <p className="text-muted-foreground">Select your dream college or university</p>
         </div>
 
