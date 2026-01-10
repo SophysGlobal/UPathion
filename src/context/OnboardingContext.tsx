@@ -6,12 +6,11 @@ import { useQuery } from '@tanstack/react-query';
 interface OnboardingData {
   fullName: string;
   username: string;
-  schoolType: 'high_school' | 'college' | '';
+  schoolType: 'high_school' | 'college' | 'other' | '';
   schoolName: string;
   gradeOrYear: string;
   major: string;
   aspirationalSchool: string;
-  isHighSchool: boolean;
 }
 
 interface OnboardingContextType {
@@ -21,16 +20,6 @@ interface OnboardingContextType {
   loading: boolean;
 }
 
-// Helper to detect if school is high school
-const detectIsHighSchool = (schoolName: string): boolean => {
-  const lowerName = schoolName.toLowerCase();
-  return (
-    lowerName.includes('high school') ||
-    lowerName.includes('highschool') ||
-    /\bhs\b/.test(lowerName) // matches "hs" as a standalone word
-  );
-};
-
 const defaultData: OnboardingData = {
   fullName: '',
   username: '',
@@ -39,7 +28,6 @@ const defaultData: OnboardingData = {
   gradeOrYear: '',
   major: '',
   aspirationalSchool: '',
-  isHighSchool: false,
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -57,15 +45,16 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { data: userData, error } = await supabase
           .from('profiles')
-          .select('display_name')
+          .select('display_name, school_type')
           .eq('id', user.id)
           .maybeSingle();
 
         if (error) throw error;
 
-        const result = {
+        const result: OnboardingData = {
           ...defaultData,
           fullName: userData?.display_name || '',
+          schoolType: (userData?.school_type as OnboardingData['schoolType']) || '',
         };
         
         initialDataRef.current = result;
@@ -76,8 +65,8 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 
   // Merge fetched data with local overrides
@@ -87,10 +76,6 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateData = useCallback((updates: Partial<OnboardingData>) => {
-    // Auto-detect isHighSchool when schoolName changes
-    if (updates.schoolName !== undefined) {
-      updates.isHighSchool = detectIsHighSchool(updates.schoolName);
-    }
     setLocalOverrides((prev) => ({ ...prev, ...updates }));
   }, []);
 
