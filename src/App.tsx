@@ -24,6 +24,7 @@ import EditProfile from "./pages/EditProfile";
 import Settings from "./pages/Settings";
 import PlanManagement from "./pages/PlanManagement";
 import SchoolInfo from "./pages/SchoolInfo";
+import SchoolCommunity from "./pages/SchoolCommunity";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
@@ -58,6 +59,7 @@ const App = () => (
                   <Route path="/plan-management" element={<PlanManagement />} />
                   <Route path="/settings/plan" element={<PlanManagement />} />
                   <Route path="/school-info" element={<SchoolInfo />} />
+                  <Route path="/school-community" element={<SchoolCommunity />} />
                   <Route path="/welcome" element={<Welcome />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
