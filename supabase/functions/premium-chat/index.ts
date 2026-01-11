@@ -85,7 +85,7 @@ serve(async (req) => {
     // Parse and validate request body
     const { messages } = await req.json();
     
-    // Validate message format
+    // Validate message format - must be a non-empty array
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(
         JSON.stringify({ error: 'Invalid messages format' }),
@@ -95,8 +95,76 @@ serve(async (req) => {
 
     // Limit message history to prevent abuse (last 20 messages)
     const limitedMessages = messages.slice(-20);
+
+    // Maximum allowed length for a single message content
+    const MAX_MESSAGE_LENGTH = 10000;
+    // Maximum total payload size across all messages
+    const MAX_TOTAL_PAYLOAD = 50000;
+    // Valid message roles
+    const VALID_ROLES = ['user', 'assistant', 'system'];
+
+    let totalPayloadSize = 0;
+
+    // Validate each message structure and content
+    for (const msg of limitedMessages) {
+      // Check message has required fields
+      if (!msg || typeof msg !== 'object') {
+        return new Response(
+          JSON.stringify({ error: 'Invalid message structure' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate role field
+      if (!msg.role || typeof msg.role !== 'string') {
+        return new Response(
+          JSON.stringify({ error: 'Message must have a valid role' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate role is one of expected values
+      if (!VALID_ROLES.includes(msg.role)) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid message role. Must be user, assistant, or system' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Validate content field
+      if (!msg.content || typeof msg.content !== 'string') {
+        return new Response(
+          JSON.stringify({ error: 'Message content must be a non-empty string' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check individual message length
+      if (msg.content.length > MAX_MESSAGE_LENGTH) {
+        return new Response(
+          JSON.stringify({ error: `Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed per message` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      totalPayloadSize += msg.content.length;
+    }
+
+    // Check total payload size
+    if (totalPayloadSize > MAX_TOTAL_PAYLOAD) {
+      return new Response(
+        JSON.stringify({ error: `Total message payload too large. Maximum ${MAX_TOTAL_PAYLOAD} characters allowed` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Sanitize messages to only include expected fields
+    const sanitizedMessages = limitedMessages.map(msg => ({
+      role: msg.role,
+      content: msg.content.trim()
+    }));
     
-    console.log('Processing chat request for premium user:', userId, 'messages:', limitedMessages.length);
+    console.log('Processing chat request for premium user:', userId, 'messages:', sanitizedMessages.length, 'total chars:', totalPayloadSize);
 
     if (!openAIApiKey) {
       throw new Error('OPENAI_API_KEY is not configured');
@@ -115,7 +183,7 @@ serve(async (req) => {
             role: 'system', 
             content: 'You are a helpful, friendly AI assistant for Upathion premium users. Be concise and helpful.' 
           },
-          ...limitedMessages
+          ...sanitizedMessages
         ],
         stream: true,
       }),
