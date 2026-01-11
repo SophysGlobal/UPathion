@@ -7,6 +7,8 @@ import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { validatePassword, getPasswordRequirements } from "@/lib/passwordValidation";
+import { Check, X, Eye, EyeOff } from "lucide-react";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -15,6 +17,10 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  const validation = validatePassword(password);
 
   // AuthGate handles redirects for logged-in users
 
@@ -35,8 +41,10 @@ const SignUp = () => {
       toast.error("Passwords don't match");
       return;
     }
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+    
+    // Validate password strength
+    if (!validation.valid) {
+      toast.error(validation.error);
       return;
     }
     
@@ -117,6 +125,11 @@ const SignUp = () => {
           <Divider text="or" />
         </div>
 
+        {/* Password Requirements */}
+        <div className="animate-fade-in text-sm text-muted-foreground text-center">
+          {getPasswordRequirements()}
+        </div>
+
         {/* Form */}
         <form onSubmit={handleSignUp} className="space-y-4">
           <div className="animate-fade-in">
@@ -128,30 +141,74 @@ const SignUp = () => {
             />
           </div>
           
-          <div className="animate-fade-in">
+          <div className="animate-fade-in relative">
             <GradientInput
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
 
-          <div className="animate-fade-in">
+          {/* Password Requirements Checklist */}
+          {password.length > 0 && (
+            <div className="animate-fade-in bg-card/50 backdrop-blur-sm rounded-lg p-3 space-y-1.5">
+              <RequirementItem 
+                met={validation.requirements.minLength} 
+                text="At least 8 characters" 
+              />
+              <RequirementItem 
+                met={validation.requirements.hasLowercase} 
+                text="Lowercase letter" 
+              />
+              <RequirementItem 
+                met={validation.requirements.hasUppercase} 
+                text="Uppercase letter" 
+              />
+              <RequirementItem 
+                met={validation.requirements.hasNumber} 
+                text="Number" 
+              />
+              <RequirementItem 
+                met={validation.requirements.hasSpecialChar} 
+                text="Special character" 
+              />
+            </div>
+          )}
+
+          <div className="animate-fade-in relative">
             <GradientInput
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
+
+          {confirmPassword && password !== confirmPassword && (
+            <p className="text-destructive text-sm animate-fade-in">Passwords don't match</p>
+          )}
 
           <div className="animate-fade-in">
             <GradientButton 
               type="submit" 
               variant="filled" 
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || !validation.valid || password !== confirmPassword}
             >
               {isLoading ? "Creating account..." : "Create Account"}
             </GradientButton>
@@ -173,5 +230,16 @@ const SignUp = () => {
     </div>
   );
 };
+
+const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
+  <div className="flex items-center gap-2 text-xs">
+    {met ? (
+      <Check className="w-3 h-3 text-green-500" />
+    ) : (
+      <X className="w-3 h-3 text-muted-foreground" />
+    )}
+    <span className={met ? "text-foreground" : "text-muted-foreground"}>{text}</span>
+  </div>
+);
 
 export default SignUp;
