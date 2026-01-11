@@ -1,11 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { X, Send, Sparkles } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -41,17 +46,39 @@ const PremiumChatModal = ({ open, onOpenChange }: PremiumChatModalProps) => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
 
-      const resp = await fetch("https://bnbzduurgsdyfylywyhr.supabase.co/functions/v1/premium-chat", {
+      // Enforce authentication - no fallback
+      if (!token) {
+        toast.error("Please sign in to use premium chat");
+        setIsLoading(false);
+        return;
+      }
+
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/premium-chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuYnpkdXVyZ3NkeWZ5bHl3eWhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyODA1NTksImV4cCI6MjA4MTg1NjU1OX0.cnZYlyE4gjOCnon4_H3ogfl1omI5gI0dvllwPMuLYk0"}`,
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJuYnpkdXVyZ3NkeWZ5bHl3eWhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyODA1NTksImV4cCI6MjA4MTg1NjU1OX0.cnZYlyE4gjOCnon4_H3ogfl1omI5gI0dvllwPMuLYk0",
+          "Authorization": `Bearer ${token}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({ messages: [...messages, userMsg] }),
       });
 
-      if (!resp.ok || !resp.body) throw new Error("Failed to start stream");
+      if (resp.status === 401) {
+        toast.error("Please sign in to use premium chat");
+        setIsLoading(false);
+        return;
+      }
+
+      if (resp.status === 403) {
+        toast.error("Premium subscription required");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!resp.ok || !resp.body) {
+        const errorData = await resp.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to start stream");
+      }
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -106,7 +133,7 @@ const PremiumChatModal = ({ open, onOpenChange }: PremiumChatModalProps) => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -141,23 +168,23 @@ const PremiumChatModal = ({ open, onOpenChange }: PremiumChatModalProps) => {
               >
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-2 text-sm",
+                    "rounded-2xl px-4 py-2 max-w-[85%]",
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-foreground"
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
             ))}
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start">
-                <div className="bg-muted rounded-2xl px-4 py-2">
+                <div className="rounded-2xl px-4 py-2 bg-muted">
                   <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                    <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.1s]" />
-                    <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce" />
+                    <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce delay-100" />
+                    <span className="w-2 h-2 bg-foreground/50 rounded-full animate-bounce delay-200" />
                   </div>
                 </div>
               </div>
@@ -172,17 +199,21 @@ const PremiumChatModal = ({ open, onOpenChange }: PremiumChatModalProps) => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
-              className="min-h-[44px] max-h-[120px] resize-none"
-              rows={1}
+              className="min-h-[44px] max-h-32 resize-none"
+              disabled={isLoading}
             />
-            <Button
+            <button
               onClick={sendMessage}
-              disabled={!input.trim() || isLoading}
-              size="icon"
-              className="shrink-0"
+              disabled={isLoading || !input.trim()}
+              className={cn(
+                "w-11 h-11 rounded-full flex items-center justify-center shrink-0",
+                "bg-primary text-primary-foreground",
+                "hover:opacity-90 transition-opacity",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
             >
-              <Send className="w-4 h-4" />
-            </Button>
+              <Send className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </DialogContent>
