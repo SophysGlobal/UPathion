@@ -10,6 +10,8 @@ import AuthGate from "@/components/AuthGate";
 import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
+import PasswordReset from "./pages/PasswordReset";
+import UpdatePassword from "./pages/UpdatePassword";
 import NameSetup from "./pages/onboarding/NameSetup";
 import NameConfirm from "./pages/onboarding/NameConfirm";
 import SchoolSetup from "./pages/onboarding/SchoolSetup";
@@ -44,6 +46,8 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/signin" element={<SignIn />} />
                   <Route path="/signup" element={<SignUp />} />
+                  <Route path="/password-reset" element={<PasswordReset />} />
+                  <Route path="/update-password" element={<UpdatePassword />} />
                   <Route path="/onboarding/name" element={<NameSetup />} />
                   <Route path="/onboarding/name-confirm" element={<NameConfirm />} />
                   <Route path="/onboarding/school" element={<SchoolSetup />} />

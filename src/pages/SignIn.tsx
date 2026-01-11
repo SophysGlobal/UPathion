@@ -117,7 +117,7 @@ const SignIn = () => {
   }, [isLoading]);
 
   const handleForgotPassword = () => {
-    toast.info("Password reset flow would be implemented here");
+    navigate("/password-reset");
   };
 
   return (
