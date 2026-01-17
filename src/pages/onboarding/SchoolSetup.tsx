@@ -7,6 +7,7 @@ import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { toast } from "sonner";
 import { GraduationCap, School, Briefcase } from "lucide-react";
+import SchoolSearchDropdown from "@/components/SchoolSearchDropdown";
 
 // Staff position options
 const staffPositions = [
@@ -127,15 +128,19 @@ const SchoolSetup = () => {
 
         {/* Form */}
         <div className="space-y-4">
-          <div className="space-y-2 animate-fade-in">
-            <label className="text-sm font-medium text-foreground">School Name</label>
-            <GradientInput
-              type="text"
-              placeholder="Enter your school name"
-              value={schoolName}
-              onChange={(e) => setSchoolName(e.target.value)}
-            />
-          </div>
+          {schoolType && (
+            <div className="space-y-2 animate-fade-in">
+              <label className="text-sm font-medium text-foreground">
+                {schoolType === 'high_school' ? 'High School' : 'College / University'}
+              </label>
+              <SchoolSearchDropdown
+                value={schoolName}
+                onChange={setSchoolName}
+                schoolType={schoolType === 'high_school' ? 'high_school' : 'university'}
+                placeholder={schoolType === 'high_school' ? 'Search for your high school...' : 'Search for your college...'}
+              />
+            </div>
+          )}
           
           {schoolType && (
             <div className="space-y-2 animate-fade-in">

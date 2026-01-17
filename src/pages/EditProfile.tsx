@@ -9,6 +9,8 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import SchoolSearchDropdown from "@/components/SchoolSearchDropdown";
+import MultiSelectSchools from "@/components/MultiSelectSchools";
 import {
   ChevronLeft,
   Mail,
@@ -28,19 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 
 // Validation helpers
@@ -63,40 +52,7 @@ const validateUrl = (url: string): string | null => {
   }
 };
 
-// Popular colleges list for aspirational school dropdown
-const POPULAR_COLLEGES = [
-  "Harvard University",
-  "Stanford University",
-  "MIT",
-  "Yale University",
-  "Princeton University",
-  "Columbia University",
-  "University of Pennsylvania",
-  "Brown University",
-  "Dartmouth College",
-  "Cornell University",
-  "Duke University",
-  "Northwestern University",
-  "Johns Hopkins University",
-  "Caltech",
-  "University of Chicago",
-  "UCLA",
-  "UC Berkeley",
-  "University of Michigan",
-  "NYU",
-  "Boston University",
-  "Georgetown University",
-  "Carnegie Mellon University",
-  "USC",
-  "University of Virginia",
-  "Georgia Tech",
-  "University of Texas at Austin",
-  "University of Florida",
-  "Ohio State University",
-  "Penn State University",
-  "University of Wisconsin-Madison",
-];
-
+// FormErrors interface remains
 interface FormErrors {
   username?: string;
   linkedin?: string;
@@ -131,7 +87,6 @@ const EditProfile = () => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [aspirationalOpen, setAspirationalOpen] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Initialize form data from profile - only once when profile loads
@@ -351,19 +306,20 @@ const EditProfile = () => {
             ],
           },
           {
-            type: "text",
+            type: "school_search",
             field: "schoolName",
             label: "Current School",
             description: "Your current school or university",
             value: formData.schoolName,
+            schoolType: formData.schoolType === 'high_school' ? 'high_school' : 'university',
           },
           ...(isHighSchool
             ? [
                 {
-                  type: "aspirational",
+                  type: "dream_schools",
                   field: "aspirationalSchool",
-                  label: "Dream School",
-                  description: "Where do you want to go after high school?",
+                  label: "Dream Schools",
+                  description: "Where do you want to go after high school? (Select up to 5)",
                   value: formData.aspirationalSchool,
                 },
               ]
@@ -666,51 +622,58 @@ const EditProfile = () => {
                   );
                 }
 
-                if (item.type === "aspirational") {
+                if (item.type === "school_search") {
                   return (
                     <div key={item.field} className="gradient-border">
                       <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-                        <label className="block">
+                        <div className="block">
+                          <p className="font-medium text-foreground text-sm mb-1">{item.label}</p>
+                          <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
+                          {formData.schoolType && formData.schoolType !== 'other' && (
+                            <SchoolSearchDropdown
+                              value={item.value}
+                              onChange={(value) => handleInputChange(item.field, value)}
+                              schoolType={item.schoolType}
+                              placeholder={item.schoolType === 'high_school' ? 'Search for your high school...' : 'Search for your college...'}
+                            />
+                          )}
+                          {(!formData.schoolType || formData.schoolType === 'other') && (
+                            <Input
+                              type="text"
+                              value={item.value}
+                              onChange={(e) => handleInputChange(item.field, e.target.value)}
+                              placeholder="Enter your school name"
+                              className="bg-secondary/50 border-border"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (item.type === "dream_schools") {
+                  // Parse the comma-separated string into an array
+                  const selectedSchools = item.value
+                    ? item.value.split(',').map((s: string) => s.trim()).filter(Boolean)
+                    : [];
+
+                  return (
+                    <div key={item.field} className="gradient-border">
+                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+                        <div className="block">
                           <div className="flex items-center gap-2 mb-1">
                             <GraduationCap className="w-4 h-4 text-primary" />
                             <p className="font-medium text-foreground text-sm">{item.label}</p>
                           </div>
                           <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                          <Popover open={aspirationalOpen} onOpenChange={setAspirationalOpen}>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                className="w-full justify-between bg-secondary/50 border-border"
-                              >
-                                {formData.aspirationalSchool || "Select a school..."}
-                                <ChevronRight className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-full p-0" align="start">
-                              <Command>
-                                <CommandInput placeholder="Search schools..." />
-                                <CommandList>
-                                  <CommandEmpty>No school found.</CommandEmpty>
-                                  <CommandGroup>
-                                    {POPULAR_COLLEGES.map((college) => (
-                                      <CommandItem
-                                        key={college}
-                                        value={college}
-                                        onSelect={(value) => {
-                                          handleInputChange("aspirationalSchool", value);
-                                          setAspirationalOpen(false);
-                                        }}
-                                      >
-                                        {college}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                        </label>
+                          <MultiSelectSchools
+                            selectedSchools={selectedSchools}
+                            onChange={(schools) => handleInputChange(item.field, schools.join(', '))}
+                            maxSelections={5}
+                            placeholder="Search for your dream colleges..."
+                          />
+                        </div>
                       </div>
                     </div>
                   );
