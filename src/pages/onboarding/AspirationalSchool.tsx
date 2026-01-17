@@ -4,7 +4,7 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
-import MultiSelectColleges from "@/components/MultiSelectColleges";
+import MultiSelectSchools from "@/components/MultiSelectSchools";
 
 const AspirationalSchool = () => {
   const navigate = useNavigate();
@@ -44,12 +44,13 @@ const AspirationalSchool = () => {
           <p className="text-muted-foreground">Select your dream colleges (up to 5)</p>
         </div>
 
-        {/* Multi-Select Colleges */}
+        {/* Multi-Select Schools */}
         <div className="animate-fade-in">
-          <MultiSelectColleges
-            selectedColleges={selectedSchools}
+          <MultiSelectSchools
+            selectedSchools={selectedSchools}
             onChange={setSelectedSchools}
             maxSelections={5}
+            placeholder="Search for your dream colleges..."
           />
         </div>
 
