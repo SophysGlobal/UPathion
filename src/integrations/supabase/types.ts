@@ -74,6 +74,39 @@ export type Database = {
         }
         Relationships: []
       }
+      schools: {
+        Row: {
+          city: string | null
+          country: string
+          created_at: string
+          id: string
+          is_notable: boolean
+          name: string
+          state: string | null
+          type: string
+        }
+        Insert: {
+          city?: string | null
+          country?: string
+          created_at?: string
+          id?: string
+          is_notable?: boolean
+          name: string
+          state?: string | null
+          type: string
+        }
+        Update: {
+          city?: string | null
+          country?: string
+          created_at?: string
+          id?: string
+          is_notable?: boolean
+          name?: string
+          state?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -107,6 +140,26 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_schools: {
+        Args: {
+          country_filter?: string
+          result_limit?: number
+          school_type?: string
+          search_query: string
+        }
+        Returns: {
+          city: string
+          country: string
+          id: string
+          is_notable: boolean
+          match_rank: number
+          name: string
+          state: string
+          type: string
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
