@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,7 @@ import ProfileAvatar from "@/components/ProfileAvatar";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import UpgradeModal from "@/components/UpgradeModal";
+import { supabase } from "@/integrations/supabase/client";
 import { School, Settings, LogOut, ChevronRight, User, Crown } from "lucide-react";
 
 const Profile = () => {
@@ -18,8 +19,32 @@ const Profile = () => {
   const { profile, loading: profileLoading } = useUserProfile();
   const navigate = useNavigate();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [schoolId, setSchoolId] = useState<string | null>(null);
 
   const isReady = !profileLoading && !onboardingLoading;
+
+  // Look up school ID for navigation
+  useEffect(() => {
+    const findSchoolId = async () => {
+      if (!data.schoolName) return;
+      
+      try {
+        const { data: schoolData } = await supabase
+          .from('schools')
+          .select('id')
+          .ilike('name', data.schoolName)
+          .maybeSingle();
+        
+        setSchoolId(schoolData?.id || null);
+      } catch (err) {
+        console.error('Error finding school:', err);
+      }
+    };
+    
+    if (isReady && data.schoolName) {
+      findSchoolId();
+    }
+  }, [data.schoolName, isReady]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -72,9 +97,20 @@ const Profile = () => {
                 {data.username && (
                   <p className="text-sm text-primary">@{data.username}</p>
                 )}
-                <p className="text-sm text-muted-foreground mt-1">
-                  {data.schoolName || 'No school set'}
-                </p>
+                {data.schoolName ? (
+                  <button
+                    onClick={() => schoolId && navigate(`/school/${schoolId}`)}
+                    className={`text-sm mt-1 transition-colors ${
+                      schoolId 
+                        ? 'text-primary hover:underline cursor-pointer' 
+                        : 'text-muted-foreground cursor-default'
+                    }`}
+                  >
+                    {data.schoolName}
+                  </button>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">No school set</p>
+                )}
                 {data.major && (
                   <p className="text-xs text-muted-foreground">{data.major}</p>
                 )}

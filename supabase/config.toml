@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.seed-schools]
 verify_jwt = false
+
+[functions.get-school-profile]
+verify_jwt = false
