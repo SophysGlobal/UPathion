@@ -74,6 +74,59 @@ export type Database = {
         }
         Relationships: []
       }
+      school_profiles: {
+        Row: {
+          about_text: string | null
+          chips: string[] | null
+          created_at: string
+          data_source: string | null
+          enrollment: number | null
+          founded_year: number | null
+          id: string
+          school_id: string
+          stats: Json | null
+          tagline: string | null
+          updated_at: string
+          website_url: string | null
+        }
+        Insert: {
+          about_text?: string | null
+          chips?: string[] | null
+          created_at?: string
+          data_source?: string | null
+          enrollment?: number | null
+          founded_year?: number | null
+          id?: string
+          school_id: string
+          stats?: Json | null
+          tagline?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Update: {
+          about_text?: string | null
+          chips?: string[] | null
+          created_at?: string
+          data_source?: string | null
+          enrollment?: number | null
+          founded_year?: number | null
+          id?: string
+          school_id?: string
+          stats?: Json | null
+          tagline?: string | null
+          updated_at?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_profiles_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: true
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schools: {
         Row: {
           city: string | null

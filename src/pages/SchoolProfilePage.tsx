@@ -1,0 +1,368 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import AnimatedBackground from "@/components/AnimatedBackground";
+import BottomNav from "@/components/BottomNav";
+import PremiumChatFAB from "@/components/PremiumChatFAB";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  ChevronLeft,
+  GraduationCap,
+  School,
+  MapPin,
+  ExternalLink,
+  Users,
+  Calendar,
+  Award,
+  BookOpen,
+  TrendingUp,
+  Building2,
+} from "lucide-react";
+
+interface SchoolData {
+  id: string;
+  name: string;
+  type: "high_school" | "university";
+  city: string | null;
+  state: string | null;
+  country: string;
+  is_notable: boolean;
+}
+
+interface SchoolProfile {
+  id: string;
+  school_id: string;
+  tagline: string | null;
+  about_text: string | null;
+  website_url: string | null;
+  stats: Record<string, number | string | null>;
+  chips: string[];
+  founded_year: number | null;
+  enrollment: number | null;
+  data_source: string | null;
+}
+
+// Stat card component
+const StatCard = ({ 
+  icon: Icon, 
+  label, 
+  value 
+}: { 
+  icon: React.ElementType; 
+  label: string; 
+  value: string | number | null;
+}) => (
+  <div className="bg-card/80 backdrop-blur-sm rounded-xl p-4 border border-border/50">
+    <div className="flex items-center gap-2 mb-2">
+      <Icon className="w-4 h-4 text-primary" />
+      <span className="text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
+    </div>
+    <p className="text-xl font-semibold text-foreground">
+      {value ?? "—"}
+    </p>
+  </div>
+);
+
+// Loading skeleton component
+const ProfileSkeleton = () => (
+  <div className="space-y-6 animate-fade-in">
+    {/* Header skeleton */}
+    <div className="gradient-border">
+      <div className="bg-card/90 backdrop-blur-sm rounded-xl p-6">
+        <div className="flex items-center gap-4 mb-4">
+          <Skeleton className="w-16 h-16 rounded-xl" />
+          <div className="flex-1">
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-full" />
+      </div>
+    </div>
+
+    {/* Stats skeleton */}
+    <div>
+      <Skeleton className="h-4 w-32 mb-3" />
+      <div className="grid grid-cols-2 gap-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-card/80 rounded-xl p-4 border border-border/50">
+            <Skeleton className="h-3 w-20 mb-2" />
+            <Skeleton className="h-6 w-16" />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Chips skeleton */}
+    <div>
+      <Skeleton className="h-4 w-48 mb-3" />
+      <div className="flex flex-wrap gap-2">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="h-8 w-24 rounded-full" />
+        ))}
+      </div>
+    </div>
+
+    {/* About skeleton */}
+    <div>
+      <Skeleton className="h-4 w-24 mb-3" />
+      <div className="gradient-border">
+        <div className="bg-card/90 rounded-xl p-4">
+          <Skeleton className="h-4 w-full mb-2" />
+          <Skeleton className="h-4 w-full mb-2" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SchoolProfilePage = () => {
+  const { schoolId } = useParams<{ schoolId: string }>();
+  const navigate = useNavigate();
+  const [school, setSchool] = useState<SchoolData | null>(null);
+  const [profile, setProfile] = useState<SchoolProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!schoolId) {
+        setError("School ID is required");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const { data, error: fetchError } = await supabase.functions.invoke(
+          "get-school-profile",
+          {
+            body: { schoolId },
+          }
+        );
+
+        if (fetchError) throw fetchError;
+
+        if (data?.school && data?.profile) {
+          setSchool(data.school);
+          setProfile(data.profile);
+        } else if (data?.error) {
+          setError(data.error);
+        }
+      } catch (err) {
+        console.error("Error fetching school profile:", err);
+        setError("Failed to load school profile");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [schoolId]);
+
+  const isUniversity = school?.type === "university";
+  const SchoolIcon = isUniversity ? GraduationCap : School;
+  const location = [school?.city, school?.state, school?.country !== "US" ? school?.country : null]
+    .filter(Boolean)
+    .join(", ");
+
+  // Define stats based on school type
+  const statsConfig = isUniversity
+    ? [
+        { icon: Users, label: "Enrollment", value: profile?.enrollment },
+        { icon: Calendar, label: "Founded", value: profile?.founded_year },
+        { icon: TrendingUp, label: "Acceptance Rate", value: profile?.stats?.acceptanceRate },
+        { icon: Award, label: "Ranking", value: profile?.stats?.ranking },
+        { icon: BookOpen, label: "Programs", value: profile?.stats?.programsCount },
+        { icon: Building2, label: "Student:Faculty", value: profile?.stats?.studentFacultyRatio },
+      ]
+    : [
+        { icon: Users, label: "Students", value: profile?.enrollment },
+        { icon: Calendar, label: "Founded", value: profile?.founded_year },
+        { icon: TrendingUp, label: "Graduation Rate", value: profile?.stats?.graduationRate },
+        { icon: BookOpen, label: "AP Courses", value: profile?.stats?.apCourses },
+        { icon: Building2, label: "Student:Teacher", value: profile?.stats?.studentTeacherRatio },
+        { icon: Award, label: "Rating", value: profile?.stats?.rating },
+      ];
+
+  return (
+    <div className="min-h-screen bg-background/80 pb-24 relative">
+      <AnimatedBackground />
+
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground truncate max-w-[200px]">
+              {isLoading ? "Loading..." : school?.name || "School Profile"}
+            </h1>
+          </div>
+        </div>
+      </header>
+
+      <main className="relative z-10 px-4 py-6 space-y-6">
+        {isLoading ? (
+          <ProfileSkeleton />
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <School className="w-16 h-16 text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">School Not Found</h2>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => navigate(-1)} variant="outline">
+              Go Back
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-6 animate-fade-in">
+            {/* Header Card */}
+            <div className="gradient-border">
+              <div className="bg-card/90 backdrop-blur-sm rounded-xl p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
+                    school?.is_notable 
+                      ? "bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30" 
+                      : "bg-secondary"
+                  }`}>
+                    <SchoolIcon className={`w-8 h-8 ${school?.is_notable ? "text-primary" : "text-muted-foreground"}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-xl font-bold text-foreground mb-1 leading-tight">
+                      {school?.name}
+                    </h2>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        isUniversity 
+                          ? "bg-primary/20 text-primary" 
+                          : "bg-secondary text-secondary-foreground"
+                      }`}>
+                        {isUniversity ? "University" : "High School"}
+                      </span>
+                      {school?.is_notable && (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-600">
+                          Notable
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                {location && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                    <MapPin className="w-4 h-4" />
+                    <span>{location}</span>
+                  </div>
+                )}
+
+                {/* Tagline */}
+                {profile?.tagline && (
+                  <p className="text-foreground/80 italic border-l-2 border-primary/50 pl-3">
+                    "{profile.tagline}"
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Key Statistics */}
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+                Key Statistics
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {statsConfig.map(({ icon, label, value }) => (
+                  <StatCard key={label} icon={icon} label={label} value={value ?? null} />
+                ))}
+              </div>
+            </div>
+
+            {/* Schools & Departments / Programs */}
+            {profile?.chips && profile.chips.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+                  {isUniversity ? "Schools & Departments" : "Programs & Activities"}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {profile.chips.map((chip) => (
+                    <span
+                      key={chip}
+                      className="px-3 py-1.5 rounded-full text-sm font-medium bg-secondary/80 text-secondary-foreground border border-border/50 hover:bg-secondary transition-colors"
+                    >
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Visit Website */}
+            <div className="gradient-border">
+              <div className="bg-card/90 backdrop-blur-sm rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                      <ExternalLink className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Visit Website</p>
+                      <p className="text-xs text-muted-foreground">
+                        {profile?.website_url || "Website not available"}
+                      </p>
+                    </div>
+                  </div>
+                  {profile?.website_url ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(profile.website_url!, "_blank")}
+                    >
+                      Open
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" disabled>
+                      N/A
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* About Section */}
+            {profile?.about_text && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+                  About
+                </h3>
+                <div className="gradient-border">
+                  <div className="bg-card/90 backdrop-blur-sm rounded-xl p-4">
+                    <div className="prose prose-sm max-w-none">
+                      {profile.about_text.split("\n\n").map((paragraph, i) => (
+                        <p key={i} className="text-foreground/90 mb-3 last:mb-0 leading-relaxed">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      <PremiumChatFAB />
+      <BottomNav />
+    </div>
+  );
+};
+
+export default SchoolProfilePage;

@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { X, MapPin, Users, Award, Building2, GraduationCap, BookOpen } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, MapPin, Users, Award, Building2, GraduationCap, BookOpen, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Drawer,
   DrawerContent,
@@ -26,37 +29,61 @@ interface SchoolBottomSheetProps {
   isOwnSchool?: boolean;
 }
 
-// Mock data for school details - in production this would come from API
-const getSchoolDetails = (schoolName: string): SchoolInfo => {
-  const isHighSchool = schoolName.toLowerCase().includes('high school') || 
-                       schoolName.toLowerCase().includes('high') ||
-                       schoolName.toLowerCase().includes('academy');
-  
-  return {
-    name: schoolName,
-    type: isHighSchool ? 'high_school' : 'university',
-    location: "Boston, MA",
-    description: `${schoolName} is a distinguished educational institution committed to academic excellence and student success. The school offers a diverse curriculum and vibrant extracurricular programs.`,
-    tags: isHighSchool 
-      ? ["STEM", "Arts", "Athletics", "College Prep", "Clubs"]
-      : ["Research", "STEM", "Liberal Arts", "Internships", "Greek Life"],
-    studentCount: isHighSchool ? "1,800+" : "25,000+",
-    ranking: isHighSchool ? "Top 50 MA" : "#42 National",
-  };
-};
-
 const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: SchoolBottomSheetProps) => {
   const navigate = useNavigate();
+  const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [isLoadingId, setIsLoadingId] = useState(false);
+  
+  // Look up the school ID when the sheet opens
+  useEffect(() => {
+    const findSchoolId = async () => {
+      if (!school?.name || !open) return;
+      
+      setIsLoadingId(true);
+      try {
+        const { data } = await supabase
+          .from('schools')
+          .select('id')
+          .ilike('name', school.name)
+          .maybeSingle();
+        
+        setSchoolId(data?.id || null);
+      } catch (err) {
+        console.error('Error finding school:', err);
+        setSchoolId(null);
+      } finally {
+        setIsLoadingId(false);
+      }
+    };
+    
+    findSchoolId();
+  }, [school?.name, open]);
   
   if (!school) return null;
   
-  const schoolDetails = getSchoolDetails(school.name);
-  const typeLabel = schoolDetails.type === 'high_school' ? 'High School' : 'University';
+  const isHighSchool = school.type === 'high_school';
+  const typeLabel = isHighSchool ? 'High School' : 'University';
   
   const handleConnect = () => {
     onOpenChange(false);
     navigate(`/school-community?school=${encodeURIComponent(school.name)}`);
   };
+
+  const handleViewProfile = () => {
+    if (schoolId) {
+      onOpenChange(false);
+      navigate(`/school/${schoolId}`);
+    }
+  };
+
+  // Generate a basic description if not provided
+  const description = school.description || 
+    `${school.name} is a distinguished educational institution committed to academic excellence and student success.`;
+
+  // Generate tags based on school type if not provided
+  const tags = school.tags || (isHighSchool 
+    ? ["Academics", "Athletics", "Arts", "Clubs", "College Prep"]
+    : ["Research", "STEM", "Liberal Arts", "Internships", "Student Life"]);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -82,10 +109,12 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-primary">{typeLabel}</p>
-              <div className="flex items-center gap-2 mt-1 text-muted-foreground">
-                <MapPin className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm truncate">{schoolDetails.location}</span>
-              </div>
+              {school.location && (
+                <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm truncate">{school.location}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -95,14 +124,18 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
               <Users className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-xs text-muted-foreground">Students</p>
-                <p className="text-sm font-semibold text-foreground">{schoolDetails.studentCount}</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {school.studentCount || "—"}
+                </p>
               </div>
             </div>
             <div className="p-3 rounded-lg bg-secondary/50 flex items-center gap-3">
               <Award className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-xs text-muted-foreground">Ranking</p>
-                <p className="text-sm font-semibold text-foreground">{schoolDetails.ranking}</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {school.ranking || "—"}
+                </p>
               </div>
             </div>
           </div>
@@ -113,8 +146,8 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
               <BookOpen className="w-4 h-4 text-primary" />
               <h4 className="text-sm font-medium text-foreground">About</h4>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {schoolDetails.description}
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+              {description}
             </p>
           </div>
 
@@ -125,7 +158,7 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
               <h4 className="text-sm font-medium text-foreground">Highlights</h4>
             </div>
             <div className="flex flex-wrap gap-2">
-              {schoolDetails.tags?.map((tag) => (
+              {tags.slice(0, 5).map((tag) => (
                 <span
                   key={tag}
                   className="px-3 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium"
@@ -136,14 +169,31 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
             </div>
           </div>
 
-          {/* Connect Button */}
-          <Button
-            onClick={handleConnect}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-6"
-          >
-            <Users className="w-4 h-4 mr-2" />
-            {isOwnSchool ? "Connect with others at your school" : "Connect with people from this school"}
-          </Button>
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            {/* View Full Profile Button */}
+            {isLoadingId ? (
+              <Skeleton className="h-12 w-full" />
+            ) : schoolId ? (
+              <Button
+                onClick={handleViewProfile}
+                variant="outline"
+                className="w-full py-6 group"
+              >
+                View Full School Profile
+                <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+              </Button>
+            ) : null}
+
+            {/* Connect Button */}
+            <Button
+              onClick={handleConnect}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-6"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              {isOwnSchool ? "Connect with others at your school" : "Connect with people from this school"}
+            </Button>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>
