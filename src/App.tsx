@@ -32,6 +32,8 @@ import PrivacySettings from "./pages/PrivacySettings";
 import GroupDetail from "./pages/GroupDetail";
 import EventDetail from "./pages/EventDetail";
 import PlaceDetail from "./pages/PlaceDetail";
+import Messages from "./pages/Messages";
+import MessageThread from "./pages/MessageThread";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
@@ -74,6 +76,8 @@ const App = () => (
                   <Route path="/group/:groupId" element={<GroupDetail />} />
                   <Route path="/event/:eventId" element={<EventDetail />} />
                   <Route path="/place/:placeId" element={<PlaceDetail />} />
+                  <Route path="/messages" element={<Messages />} />
+                  <Route path="/messages/:conversationId" element={<MessageThread />} />
                   <Route path="/welcome" element={<Welcome />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
