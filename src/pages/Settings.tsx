@@ -127,7 +127,7 @@ const Settings = () => {
           label: "Privacy Settings",
           description: "Manage your privacy preferences",
           action: <ChevronRight className="w-5 h-5 text-muted-foreground" />,
-          onClick: () => toast.info("Privacy settings coming soon"),
+          onClick: () => navigate("/privacy-settings"),
         },
       ],
     },
