@@ -298,3 +298,118 @@ export function generateSeedCommunityMembers(schoolName: string): SeedCommunityM
     { id: 'cm6', name: 'Amanda Foster', role: 'staff', gradeOrPosition: 'Career Services', bio: 'Connecting students with internship opportunities' },
   ];
 }
+
+// ============================================
+// DIRECT MESSAGES - CONVERSATIONS
+// ============================================
+export interface SeedConversation {
+  id: string;
+  participantName: string;
+  participantRole: 'Student' | 'Teacher' | 'Counselor' | 'Staff';
+  participantBadge?: string;
+  participantSchool: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+  isMuted: boolean;
+}
+
+export const seedConversations: SeedConversation[] = [
+  { 
+    id: 'conv1', 
+    participantName: 'Sarah Mitchell', 
+    participantRole: 'Student', 
+    participantBadge: 'Senior',
+    participantSchool: 'Acton-Boxborough Regional High School',
+    lastMessage: 'Hey! Did you finish the AP Chem homework?',
+    lastMessageTime: '2m ago',
+    unreadCount: 3,
+    isMuted: false
+  },
+  { 
+    id: 'conv2', 
+    participantName: 'Dr. Emily Watson', 
+    participantRole: 'Teacher',
+    participantSchool: 'Acton-Boxborough Regional High School',
+    lastMessage: 'Your essay submission looks great. Just a few notes...',
+    lastMessageTime: '1h ago',
+    unreadCount: 1,
+    isMuted: false
+  },
+  { 
+    id: 'conv3', 
+    participantName: 'Michael Brown', 
+    participantRole: 'Counselor',
+    participantSchool: 'Westford Academy',
+    lastMessage: 'Let me know when you want to schedule our next meeting',
+    lastMessageTime: '3h ago',
+    unreadCount: 0,
+    isMuted: false
+  },
+  { 
+    id: 'conv4', 
+    participantName: 'James Chen', 
+    participantRole: 'Student',
+    participantBadge: 'Junior',
+    participantSchool: 'Lincoln-Sudbury Regional High School',
+    lastMessage: 'The robotics meeting is at 4pm tomorrow!',
+    lastMessageTime: 'Yesterday',
+    unreadCount: 0,
+    isMuted: true
+  },
+  { 
+    id: 'conv5', 
+    participantName: 'Lisa Park', 
+    participantRole: 'Student',
+    participantBadge: 'Sophomore',
+    participantSchool: 'Concord-Carlisle High School',
+    lastMessage: 'Thanks for helping with the project 🙏',
+    lastMessageTime: '2d ago',
+    unreadCount: 0,
+    isMuted: false
+  },
+];
+
+// ============================================
+// DIRECT MESSAGES - MESSAGES
+// ============================================
+export interface SeedMessage {
+  id: string;
+  conversationId: string;
+  senderId: 'me' | 'other';
+  text: string;
+  timestamp: string;
+  reactions?: string[];
+  isDeleted?: boolean;
+}
+
+export const seedMessages: SeedMessage[] = [
+  // Conversation with Sarah Mitchell
+  { id: 'm1', conversationId: 'conv1', senderId: 'other', text: 'Hey! Are you in Ms. Kim\'s AP Chem class?', timestamp: '10:30 AM' },
+  { id: 'm2', conversationId: 'conv1', senderId: 'me', text: 'Yeah! Section 3, right?', timestamp: '10:32 AM' },
+  { id: 'm3', conversationId: 'conv1', senderId: 'other', text: 'Yes! Did you finish the homework for tomorrow?', timestamp: '10:33 AM' },
+  { id: 'm4', conversationId: 'conv1', senderId: 'me', text: 'Working on it now. Problem 5 is tricky', timestamp: '10:35 AM' },
+  { id: 'm5', conversationId: 'conv1', senderId: 'other', text: 'I know right! Want to study together later?', timestamp: '10:36 AM' },
+  { id: 'm6', conversationId: 'conv1', senderId: 'other', text: 'We could meet at the library', timestamp: '10:36 AM' },
+  { id: 'm7', conversationId: 'conv1', senderId: 'other', text: 'Hey! Did you finish the AP Chem homework?', timestamp: '2:45 PM' },
+  
+  // Conversation with Dr. Emily Watson
+  { id: 'm8', conversationId: 'conv2', senderId: 'me', text: 'Hi Dr. Watson! I submitted my essay draft', timestamp: 'Yesterday' },
+  { id: 'm9', conversationId: 'conv2', senderId: 'other', text: 'Thank you! I\'ll review it today', timestamp: 'Yesterday' },
+  { id: 'm10', conversationId: 'conv2', senderId: 'other', text: 'Your essay submission looks great. Just a few notes...', timestamp: '1h ago' },
+  
+  // Conversation with Michael Brown
+  { id: 'm11', conversationId: 'conv3', senderId: 'other', text: 'Great meeting today! You have a strong application', timestamp: 'Monday' },
+  { id: 'm12', conversationId: 'conv3', senderId: 'me', text: 'Thank you! I appreciate all your help', timestamp: 'Monday' },
+  { id: 'm13', conversationId: 'conv3', senderId: 'other', text: 'Let me know when you want to schedule our next meeting', timestamp: '3h ago' },
+  
+  // Conversation with James Chen
+  { id: 'm14', conversationId: 'conv4', senderId: 'other', text: 'Hey! Are you coming to robotics club?', timestamp: 'Tuesday' },
+  { id: 'm15', conversationId: 'conv4', senderId: 'me', text: 'Definitely! What time again?', timestamp: 'Tuesday' },
+  { id: 'm16', conversationId: 'conv4', senderId: 'other', text: 'The robotics meeting is at 4pm tomorrow!', timestamp: 'Yesterday' },
+  
+  // Conversation with Lisa Park
+  { id: 'm17', conversationId: 'conv5', senderId: 'me', text: 'Here are the notes from class', timestamp: '3d ago' },
+  { id: 'm18', conversationId: 'conv5', senderId: 'other', text: 'You\'re a lifesaver! 🙌', timestamp: '2d ago' },
+  { id: 'm19', conversationId: 'conv5', senderId: 'other', text: 'Thanks for helping with the project 🙏', timestamp: '2d ago' },
+];
