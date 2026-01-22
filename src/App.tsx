@@ -28,6 +28,10 @@ import PlanManagement from "./pages/PlanManagement";
 import SchoolInfo from "./pages/SchoolInfo";
 import SchoolCommunity from "./pages/SchoolCommunity";
 import SchoolProfilePage from "./pages/SchoolProfilePage";
+import PrivacySettings from "./pages/PrivacySettings";
+import GroupDetail from "./pages/GroupDetail";
+import EventDetail from "./pages/EventDetail";
+import PlaceDetail from "./pages/PlaceDetail";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
@@ -66,6 +70,10 @@ const App = () => (
                   <Route path="/school-info" element={<SchoolInfo />} />
                   <Route path="/school-community" element={<SchoolCommunity />} />
                   <Route path="/school/:schoolId" element={<SchoolProfilePage />} />
+                  <Route path="/privacy-settings" element={<PrivacySettings />} />
+                  <Route path="/group/:groupId" element={<GroupDetail />} />
+                  <Route path="/event/:eventId" element={<EventDetail />} />
+                  <Route path="/place/:placeId" element={<PlaceDetail />} />
                   <Route path="/welcome" element={<Welcome />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
