@@ -3,18 +3,84 @@ import { Home, Compass, Newspaper, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { memo } from "react";
-import { USE_SEED_DATA, seedConversations } from "@/data/seedData";
+import { memo, useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const BottomNav = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useUserProfile();
+  const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Calculate unread count from seed data
-  const unreadCount = USE_SEED_DATA 
-    ? seedConversations.filter(c => c.unreadCount > 0).length 
-    : 0;
+  // Fetch unread count from Supabase
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const fetchUnreadCount = async () => {
+      try {
+        // Get user's conversations
+        const { data: participations } = await supabase
+          .from('conversation_participants')
+          .select('conversation_id, last_read_at')
+          .eq('user_id', user.id);
+
+        if (!participations || participations.length === 0) {
+          setUnreadCount(0);
+          return;
+        }
+
+        let totalUnread = 0;
+        for (const participation of participations) {
+          if (participation.last_read_at) {
+            const { count } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', participation.conversation_id)
+              .neq('sender_id', user.id)
+              .gt('created_at', participation.last_read_at);
+            totalUnread += count || 0;
+          } else {
+            const { count } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('conversation_id', participation.conversation_id)
+              .neq('sender_id', user.id);
+            totalUnread += count || 0;
+          }
+        }
+        setUnreadCount(totalUnread);
+      } catch (err) {
+        console.error('Error fetching unread count:', err);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel('nav-unread-count')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const navItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
