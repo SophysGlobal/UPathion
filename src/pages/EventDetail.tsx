@@ -3,8 +3,16 @@ import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Calendar, Clock, MapPin, Users } from "lucide-react";
+import { ChevronLeft, Calendar, Clock, MapPin, Users, ExternalLink } from "lucide-react";
 import { USE_SEED_DATA, seedEvents } from "@/data/seedData";
+import { toast } from "sonner";
+
+// Helper function to open Google Maps
+const openGoogleMaps = (location: string) => {
+  const encodedLocation = encodeURIComponent(location);
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+  window.open(mapsUrl, '_blank');
+};
 
 const EventDetail = () => {
   const navigate = useNavigate();
@@ -13,6 +21,18 @@ const EventDetail = () => {
   const event = USE_SEED_DATA 
     ? seedEvents.find(e => e.id === eventId) 
     : null;
+
+  const handleGetDirections = () => {
+    if (event?.location && event?.school) {
+      // Combine location with school for better search results
+      const fullLocation = `${event.location}, ${event.school}`;
+      openGoogleMaps(fullLocation);
+    } else if (event?.location) {
+      openGoogleMaps(event.location);
+    } else {
+      toast.error('Location not available');
+    }
+  };
 
   if (!event) {
     return (
@@ -104,7 +124,18 @@ const EventDetail = () => {
 
         {/* Actions */}
         <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-          <Button className="w-full py-6">RSVP to Event</Button>
+          <Button className="w-full py-6">
+            <Calendar className="w-4 h-4 mr-2" />
+            RSVP to Event
+          </Button>
+          <Button 
+            variant="outline" 
+            className="w-full py-6"
+            onClick={handleGetDirections}
+          >
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Get Directions
+          </Button>
         </div>
       </main>
 

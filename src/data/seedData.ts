@@ -184,7 +184,7 @@ export const seedFeedPosts: SeedFeedPost[] = [
 export interface SeedPerson {
   id: string;
   name: string;
-  role: 'Student' | 'Teacher' | 'Counselor' | 'Staff';
+  role: 'Student' | 'Teacher' | 'Counselor';
   badge?: string;
   school: string;
   bio: string;
@@ -305,7 +305,7 @@ export function generateSeedCommunityMembers(schoolName: string): SeedCommunityM
 export interface SeedConversation {
   id: string;
   participantName: string;
-  participantRole: 'Student' | 'Teacher' | 'Counselor' | 'Staff';
+  participantRole: 'Student' | 'Teacher' | 'Counselor';
   participantBadge?: string;
   participantSchool: string;
   lastMessage: string;

@@ -27,8 +27,11 @@ import {
   type SeedMessage,
   type SeedConversation
 } from "@/data/seedData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const EMOJI_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const MESSAGES_STORAGE_KEY = 'upathion_messages';
+const CONVERSATIONS_STORAGE_KEY = 'upathion_conversations';
 
 const MessageThread = () => {
   const navigate = useNavigate();
@@ -36,19 +39,52 @@ const MessageThread = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useState<SeedMessage[]>(
-    USE_SEED_DATA ? seedMessages.filter(m => m.conversationId === conversationId) : []
-  );
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
 
-  const conversation: SeedConversation | undefined = USE_SEED_DATA 
-    ? seedConversations.find(c => c.id === conversationId)
-    : undefined;
+  // Get initial messages for this conversation
+  const getInitialMessages = (): SeedMessage[] => {
+    if (!USE_SEED_DATA) return [];
+    return seedMessages.filter(m => m.conversationId === conversationId);
+  };
+
+  // Use localStorage for message persistence
+  const [storedMessages, setStoredMessages] = useLocalStorage<Record<string, SeedMessage[]>>(
+    MESSAGES_STORAGE_KEY,
+    {}
+  );
+
+  const [storedConversations, setStoredConversations] = useLocalStorage<SeedConversation[]>(
+    CONVERSATIONS_STORAGE_KEY,
+    USE_SEED_DATA ? seedConversations : []
+  );
+
+  // Initialize messages for this conversation
+  const [messages, setMessages] = useState<SeedMessage[]>(() => {
+    const stored = storedMessages[conversationId || ''];
+    if (stored && stored.length > 0) {
+      return stored;
+    }
+    return getInitialMessages();
+  });
+
+  // Find conversation info
+  const conversation: SeedConversation | undefined = storedConversations.find(c => c.id === conversationId) 
+    || (USE_SEED_DATA ? seedConversations.find(c => c.id === conversationId) : undefined);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (conversationId) {
+      setStoredMessages(prev => ({
+        ...prev,
+        [conversationId]: messages
+      }));
+    }
+  }, [messages, conversationId, setStoredMessages]);
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
@@ -62,6 +98,15 @@ const MessageThread = () => {
     };
     
     setMessages(prev => [...prev, newMessage]);
+    
+    // Update conversation's last message
+    setStoredConversations(prev => 
+      prev.map(c => c.id === conversationId 
+        ? { ...c, lastMessage: inputValue.trim(), lastMessageTime: 'Just now' }
+        : c
+      )
+    );
+    
     setInputValue('');
     toast.success('Message sent!');
   };
@@ -101,12 +146,17 @@ const MessageThread = () => {
     toast.info('Attachments coming soon!');
   };
 
+  const handleViewProfile = () => {
+    if (conversationId) {
+      navigate(`/user/${conversationId}`);
+    }
+  };
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'Student': return 'bg-primary/20 text-primary';
       case 'Teacher': return 'bg-blue-500/20 text-blue-400';
       case 'Counselor': return 'bg-green-500/20 text-green-400';
-      case 'Staff': return 'bg-purple-500/20 text-purple-400';
       default: return 'bg-secondary text-muted-foreground';
     }
   };
@@ -148,11 +198,14 @@ const MessageThread = () => {
             <ChevronLeft className="w-5 h-5 text-foreground" />
           </button>
           
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+          <button
+            onClick={handleViewProfile}
+            className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity"
+          >
             <User className="w-5 h-5 text-primary" />
-          </div>
+          </button>
           
-          <div className="flex-1 min-w-0">
+          <button onClick={handleViewProfile} className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity">
             <div className="flex items-center gap-2">
               <span className="font-medium text-foreground truncate">{conversation.participantName}</span>
               {conversation.participantBadge && (
@@ -162,7 +215,7 @@ const MessageThread = () => {
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate">{conversation.participantSchool}</p>
-          </div>
+          </button>
         </div>
       </header>
 

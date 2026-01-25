@@ -5,6 +5,14 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, MapPin, Bookmark, ExternalLink } from "lucide-react";
 import { USE_SEED_DATA, seedPlaces } from "@/data/seedData";
+import { toast } from "sonner";
+
+// Helper function to open Google Maps
+const openGoogleMaps = (location: string) => {
+  const encodedLocation = encodeURIComponent(location);
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+  window.open(mapsUrl, '_blank');
+};
 
 const PlaceDetail = () => {
   const navigate = useNavigate();
@@ -13,6 +21,21 @@ const PlaceDetail = () => {
   const place = USE_SEED_DATA 
     ? seedPlaces.find(p => p.id === placeId) 
     : null;
+
+  const handleGetDirections = () => {
+    if (place?.name && place?.area) {
+      const fullLocation = `${place.name}, ${place.area}`;
+      openGoogleMaps(fullLocation);
+    } else if (place?.area) {
+      openGoogleMaps(place.area);
+    } else {
+      toast.error('Location not available');
+    }
+  };
+
+  const handleSavePlace = () => {
+    toast.success(`${place?.name} saved!`);
+  };
 
   if (!place) {
     return (
@@ -72,11 +95,15 @@ const PlaceDetail = () => {
 
         {/* Actions */}
         <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.08s', animationFillMode: 'both' }}>
-          <Button className="w-full py-6">
+          <Button className="w-full py-6" onClick={handleSavePlace}>
             <Bookmark className="w-4 h-4 mr-2" />
             Save Place
           </Button>
-          <Button variant="outline" className="w-full py-6">
+          <Button 
+            variant="outline" 
+            className="w-full py-6"
+            onClick={handleGetDirections}
+          >
             <ExternalLink className="w-4 h-4 mr-2" />
             Get Directions
           </Button>
