@@ -34,6 +34,7 @@ import EventDetail from "./pages/EventDetail";
 import PlaceDetail from "./pages/PlaceDetail";
 import Messages from "./pages/Messages";
 import MessageThread from "./pages/MessageThread";
+import UserProfile from "./pages/UserProfile";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
@@ -78,6 +79,7 @@ const App = () => (
                   <Route path="/place/:placeId" element={<PlaceDetail />} />
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/messages/:conversationId" element={<MessageThread />} />
+                  <Route path="/user/:userId" element={<UserProfile />} />
                   <Route path="/welcome" element={<Welcome />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

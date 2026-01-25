@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
@@ -29,13 +29,27 @@ import {
   seedConversations, 
   type SeedConversation 
 } from "@/data/seedData";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+
+const STORAGE_KEY = 'upathion_conversations';
 
 const Messages = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [conversations, setConversations] = useState<SeedConversation[]>(
+  
+  // Use localStorage for persistence
+  const [storedConversations, setStoredConversations] = useLocalStorage<SeedConversation[]>(
+    STORAGE_KEY,
     USE_SEED_DATA ? seedConversations : []
   );
+  
+  // Initialize with stored data or seed data
+  const [conversations, setConversations] = useState<SeedConversation[]>(storedConversations);
+
+  // Sync to localStorage whenever conversations change
+  useEffect(() => {
+    setStoredConversations(conversations);
+  }, [conversations, setStoredConversations]);
 
   const filteredConversations = useMemo(() => 
     conversations.filter(c => 
@@ -49,6 +63,11 @@ const Messages = () => {
       prev.map(c => c.id === conversation.id ? { ...c, unreadCount: 0 } : c)
     );
     navigate(`/messages/${conversation.id}`);
+  };
+
+  const handleViewProfile = (e: React.MouseEvent, conversation: SeedConversation) => {
+    e.stopPropagation();
+    navigate(`/user/${conversation.id}`);
   };
 
   const handleToggleMute = (e: React.MouseEvent, conversationId: string) => {
@@ -85,7 +104,6 @@ const Messages = () => {
       case 'Student': return 'bg-primary/20 text-primary';
       case 'Teacher': return 'bg-blue-500/20 text-blue-400';
       case 'Counselor': return 'bg-green-500/20 text-green-400';
-      case 'Staff': return 'bg-purple-500/20 text-purple-400';
       default: return 'bg-secondary text-muted-foreground';
     }
   };
@@ -152,8 +170,11 @@ const Messages = () => {
                 style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
               >
                 <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3 transition-colors group-hover:bg-secondary/50">
-                  {/* Avatar */}
-                  <div className="relative flex-shrink-0">
+                  {/* Avatar - clickable for profile */}
+                  <button
+                    onClick={(e) => handleViewProfile(e, conversation)}
+                    className="relative flex-shrink-0 hover:opacity-80 transition-opacity"
+                  >
                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
                       <User className="w-6 h-6 text-primary" />
                     </div>
@@ -162,14 +183,19 @@ const Messages = () => {
                         {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
                       </span>
                     )}
-                  </div>
+                  </button>
                   
                   {/* Content */}
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center gap-2">
-                      <span className={`font-medium ${conversation.unreadCount > 0 ? 'text-foreground' : 'text-foreground/80'}`}>
-                        {conversation.participantName}
-                      </span>
+                      <button
+                        onClick={(e) => handleViewProfile(e, conversation)}
+                        className="font-medium hover:underline"
+                      >
+                        <span className={conversation.unreadCount > 0 ? 'text-foreground' : 'text-foreground/80'}>
+                          {conversation.participantName}
+                        </span>
+                      </button>
                       {conversation.participantBadge && (
                         <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRoleBadgeColor(conversation.participantRole)}`}>
                           {conversation.participantBadge}

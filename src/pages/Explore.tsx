@@ -63,6 +63,10 @@ const Explore = () => {
       p.type.toLowerCase().includes(searchQuery.toLowerCase())
     ), [places, searchQuery]);
 
+  const handleViewProfile = (person: SeedPerson) => {
+    navigate(`/user/${person.id}`);
+  };
+
   const handleConnect = (person: SeedPerson) => {
     toast.success(`Connection request sent to ${person.name}!`);
   };
@@ -116,12 +120,20 @@ const Explore = () => {
           >
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div className={`w-12 h-12 rounded-full ${person.avatarColor} flex items-center justify-center flex-shrink-0`}>
+                <button
+                  onClick={() => handleViewProfile(person)}
+                  className={`w-12 h-12 rounded-full ${person.avatarColor} flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity`}
+                >
                   <User className="w-6 h-6 text-primary" />
-                </div>
+                </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-foreground">{person.name}</span>
+                    <button 
+                      onClick={() => handleViewProfile(person)}
+                      className="font-medium text-foreground hover:underline"
+                    >
+                      {person.name}
+                    </button>
                     {person.badge && (
                       <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent text-xs font-medium">
                         {person.badge}
