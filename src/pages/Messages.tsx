@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
@@ -15,7 +15,8 @@ import {
   MailOpen, 
   Mail,
   MessageCircle,
-  PenSquare
+  PenSquare,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -24,87 +25,72 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  USE_SEED_DATA, 
-  seedConversations, 
-  type SeedConversation 
-} from "@/data/seedData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-
-const STORAGE_KEY = 'upathion_conversations';
+import { useConversations, type Conversation } from "@/hooks/useMessages";
+import { useAuth } from "@/context/AuthContext";
+import { formatDistanceToNow } from "date-fns";
 
 const Messages = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Use localStorage for persistence
-  const [storedConversations, setStoredConversations] = useLocalStorage<SeedConversation[]>(
-    STORAGE_KEY,
-    USE_SEED_DATA ? seedConversations : []
-  );
-  
-  // Initialize with stored data or seed data
-  const [conversations, setConversations] = useState<SeedConversation[]>(storedConversations);
-
-  // Sync to localStorage whenever conversations change
-  useEffect(() => {
-    setStoredConversations(conversations);
-  }, [conversations, setStoredConversations]);
+  const {
+    conversations,
+    loading,
+    markAsRead,
+    toggleMute,
+    deleteConversation,
+  } = useConversations();
 
   const filteredConversations = useMemo(() => 
-    conversations.filter(c => 
-      c.participantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [conversations, searchQuery]);
+    conversations.filter(c => {
+      const otherParticipant = c.participants.find(p => p.user_id !== user?.id);
+      const name = otherParticipant?.profile?.display_name || '';
+      const lastMessage = c.last_message?.content || '';
+      return name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
+    }), [conversations, searchQuery, user?.id]);
 
-  const handleOpenThread = (conversation: SeedConversation) => {
-    // Mark as read when opening
-    setConversations(prev => 
-      prev.map(c => c.id === conversation.id ? { ...c, unreadCount: 0 } : c)
-    );
+  const handleOpenThread = (conversation: Conversation) => {
+    markAsRead(conversation.id);
     navigate(`/messages/${conversation.id}`);
   };
 
-  const handleViewProfile = (e: React.MouseEvent, conversation: SeedConversation) => {
+  const handleViewProfile = (e: React.MouseEvent, participantId: string) => {
     e.stopPropagation();
-    navigate(`/user/${conversation.id}`);
+    navigate(`/user/${participantId}`);
   };
 
-  const handleToggleMute = (e: React.MouseEvent, conversationId: string) => {
+  const handleToggleMute = async (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation();
-    setConversations(prev => 
-      prev.map(c => c.id === conversationId ? { ...c, isMuted: !c.isMuted } : c)
-    );
-    const conv = conversations.find(c => c.id === conversationId);
-    toast.success(conv?.isMuted ? 'Unmuted conversation' : 'Muted conversation');
+    await toggleMute(conversationId);
+    toast.success('Conversation updated');
   };
 
-  const handleToggleRead = (e: React.MouseEvent, conversationId: string) => {
+  const handleToggleRead = async (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation();
-    setConversations(prev => 
-      prev.map(c => c.id === conversationId 
-        ? { ...c, unreadCount: c.unreadCount > 0 ? 0 : 1 } 
-        : c
-      )
-    );
+    await markAsRead(conversationId);
   };
 
-  const handleDeleteConversation = (e: React.MouseEvent, conversationId: string) => {
+  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation();
-    setConversations(prev => prev.filter(c => c.id !== conversationId));
+    await deleteConversation(conversationId);
     toast.success('Conversation deleted');
   };
 
   const handleNewMessage = () => {
-    toast.info('Compose new message coming soon!');
+    navigate('/messages/compose');
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'Student': return 'bg-primary/20 text-primary';
-      case 'Teacher': return 'bg-blue-500/20 text-blue-400';
-      case 'Counselor': return 'bg-green-500/20 text-green-400';
-      default: return 'bg-secondary text-muted-foreground';
+  const getOtherParticipant = (conversation: Conversation) => {
+    return conversation.participants.find(p => p.user_id !== user?.id);
+  };
+
+  const formatTime = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: false });
+    } catch {
+      return '';
     }
   };
 
@@ -134,7 +120,7 @@ const Messages = () => {
           <div>
             <h1 className="text-lg font-semibold text-foreground">Messages</h1>
             <p className="text-xs text-muted-foreground">
-              {conversations.filter(c => c.unreadCount > 0).length} unread
+              {conversations.filter(c => c.unread_count > 0).length} unread
             </p>
           </div>
           <Button size="icon" variant="ghost" onClick={handleNewMessage}>
@@ -157,108 +143,130 @@ const Messages = () => {
           </div>
         </div>
 
-        {/* Conversations List */}
-        {filteredConversations.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <div className="space-y-2">
-            {filteredConversations.map((conversation, index) => (
-              <button
-                key={conversation.id}
-                onClick={() => handleOpenThread(conversation)}
-                className="w-full gradient-border group animate-fade-in"
-                style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
-              >
-                <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3 transition-colors group-hover:bg-secondary/50">
-                  {/* Avatar - clickable for profile */}
-                  <button
-                    onClick={(e) => handleViewProfile(e, conversation)}
-                    className="relative flex-shrink-0 hover:opacity-80 transition-opacity"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                      <User className="w-6 h-6 text-primary" />
-                    </div>
-                    {conversation.unreadCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-                        {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
-                      </span>
-                    )}
-                  </button>
-                  
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => handleViewProfile(e, conversation)}
-                        className="font-medium hover:underline"
-                      >
-                        <span className={conversation.unreadCount > 0 ? 'text-foreground' : 'text-foreground/80'}>
-                          {conversation.participantName}
-                        </span>
-                      </button>
-                      {conversation.participantBadge && (
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRoleBadgeColor(conversation.participantRole)}`}>
-                          {conversation.participantBadge}
-                        </span>
-                      )}
-                      {conversation.isMuted && (
-                        <VolumeX className="w-3 h-3 text-muted-foreground" />
-                      )}
-                    </div>
-                    <p className={`text-sm truncate ${conversation.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                      {conversation.lastMessage}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {conversation.lastMessageTime}
-                    </p>
-                  </div>
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          </div>
+        )}
 
-                  {/* Actions Menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button size="icon" variant="ghost" className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-card border-border">
-                      <DropdownMenuItem onClick={(e) => handleToggleRead(e as any, conversation.id)}>
-                        {conversation.unreadCount > 0 ? (
-                          <>
-                            <MailOpen className="w-4 h-4 mr-2" />
-                            Mark as read
-                          </>
+        {/* Conversations List */}
+        {!loading && filteredConversations.length === 0 ? (
+          renderEmptyState()
+        ) : !loading && (
+          <div className="space-y-2">
+            {filteredConversations.map((conversation, index) => {
+              const otherParticipant = getOtherParticipant(conversation);
+              const isMuted = conversation.participants.find(p => p.user_id === user?.id)?.is_muted;
+              
+              return (
+                <button
+                  key={conversation.id}
+                  onClick={() => handleOpenThread(conversation)}
+                  className="w-full gradient-border group animate-fade-in"
+                  style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
+                >
+                  <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3 transition-colors group-hover:bg-secondary/50">
+                    {/* Avatar - clickable for profile */}
+                    <button
+                      onClick={(e) => otherParticipant && handleViewProfile(e, otherParticipant.user_id)}
+                      className="relative flex-shrink-0 hover:opacity-80 transition-opacity"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                        {otherParticipant?.profile?.avatar_url ? (
+                          <img 
+                            src={otherParticipant.profile.avatar_url} 
+                            alt={otherParticipant.profile.display_name || 'User'} 
+                            className="w-12 h-12 object-cover"
+                          />
                         ) : (
-                          <>
-                            <Mail className="w-4 h-4 mr-2" />
-                            Mark as unread
-                          </>
+                          <User className="w-6 h-6 text-primary" />
                         )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => handleToggleMute(e as any, conversation.id)}>
-                        {conversation.isMuted ? (
-                          <>
-                            <Volume2 className="w-4 h-4 mr-2" />
-                            Unmute
-                          </>
-                        ) : (
-                          <>
-                            <VolumeX className="w-4 h-4 mr-2" />
-                            Mute
-                          </>
+                      </div>
+                      {conversation.unread_count > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                          {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
+                        </span>
+                      )}
+                    </button>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => otherParticipant && handleViewProfile(e, otherParticipant.user_id)}
+                          className="font-medium hover:underline"
+                        >
+                          <span className={conversation.unread_count > 0 ? 'text-foreground' : 'text-foreground/80'}>
+                            {otherParticipant?.profile?.display_name || 'Unknown User'}
+                          </span>
+                        </button>
+                        {otherParticipant?.profile?.grade_or_year && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/20 text-primary">
+                            {otherParticipant.profile.grade_or_year}
+                          </span>
                         )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={(e) => handleDeleteConversation(e as any, conversation.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </button>
-            ))}
+                        {isMuted && (
+                          <VolumeX className="w-3 h-3 text-muted-foreground" />
+                        )}
+                      </div>
+                      <p className={`text-sm truncate ${conversation.unread_count > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+                        {conversation.last_message?.content || 'No messages yet'}
+                      </p>
+                      {conversation.last_message && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatTime(conversation.last_message.created_at)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Actions Menu */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button size="icon" variant="ghost" className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-card border-border">
+                        <DropdownMenuItem onClick={(e) => handleToggleRead(e as any, conversation.id)}>
+                          {conversation.unread_count > 0 ? (
+                            <>
+                              <MailOpen className="w-4 h-4 mr-2" />
+                              Mark as read
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="w-4 h-4 mr-2" />
+                              Mark as unread
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleToggleMute(e as any, conversation.id)}>
+                          {isMuted ? (
+                            <>
+                              <Volume2 className="w-4 h-4 mr-2" />
+                              Unmute
+                            </>
+                          ) : (
+                            <>
+                              <VolumeX className="w-4 h-4 mr-2" />
+                              Mute
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => handleDeleteConversation(e as any, conversation.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </main>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import AnimatedBackground from "@/components/AnimatedBackground";
@@ -11,7 +11,8 @@ import {
   Copy, 
   Trash2,
   SmilePlus,
-  Paperclip
+  Paperclip,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -20,95 +21,59 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  USE_SEED_DATA, 
-  seedConversations, 
-  seedMessages,
-  type SeedMessage,
-  type SeedConversation
-} from "@/data/seedData";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useMessages, useConversations, type Message } from "@/hooks/useMessages";
+import { useAuth } from "@/context/AuthContext";
+import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
 
 const EMOJI_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
-const MESSAGES_STORAGE_KEY = 'upathion_messages';
-const CONVERSATIONS_STORAGE_KEY = 'upathion_conversations';
 
 const MessageThread = () => {
   const navigate = useNavigate();
   const { conversationId } = useParams();
+  const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const [inputValue, setInputValue] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
-  // Get initial messages for this conversation
-  const getInitialMessages = (): SeedMessage[] => {
-    if (!USE_SEED_DATA) return [];
-    return seedMessages.filter(m => m.conversationId === conversationId);
-  };
+  const { conversations, markAsRead } = useConversations();
+  const { 
+    messages, 
+    loading, 
+    sendMessage, 
+    deleteMessage, 
+    addReaction 
+  } = useMessages(conversationId);
 
-  // Use localStorage for message persistence
-  const [storedMessages, setStoredMessages] = useLocalStorage<Record<string, SeedMessage[]>>(
-    MESSAGES_STORAGE_KEY,
-    {}
-  );
+  // Find the conversation
+  const conversation = conversations.find(c => c.id === conversationId);
+  const otherParticipant = conversation?.participants.find(p => p.user_id !== user?.id);
 
-  const [storedConversations, setStoredConversations] = useLocalStorage<SeedConversation[]>(
-    CONVERSATIONS_STORAGE_KEY,
-    USE_SEED_DATA ? seedConversations : []
-  );
-
-  // Initialize messages for this conversation
-  const [messages, setMessages] = useState<SeedMessage[]>(() => {
-    const stored = storedMessages[conversationId || ''];
-    if (stored && stored.length > 0) {
-      return stored;
+  // Mark as read when opening
+  useEffect(() => {
+    if (conversationId) {
+      markAsRead(conversationId);
     }
-    return getInitialMessages();
-  });
-
-  // Find conversation info
-  const conversation: SeedConversation | undefined = storedConversations.find(c => c.id === conversationId) 
-    || (USE_SEED_DATA ? seedConversations.find(c => c.id === conversationId) : undefined);
+  }, [conversationId, markAsRead]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Save messages to localStorage whenever they change
-  useEffect(() => {
-    if (conversationId) {
-      setStoredMessages(prev => ({
-        ...prev,
-        [conversationId]: messages
-      }));
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isSending) return;
+    
+    setIsSending(true);
+    try {
+      await sendMessage(inputValue.trim());
+      setInputValue('');
+    } catch (err) {
+      toast.error('Failed to send message');
+    } finally {
+      setIsSending(false);
     }
-  }, [messages, conversationId, setStoredMessages]);
-
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-    
-    const newMessage: SeedMessage = {
-      id: `m${Date.now()}`,
-      conversationId: conversationId || '',
-      senderId: 'me',
-      text: inputValue.trim(),
-      timestamp: 'Just now',
-    };
-    
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Update conversation's last message
-    setStoredConversations(prev => 
-      prev.map(c => c.id === conversationId 
-        ? { ...c, lastMessage: inputValue.trim(), lastMessageTime: 'Just now' }
-        : c
-      )
-    );
-    
-    setInputValue('');
-    toast.success('Message sent!');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -123,22 +88,21 @@ const MessageThread = () => {
     toast.success('Copied to clipboard');
   };
 
-  const handleDeleteMessage = (messageId: string) => {
-    setMessages(prev => prev.filter(m => m.id !== messageId));
-    toast.success('Message deleted');
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      await deleteMessage(messageId);
+      toast.success('Message deleted');
+    } catch {
+      toast.error('Failed to delete message');
+    }
   };
 
-  const handleAddReaction = (messageId: string, emoji: string) => {
-    setMessages(prev => prev.map(m => {
-      if (m.id === messageId) {
-        const reactions = m.reactions || [];
-        if (reactions.includes(emoji)) {
-          return { ...m, reactions: reactions.filter(r => r !== emoji) };
-        }
-        return { ...m, reactions: [...reactions, emoji] };
-      }
-      return m;
-    }));
+  const handleAddReaction = async (messageId: string, emoji: string) => {
+    try {
+      await addReaction(messageId, emoji);
+    } catch {
+      toast.error('Failed to add reaction');
+    }
     setShowEmojiPicker(null);
   };
 
@@ -147,21 +111,48 @@ const MessageThread = () => {
   };
 
   const handleViewProfile = () => {
-    if (conversationId) {
-      navigate(`/user/${conversationId}`);
+    if (otherParticipant) {
+      navigate(`/user/${otherParticipant.user_id}`);
     }
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'Student': return 'bg-primary/20 text-primary';
-      case 'Teacher': return 'bg-blue-500/20 text-blue-400';
-      case 'Counselor': return 'bg-green-500/20 text-green-400';
-      default: return 'bg-secondary text-muted-foreground';
+  const formatMessageTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      if (isToday(date)) {
+        return format(date, 'h:mm a');
+      } else if (isYesterday(date)) {
+        return `Yesterday ${format(date, 'h:mm a')}`;
+      }
+      return format(date, 'MMM d, h:mm a');
+    } catch {
+      return '';
     }
   };
 
-  if (!conversation) {
+  const shouldShowTimestamp = (currentMsg: Message, prevMsg: Message | undefined) => {
+    if (!prevMsg) return true;
+    try {
+      const current = new Date(currentMsg.created_at);
+      const prev = new Date(prevMsg.created_at);
+      // Show timestamp if more than 5 minutes apart
+      return (current.getTime() - prev.getTime()) > 5 * 60 * 1000;
+    } catch {
+      return true;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background/80 pb-20 relative flex items-center justify-center">
+        <AnimatedBackground />
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!conversation && !loading) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
         <AnimatedBackground />
@@ -200,38 +191,57 @@ const MessageThread = () => {
           
           <button
             onClick={handleViewProfile}
-            className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity"
+            className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity overflow-hidden"
           >
-            <User className="w-5 h-5 text-primary" />
+            {otherParticipant?.profile?.avatar_url ? (
+              <img 
+                src={otherParticipant.profile.avatar_url} 
+                alt={otherParticipant.profile.display_name || 'User'} 
+                className="w-10 h-10 object-cover"
+              />
+            ) : (
+              <User className="w-5 h-5 text-primary" />
+            )}
           </button>
           
           <button onClick={handleViewProfile} className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground truncate">{conversation.participantName}</span>
-              {conversation.participantBadge && (
-                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getRoleBadgeColor(conversation.participantRole)}`}>
-                  {conversation.participantBadge}
+              <span className="font-medium text-foreground truncate">
+                {otherParticipant?.profile?.display_name || 'Unknown User'}
+              </span>
+              {otherParticipant?.profile?.grade_or_year && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/20 text-primary">
+                  {otherParticipant.profile.grade_or_year}
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground truncate">{conversation.participantSchool}</p>
+            {otherParticipant?.profile?.school_name && (
+              <p className="text-xs text-muted-foreground truncate">
+                {otherParticipant.profile.school_name}
+              </p>
+            )}
           </button>
         </div>
       </header>
 
       {/* Messages */}
       <main className="flex-1 relative z-10 px-4 py-4 space-y-3 overflow-y-auto">
+        {messages.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
+          </div>
+        )}
+        
         {messages.map((message, index) => {
-          const isMe = message.senderId === 'me';
-          const showTimestamp = index === 0 || 
-            messages[index - 1]?.timestamp !== message.timestamp;
+          const isMe = message.sender_id === user?.id;
+          const showTimestamp = shouldShowTimestamp(message, messages[index - 1]);
 
           return (
             <div key={message.id}>
               {showTimestamp && (
                 <div className="text-center mb-3">
                   <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-1 rounded-full">
-                    {message.timestamp}
+                    {formatMessageTime(message.created_at)}
                   </span>
                 </div>
               )}
@@ -245,21 +255,24 @@ const MessageThread = () => {
                         : 'bg-card border border-border rounded-bl-md'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
+                    <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                   </div>
                   
                   {/* Reactions */}
                   {message.reactions && message.reactions.length > 0 && (
                     <div className={`flex gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                      {message.reactions.map((emoji, i) => (
-                        <span 
-                          key={i} 
-                          className="text-sm bg-secondary/80 rounded-full px-1.5 py-0.5 cursor-pointer hover:bg-secondary"
-                          onClick={() => handleAddReaction(message.id, emoji)}
-                        >
-                          {emoji}
-                        </span>
-                      ))}
+                      {Array.from(new Set(message.reactions.map(r => r.emoji))).map((emoji, i) => {
+                        const count = message.reactions?.filter(r => r.emoji === emoji).length || 0;
+                        return (
+                          <span 
+                            key={i} 
+                            className="text-sm bg-secondary/80 rounded-full px-1.5 py-0.5 cursor-pointer hover:bg-secondary"
+                            onClick={() => handleAddReaction(message.id, emoji)}
+                          >
+                            {emoji} {count > 1 && <span className="text-xs">{count}</span>}
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                   
@@ -291,7 +304,7 @@ const MessageThread = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align={isMe ? 'end' : 'start'} className="bg-card border-border">
-                        <DropdownMenuItem onClick={() => handleCopyMessage(message.text)}>
+                        <DropdownMenuItem onClick={() => handleCopyMessage(message.content)}>
                           <Copy className="w-4 h-4 mr-2" />
                           Copy
                         </DropdownMenuItem>
@@ -336,10 +349,14 @@ const MessageThread = () => {
           <Button 
             size="icon" 
             onClick={handleSendMessage}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isSending}
             className="rounded-full"
           >
-            <Send className="w-5 h-5" />
+            {isSending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </Button>
         </div>
       </div>
