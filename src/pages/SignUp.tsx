@@ -7,6 +7,7 @@ import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { validatePassword, getPasswordRequirements } from "@/lib/passwordValidation";
 import { Check, X, Eye, EyeOff } from "lucide-react";
 
@@ -50,21 +51,65 @@ const SignUp = () => {
     
     setIsLoading(true);
     
-    const { error } = await signUpWithEmail(email, password);
-    
-    setIsLoading(false);
-    
-    if (error) {
-      if (error.message.includes("User already registered")) {
-        toast.error("An account with this email already exists. Please sign in instead.");
-      } else {
-        toast.error(error.message || "Failed to create account");
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
+      if (error) {
+        console.error("Signup error:", error);
+        
+        if (error.message.includes("User already registered")) {
+          toast.error("An account with this email already exists. Please sign in instead.");
+        } else if (error.message.includes("sending confirmation email") || error.message.includes("SMTP")) {
+          // Supabase's default email provider failed, use our custom edge function
+          console.log("Default email failed, using custom Resend edge function...");
+          
+          // User was created, but email failed - send via our edge function
+          const { error: fnError } = await supabase.functions.invoke("send-confirmation-email", {
+            body: {
+              email,
+              confirmationUrl: `${window.location.origin}/auth/callback`,
+              type: "signup",
+            },
+          });
+
+          if (fnError) {
+            console.error("Custom email send error:", fnError);
+            toast.error("Account created but we couldn't send the confirmation email. Please try resending from the next screen.");
+          } else {
+            toast.success("Account created! Check your email to confirm.");
+          }
+          
+          // Navigate to confirmation screen
+          navigate("/email-confirmation", { state: { email } });
+          return;
+        } else {
+          toast.error(error.message || "Failed to create account");
+        }
+        return;
       }
-      return;
+      
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        // Email confirmation required
+        toast.success("Account created! Check your email to confirm.");
+        navigate("/email-confirmation", { state: { email } });
+      } else if (data.session) {
+        // No email confirmation required (shouldn't happen with our setup, but handle it)
+        toast.success("Account created successfully!");
+        navigate("/onboarding/name");
+      }
+    } catch (err: any) {
+      console.error("Unexpected signup error:", err);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-    
-    toast.success("Account created! You can now sign in.");
-    navigate("/signin");
   };
 
   if (loading) {

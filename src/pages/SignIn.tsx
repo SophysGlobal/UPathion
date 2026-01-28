@@ -73,11 +73,13 @@ const SignIn = () => {
       if (error) {
         console.error("Sign-in error:", error);
         let errorMessage = "Failed to sign in";
+        let shouldRedirectToConfirmation = false;
 
         if (error.message.includes("Invalid login credentials")) {
           errorMessage = "Invalid email or password";
         } else if (error.message.includes("Email not confirmed")) {
           errorMessage = "Please confirm your email before signing in";
+          shouldRedirectToConfirmation = true;
         } else if (error.message.includes("Too many requests")) {
           errorMessage = "Too many attempts. Please try again later";
         } else if (error.message) {
@@ -87,6 +89,11 @@ const SignIn = () => {
         setError(errorMessage);
         toast.error(errorMessage);
         setIsLoading(false);
+        
+        if (shouldRedirectToConfirmation) {
+          // Redirect to confirmation page so user can resend email
+          navigate("/email-confirmation", { state: { email: trimmedEmail } });
+        }
         return;
       }
 
