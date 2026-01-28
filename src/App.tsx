@@ -10,6 +10,8 @@ import AuthGate from "@/components/AuthGate";
 import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
+import EmailConfirmation from "./pages/EmailConfirmation";
+import AuthCallback from "./pages/AuthCallback";
 import PasswordReset from "./pages/PasswordReset";
 import UpdatePassword from "./pages/UpdatePassword";
 import NameSetup from "./pages/onboarding/NameSetup";
@@ -55,6 +57,8 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/signin" element={<SignIn />} />
                   <Route path="/signup" element={<SignUp />} />
+                  <Route path="/email-confirmation" element={<EmailConfirmation />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/password-reset" element={<PasswordReset />} />
                   <Route path="/update-password" element={<UpdatePassword />} />
                   <Route path="/onboarding/name" element={<NameSetup />} />
