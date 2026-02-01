@@ -211,20 +211,18 @@ const UserProfile = () => {
         <div className="gradient-border animate-fade-in">
           <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className={`w-24 h-24 rounded-full ${user.avatarColor || 'bg-primary/20'} flex items-center justify-center`}>
+              <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center">
                 <User className="w-12 h-12 text-primary" />
               </div>
             </div>
-            <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
+            <h2 className="text-xl font-bold text-foreground">{profile.display_name}</h2>
+            {profile.username && (
+              <p className="text-sm text-muted-foreground mt-1">@{profile.username}</p>
+            )}
             <div className="flex items-center justify-center gap-2 mt-2">
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
-                {user.role}
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(profile.school_type)}`}>
+                {roleLabel}
               </span>
-              {user.badge && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-muted-foreground">
-                  {user.badge}
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -242,16 +240,73 @@ const UserProfile = () => {
         </div>
 
         {/* School Info */}
-        <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.08s', animationFillMode: 'both' }}>
-          <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">Education</h3>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                {user.school.toLowerCase().includes('university') || user.school.toLowerCase().includes('college') 
-                  ? <GraduationCap className="w-5 h-5 text-primary" />
-                  : <School className="w-5 h-5 text-primary" />
-                }
+        {profile.school_name && (
+          <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.08s', animationFillMode: 'both' }}>
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Education</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <SchoolIcon className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-foreground truncate">{profile.school_name}</p>
+                  {profile.grade_or_year && (
+                    <p className="text-sm text-muted-foreground">{profile.grade_or_year}</p>
+                  )}
+                </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bio */}
+        {profile.bio && (
+          <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.12s', animationFillMode: 'both' }}>
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-medium text-foreground">About</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {profile.bio}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Major */}
+        {profile.major && (
+          <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.16s', animationFillMode: 'both' }}>
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-accent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">Major(s)</p>
+                  <p className="font-medium text-foreground">{profile.major}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Aspirational School */}
+        {profile.aspirational_school && (
+          <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.20s', animationFillMode: 'both' }}>
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">Dream School</p>
+                  <p className="font-medium text-foreground truncate">{profile.aspirational_school}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
               <div>
                 <p className="font-medium text-foreground">{user.school}</p>
                 {user.badge && (
