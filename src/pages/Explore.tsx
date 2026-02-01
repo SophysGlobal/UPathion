@@ -4,6 +4,7 @@ import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { Search, Filter, Users, BookOpen, Calendar, MapPin, UserPlus, User, Clock, Bookmark } from "lucide-react";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,10 @@ const Explore = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ExploreTab>('people');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // User profile preview state
+  const [selectedPerson, setSelectedPerson] = useState<SeedPerson | null>(null);
+  const [userSheetOpen, setUserSheetOpen] = useState(false);
 
   const tabs: { key: ExploreTab; icon: typeof Users; label: string }[] = [
     { key: 'people', icon: Users, label: 'People' },
@@ -63,11 +68,13 @@ const Explore = () => {
       p.type.toLowerCase().includes(searchQuery.toLowerCase())
     ), [places, searchQuery]);
 
-  const handleViewProfile = (person: SeedPerson) => {
-    navigate(`/user/${person.id}`);
+  const handleUserClick = (person: SeedPerson) => {
+    setSelectedPerson(person);
+    setUserSheetOpen(true);
   };
 
-  const handleConnect = (person: SeedPerson) => {
+  const handleConnect = (e: React.MouseEvent, person: SeedPerson) => {
+    e.stopPropagation();
     toast.success(`Connection request sent to ${person.name}!`);
   };
 
@@ -113,27 +120,24 @@ const Explore = () => {
     return (
       <div className="space-y-3">
         {filteredPeople.map((person, index) => (
-          <div 
+          <button 
             key={person.id}
-            className="gradient-border animate-fade-in"
+            onClick={() => handleUserClick(person)}
+            className="w-full gradient-border animate-fade-in text-left"
             style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
           >
-            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 hover:bg-secondary/50 transition-colors">
               <div className="flex items-start gap-3">
-                <button
-                  onClick={() => handleViewProfile(person)}
-                  className={`w-12 h-12 rounded-full ${person.avatarColor} flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity`}
+                <div
+                  className={`w-12 h-12 rounded-full ${person.avatarColor} flex items-center justify-center flex-shrink-0`}
                 >
                   <User className="w-6 h-6 text-primary" />
-                </button>
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button 
-                      onClick={() => handleViewProfile(person)}
-                      className="font-medium text-foreground hover:underline"
-                    >
+                    <span className="font-medium text-foreground">
                       {person.name}
-                    </button>
+                    </span>
                     {person.badge && (
                       <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent text-xs font-medium">
                         {person.badge}
@@ -146,7 +150,7 @@ const Explore = () => {
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={() => handleConnect(person)}
+                  onClick={(e) => handleConnect(e, person)}
                   className="flex-shrink-0"
                 >
                   <UserPlus className="w-4 h-4 mr-1" />
@@ -154,7 +158,7 @@ const Explore = () => {
                 </Button>
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     );
@@ -358,6 +362,21 @@ const Explore = () => {
           {renderContent()}
         </div>
       </main>
+
+      {/* User Profile Bottom Sheet */}
+      <UserProfileBottomSheet
+        open={userSheetOpen}
+        onOpenChange={setUserSheetOpen}
+        userId={null}
+        seedUser={selectedPerson ? {
+          id: selectedPerson.id,
+          name: selectedPerson.name,
+          role: selectedPerson.role,
+          badge: selectedPerson.badge,
+          school: selectedPerson.school,
+          bio: selectedPerson.bio,
+        } : null}
+      />
 
       <PremiumChatFAB />
       <BottomNav />

@@ -4,16 +4,18 @@ import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
+import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 
 interface PostCardProps {
   post: SeedFeedPost;
   onSchoolClick: (schoolName: string) => void;
+  onUserClick: (authorName: string) => void;
   userSchool?: string;
 }
 
-const PostCard = memo(({ post, onSchoolClick, userSchool }: PostCardProps) => {
+const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCardProps) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -22,12 +24,20 @@ const PostCard = memo(({ post, onSchoolClick, userSchool }: PostCardProps) => {
       <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
         {/* Author Header */}
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+          <button 
+            onClick={() => onUserClick(post.authorName)}
+            className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center hover:opacity-80 transition-opacity"
+          >
             <User className="w-5 h-5 text-primary" />
-          </div>
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-foreground">{post.authorName}</span>
+              <button 
+                onClick={() => onUserClick(post.authorName)}
+                className="font-medium text-foreground hover:underline"
+              >
+                {post.authorName}
+              </button>
               {post.authorBadge && (
                 <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent text-xs font-medium">
                   {post.authorBadge}
@@ -108,7 +118,11 @@ const Feed = () => {
   const { profile } = useProfileCompletion();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [schoolSheetOpen, setSchoolSheetOpen] = useState(false);
+  
+  // User profile preview state
+  const [selectedUser, setSelectedUser] = useState<{ name: string; role?: string; badge?: string; school?: string } | null>(null);
+  const [userSheetOpen, setUserSheetOpen] = useState(false);
 
   const hasAspirationalSchool = !!profile?.aspirational_school;
   const userSchool = profile?.school_name || '';
@@ -140,7 +154,19 @@ const Feed = () => {
 
   const handleSchoolClick = (schoolName: string) => {
     setSelectedSchool(schoolName);
-    setSheetOpen(true);
+    setSchoolSheetOpen(true);
+  };
+
+  const handleUserClick = (authorName: string) => {
+    // Find post with this author to get more info
+    const post = posts.find(p => p.authorName === authorName);
+    setSelectedUser({
+      name: authorName,
+      role: post?.authorRole,
+      badge: post?.authorBadge,
+      school: post?.schoolName,
+    });
+    setUserSheetOpen(true);
   };
 
   const renderEmptyState = () => (
@@ -197,6 +223,7 @@ const Feed = () => {
               <PostCard 
                 post={post} 
                 onSchoolClick={handleSchoolClick}
+                onUserClick={handleUserClick}
                 userSchool={userSchool}
               />
             </div>
@@ -206,13 +233,27 @@ const Feed = () => {
 
       {/* School Bottom Sheet */}
       <SchoolBottomSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        open={schoolSheetOpen}
+        onOpenChange={setSchoolSheetOpen}
         school={selectedSchool ? { 
           name: selectedSchool, 
           type: selectedSchool.toLowerCase().includes('high') ? 'high_school' : 'university' 
         } : null}
         isOwnSchool={selectedSchool === userSchool}
+      />
+
+      {/* User Profile Bottom Sheet */}
+      <UserProfileBottomSheet
+        open={userSheetOpen}
+        onOpenChange={setUserSheetOpen}
+        userId={null}
+        seedUser={selectedUser ? {
+          id: selectedUser.name.toLowerCase().replace(/\s+/g, '-'),
+          name: selectedUser.name,
+          role: selectedUser.role,
+          badge: selectedUser.badge,
+          school: selectedUser.school,
+        } : null}
       />
 
       <PremiumChatFAB />
