@@ -397,6 +397,19 @@ const SchoolProfilePage = () => {
                 </div>
               </div>
             )}
+
+            {/* Data Source Attribution */}
+            {profile?.source_name && (
+              <div className="pt-2 border-t border-border/30">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Info className="w-3 h-3" />
+                  <span>
+                    Data from <span className="font-medium">{profile.source_name}</span>
+                    {profile.enrichment_status === 'enriched' && ' • Verified'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>

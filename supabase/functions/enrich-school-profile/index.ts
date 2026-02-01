@@ -68,7 +68,10 @@ function generateChipsFromPrograms(scorecardData: ScorecardSchool): string[] {
   const chips: string[] = [];
   
   // Add based on program availability and carnegie classification
-  const carnegie = scorecardData['school.carnegie_basic'];
+  const carnegieRaw = scorecardData['school.carnegie_basic'];
+  // Ensure carnegie is a string (API may return number)
+  const carnegie = carnegieRaw != null ? String(carnegieRaw) : null;
+  
   if (carnegie) {
     if (carnegie.includes('Research')) chips.push('Research University');
     if (carnegie.includes('Doctoral')) chips.push('Doctoral Programs');
