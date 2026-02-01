@@ -18,6 +18,9 @@ import {
   BookOpen,
   TrendingUp,
   Building2,
+  DollarSign,
+  Percent,
+  Info,
 } from "lucide-react";
 
 interface SchoolData {
@@ -41,17 +44,53 @@ interface SchoolProfile {
   founded_year: number | null;
   enrollment: number | null;
   data_source: string | null;
+  // Enrichment fields
+  acceptance_rate: number | null;
+  student_faculty_ratio: string | null;
+  graduation_rate: number | null;
+  programs_count: number | null;
+  tuition_in_state: number | null;
+  tuition_out_of_state: number | null;
+  ranking: string | null;
+  ranking_source: string | null;
+  carnegie_classification: string | null;
+  ownership_type: string | null;
+  locale: string | null;
+  source_name: string | null;
+  source_url: string | null;
+  enrichment_status: string | null;
+  about_source: string | null;
 }
+
+// Format large numbers with commas
+const formatNumber = (num: number | null): string | null => {
+  if (num === null || num === undefined) return null;
+  return num.toLocaleString();
+};
+
+// Format currency
+const formatCurrency = (num: number | null): string | null => {
+  if (num === null || num === undefined) return null;
+  return `$${num.toLocaleString()}`;
+};
+
+// Format percentage
+const formatPercentage = (num: number | null): string | null => {
+  if (num === null || num === undefined) return null;
+  return `${num}%`;
+};
 
 // Stat card component
 const StatCard = ({ 
   icon: Icon, 
   label, 
-  value 
+  value,
+  subValue,
 }: { 
   icon: React.ElementType; 
   label: string; 
   value: string | number | null;
+  subValue?: string | null;
 }) => (
   <div className="bg-card/80 backdrop-blur-sm rounded-xl p-4 border border-border/50">
     <div className="flex items-center gap-2 mb-2">
@@ -59,8 +98,11 @@ const StatCard = ({
       <span className="text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
     </div>
     <p className="text-xl font-semibold text-foreground">
-      {value ?? "—"}
+      {value !== null && value !== undefined ? value : "N/A"}
     </p>
+    {subValue && (
+      <p className="text-xs text-muted-foreground mt-1">{subValue}</p>
+    )}
   </div>
 );
 
@@ -170,23 +212,23 @@ const SchoolProfilePage = () => {
     .filter(Boolean)
     .join(", ");
 
-  // Define stats based on school type
+  // Define stats based on school type - using real enriched fields
   const statsConfig = isUniversity
     ? [
-        { icon: Users, label: "Enrollment", value: profile?.enrollment },
-        { icon: Calendar, label: "Founded", value: profile?.founded_year },
-        { icon: TrendingUp, label: "Acceptance Rate", value: profile?.stats?.acceptanceRate },
-        { icon: Award, label: "Ranking", value: profile?.stats?.ranking },
-        { icon: BookOpen, label: "Programs", value: profile?.stats?.programsCount },
-        { icon: Building2, label: "Student:Faculty", value: profile?.stats?.studentFacultyRatio },
+        { icon: Users, label: "Enrollment", value: formatNumber(profile?.enrollment ?? null) },
+        { icon: TrendingUp, label: "Acceptance Rate", value: formatPercentage(profile?.acceptance_rate ?? null) },
+        { icon: Award, label: "Ranking", value: profile?.ranking ?? null, subValue: profile?.ranking_source ?? null },
+        { icon: BookOpen, label: "Programs", value: formatNumber(profile?.programs_count ?? null) },
+        { icon: Building2, label: "Student:Faculty", value: profile?.student_faculty_ratio ?? null },
+        { icon: Percent, label: "Graduation Rate", value: formatPercentage(profile?.graduation_rate ?? null) },
+        { icon: DollarSign, label: "Tuition (In-State)", value: formatCurrency(profile?.tuition_in_state ?? null) },
+        { icon: DollarSign, label: "Tuition (Out-of-State)", value: formatCurrency(profile?.tuition_out_of_state ?? null) },
       ]
     : [
-        { icon: Users, label: "Students", value: profile?.enrollment },
-        { icon: Calendar, label: "Founded", value: profile?.founded_year },
-        { icon: TrendingUp, label: "Graduation Rate", value: profile?.stats?.graduationRate },
-        { icon: BookOpen, label: "AP Courses", value: profile?.stats?.apCourses },
-        { icon: Building2, label: "Student:Teacher", value: profile?.stats?.studentTeacherRatio },
-        { icon: Award, label: "Rating", value: profile?.stats?.rating },
+        { icon: Users, label: "Students", value: formatNumber(profile?.enrollment ?? null) },
+        { icon: Calendar, label: "Founded", value: profile?.founded_year ?? null },
+        { icon: Percent, label: "Graduation Rate", value: formatPercentage(profile?.graduation_rate ?? null) },
+        { icon: Building2, label: "Student:Teacher", value: profile?.student_faculty_ratio ?? null },
       ];
 
   return (
@@ -279,8 +321,8 @@ const SchoolProfilePage = () => {
                 Key Statistics
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                {statsConfig.map(({ icon, label, value }) => (
-                  <StatCard key={label} icon={icon} label={label} value={value ?? null} />
+                {statsConfig.map(({ icon, label, value, subValue }) => (
+                  <StatCard key={label} icon={icon} label={label} value={value ?? null} subValue={subValue} />
                 ))}
               </div>
             </div>
