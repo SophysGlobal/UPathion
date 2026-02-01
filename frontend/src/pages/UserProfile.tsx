@@ -1,8 +1,11 @@
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   ChevronLeft, 
   User, 
@@ -13,7 +16,9 @@ import {
   Ban,
   School,
   GraduationCap,
-  BookOpen
+  BookOpen,
+  Calendar,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -22,40 +27,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { USE_SEED_DATA, seedPeople, seedConversations } from "@/data/seedData";
 
-// Find user by ID from seed data
-const findUserById = (userId: string) => {
-  // Check in seedPeople
-  const person = seedPeople.find(p => p.id === userId);
-  if (person) {
-    return {
-      id: person.id,
-      name: person.name,
-      role: person.role,
-      badge: person.badge,
-      school: person.school,
-      bio: person.bio,
-      avatarColor: person.avatarColor,
-    };
-  }
-
-  // Check in seedConversations
-  const conv = seedConversations.find(c => c.id === userId || c.participantName.toLowerCase().replace(/\s+/g, '-') === userId);
-  if (conv) {
-    return {
-      id: conv.id,
-      name: conv.participantName,
-      role: conv.participantRole,
-      badge: conv.participantBadge,
-      school: conv.participantSchool,
-      bio: '',
-      avatarColor: 'bg-primary/20',
-    };
-  }
-
-  return null;
-};
+interface UserProfile {
+  id: string;
+  display_name: string;
+  username?: string;
+  bio?: string;
+  school_name?: string;
+  school_type?: string;
+  grade_or_year?: string;
+  major?: string;
+  aspirational_school?: string;
+}
 
 const getRoleBadgeColor = (role: string) => {
   switch (role) {
