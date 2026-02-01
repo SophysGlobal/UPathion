@@ -199,44 +199,113 @@ export type Database = {
       }
       school_profiles: {
         Row: {
+          about_source: string | null
+          about_source_url: string | null
           about_text: string | null
+          acceptance_rate: number | null
+          carnegie_classification: string | null
           chips: string[] | null
           created_at: string
           data_source: string | null
+          enrichment_error: string | null
+          enrichment_status: string | null
           enrollment: number | null
           founded_year: number | null
+          graduation_rate: number | null
           id: string
+          ipeds_id: string | null
+          last_enrichment_attempt: string | null
+          locale: string | null
+          nces_id: string | null
+          ownership_type: string | null
+          programs_count: number | null
+          ranking: string | null
+          ranking_source: string | null
+          religious_affiliation: string | null
           school_id: string
+          scorecard_id: number | null
+          source_name: string | null
+          source_retrieved_at: string | null
+          source_url: string | null
           stats: Json | null
+          student_faculty_ratio: string | null
           tagline: string | null
+          tuition_in_state: number | null
+          tuition_out_of_state: number | null
           updated_at: string
           website_url: string | null
         }
         Insert: {
+          about_source?: string | null
+          about_source_url?: string | null
           about_text?: string | null
+          acceptance_rate?: number | null
+          carnegie_classification?: string | null
           chips?: string[] | null
           created_at?: string
           data_source?: string | null
+          enrichment_error?: string | null
+          enrichment_status?: string | null
           enrollment?: number | null
           founded_year?: number | null
+          graduation_rate?: number | null
           id?: string
+          ipeds_id?: string | null
+          last_enrichment_attempt?: string | null
+          locale?: string | null
+          nces_id?: string | null
+          ownership_type?: string | null
+          programs_count?: number | null
+          ranking?: string | null
+          ranking_source?: string | null
+          religious_affiliation?: string | null
           school_id: string
+          scorecard_id?: number | null
+          source_name?: string | null
+          source_retrieved_at?: string | null
+          source_url?: string | null
           stats?: Json | null
+          student_faculty_ratio?: string | null
           tagline?: string | null
+          tuition_in_state?: number | null
+          tuition_out_of_state?: number | null
           updated_at?: string
           website_url?: string | null
         }
         Update: {
+          about_source?: string | null
+          about_source_url?: string | null
           about_text?: string | null
+          acceptance_rate?: number | null
+          carnegie_classification?: string | null
           chips?: string[] | null
           created_at?: string
           data_source?: string | null
+          enrichment_error?: string | null
+          enrichment_status?: string | null
           enrollment?: number | null
           founded_year?: number | null
+          graduation_rate?: number | null
           id?: string
+          ipeds_id?: string | null
+          last_enrichment_attempt?: string | null
+          locale?: string | null
+          nces_id?: string | null
+          ownership_type?: string | null
+          programs_count?: number | null
+          ranking?: string | null
+          ranking_source?: string | null
+          religious_affiliation?: string | null
           school_id?: string
+          scorecard_id?: number | null
+          source_name?: string | null
+          source_retrieved_at?: string | null
+          source_url?: string | null
           stats?: Json | null
+          student_faculty_ratio?: string | null
           tagline?: string | null
+          tuition_in_state?: number | null
+          tuition_out_of_state?: number | null
           updated_at?: string
           website_url?: string | null
         }
