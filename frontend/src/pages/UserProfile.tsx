@@ -40,28 +40,65 @@ interface UserProfile {
   aspirational_school?: string;
 }
 
-const getRoleBadgeColor = (role: string) => {
-  switch (role) {
-    case 'Student': return 'bg-primary/20 text-primary';
-    case 'Teacher': return 'bg-blue-500/20 text-blue-400';
-    case 'Counselor': return 'bg-green-500/20 text-green-400';
+const getRoleBadgeColor = (schoolType?: string) => {
+  if (!schoolType) return 'bg-primary/20 text-primary';
+  switch (schoolType) {
+    case 'high_school': return 'bg-blue-500/20 text-blue-400';
+    case 'college':
+    case 'university': return 'bg-primary/20 text-primary';
     default: return 'bg-secondary text-muted-foreground';
+  }
+};
+
+const getRoleLabel = (schoolType?: string) => {
+  if (!schoolType) return 'Student';
+  switch (schoolType) {
+    case 'high_school': return 'High School Student';
+    case 'college':
+    case 'university': return 'College Student';
+    default: return 'Student';
   }
 };
 
 const UserProfile = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const user = USE_SEED_DATA && userId ? findUserById(userId) : null;
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, display_name, username, bio, school_name, school_type, grade_or_year, major, aspirational_school')
+          .eq('id', userId)
+          .single();
+
+        if (error) throw error;
+        setProfile(data);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [userId]);
 
   const handleMessage = () => {
-    toast.success(`Starting conversation with ${user?.name}`);
+    toast.success(`Starting conversation with ${profile?.display_name}`);
     navigate('/messages');
   };
 
   const handleConnect = () => {
-    toast.success(`Connection request sent to ${user?.name}!`);
+    toast.success(`Connection request sent to ${profile?.display_name}!`);
   };
 
   const handleReport = () => {
@@ -72,7 +109,41 @@ const UserProfile = () => {
     toast.info('Block functionality coming soon');
   };
 
-  if (!user) {
+  const roleLabel = getRoleLabel(profile?.school_type);
+  const isHighSchool = profile?.school_type === 'high_school';
+  const SchoolIcon = isHighSchool ? School : GraduationCap;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background/80 pb-20 relative">
+        <AnimatedBackground />
+        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+          <div className="flex items-center gap-4 px-6 py-3">
+            <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors">
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">Profile</h1>
+          </div>
+        </header>
+        <main className="relative z-10 px-6 py-6 space-y-6">
+          <div className="gradient-border animate-fade-in">
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
+              <Skeleton className="w-24 h-24 rounded-full mx-auto mb-4" />
+              <Skeleton className="h-6 w-48 mx-auto mb-2" />
+              <Skeleton className="h-4 w-32 mx-auto" />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className="h-12 flex-1" />
+            <Skeleton className="h-12 flex-1" />
+          </div>
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (!profile) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
         <AnimatedBackground />
