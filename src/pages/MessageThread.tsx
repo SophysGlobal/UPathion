@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { Button } from "@/components/ui/button";
 import { 
   ChevronLeft, 
@@ -36,6 +37,9 @@ const MessageThread = () => {
   const [inputValue, setInputValue] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  
+  // User profile preview state
+  const [userSheetOpen, setUserSheetOpen] = useState(false);
 
   const { conversations, markAsRead } = useConversations();
   const { 
@@ -112,7 +116,7 @@ const MessageThread = () => {
 
   const handleViewProfile = () => {
     if (otherParticipant) {
-      navigate(`/user/${otherParticipant.user_id}`);
+      setUserSheetOpen(true);
     }
   };
 
@@ -360,6 +364,14 @@ const MessageThread = () => {
           </Button>
         </div>
       </div>
+
+      {/* User Profile Bottom Sheet */}
+      <UserProfileBottomSheet
+        open={userSheetOpen}
+        onOpenChange={setUserSheetOpen}
+        userId={otherParticipant?.user_id || null}
+        seedUser={null}
+      />
 
       <BottomNav />
     </div>

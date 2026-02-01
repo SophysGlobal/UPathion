@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
 import { 
@@ -34,6 +35,10 @@ const Messages = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   
+  // User profile preview state
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [userSheetOpen, setUserSheetOpen] = useState(false);
+  
   const {
     conversations,
     loading,
@@ -58,7 +63,8 @@ const Messages = () => {
 
   const handleViewProfile = (e: React.MouseEvent, participantId: string) => {
     e.stopPropagation();
-    navigate(`/user/${participantId}`);
+    setSelectedUserId(participantId);
+    setUserSheetOpen(true);
   };
 
   const handleToggleMute = async (e: React.MouseEvent, conversationId: string) => {
@@ -270,6 +276,14 @@ const Messages = () => {
           </div>
         )}
       </main>
+
+      {/* User Profile Bottom Sheet */}
+      <UserProfileBottomSheet
+        open={userSheetOpen}
+        onOpenChange={setUserSheetOpen}
+        userId={selectedUserId}
+        seedUser={null}
+      />
 
       <PremiumChatFAB />
       <BottomNav />

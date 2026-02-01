@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { ChevronLeft, User, UserPlus, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,9 +19,19 @@ const getRoleBadgeColor = (role: string) => {
   }
 };
 
-const MemberCard = ({ member, onConnect }: { member: SeedCommunityMember; onConnect: () => void }) => (
-  <div className="gradient-border">
-    <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+interface MemberCardProps {
+  member: SeedCommunityMember;
+  schoolName: string;
+  onUserClick: () => void;
+  onConnect: () => void;
+}
+
+const MemberCard = ({ member, schoolName, onUserClick, onConnect }: MemberCardProps) => (
+  <button 
+    onClick={onUserClick}
+    className="w-full gradient-border text-left"
+  >
+    <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 hover:bg-secondary/50 transition-colors">
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
           <User className="w-6 h-6 text-primary" />
@@ -28,7 +39,7 @@ const MemberCard = ({ member, onConnect }: { member: SeedCommunityMember; onConn
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-medium text-foreground">{member.name}</h3>
+            <span className="font-medium text-foreground">{member.name}</span>
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getRoleBadgeColor(member.role)}`}>
               {member.role}
             </span>
@@ -47,7 +58,10 @@ const MemberCard = ({ member, onConnect }: { member: SeedCommunityMember; onConn
           variant="outline"
           size="sm"
           className="flex-1"
-          onClick={onConnect}
+          onClick={(e) => {
+            e.stopPropagation();
+            onConnect();
+          }}
         >
           <UserPlus className="w-4 h-4 mr-1" />
           Connect
@@ -55,19 +69,26 @@ const MemberCard = ({ member, onConnect }: { member: SeedCommunityMember; onConn
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => toast.info("Messaging coming soon!")}
+          onClick={(e) => {
+            e.stopPropagation();
+            toast.info("Messaging coming soon!");
+          }}
         >
           <MessageCircle className="w-4 h-4" />
         </Button>
       </div>
     </div>
-  </div>
+  </button>
 );
 
 const SchoolCommunity = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const schoolName = searchParams.get('school') || 'School';
+  
+  // User profile preview state
+  const [selectedMember, setSelectedMember] = useState<SeedCommunityMember | null>(null);
+  const [userSheetOpen, setUserSheetOpen] = useState(false);
   
   const members = useMemo(() => {
     if (!USE_SEED_DATA) return [];
@@ -76,6 +97,11 @@ const SchoolCommunity = () => {
 
   const handleConnect = (member: SeedCommunityMember) => {
     toast.success(`Connection request sent to ${member.name}!`);
+  };
+
+  const handleUserClick = (member: SeedCommunityMember) => {
+    setSelectedMember(member);
+    setUserSheetOpen(true);
   };
 
   const renderEmptyState = () => (
@@ -134,11 +160,31 @@ const SchoolCommunity = () => {
               className="animate-fade-in"
               style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
             >
-              <MemberCard member={member} onConnect={() => handleConnect(member)} />
+              <MemberCard 
+                member={member} 
+                schoolName={schoolName}
+                onUserClick={() => handleUserClick(member)}
+                onConnect={() => handleConnect(member)} 
+              />
             </div>
           ))
         )}
       </main>
+
+      {/* User Profile Bottom Sheet */}
+      <UserProfileBottomSheet
+        open={userSheetOpen}
+        onOpenChange={setUserSheetOpen}
+        userId={null}
+        seedUser={selectedMember ? {
+          id: selectedMember.id,
+          name: selectedMember.name,
+          role: selectedMember.role.charAt(0).toUpperCase() + selectedMember.role.slice(1),
+          badge: selectedMember.gradeOrPosition,
+          school: schoolName,
+          bio: selectedMember.bio,
+        } : null}
+      />
 
       <PremiumChatFAB />
       <BottomNav />
