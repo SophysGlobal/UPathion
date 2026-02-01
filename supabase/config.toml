@@ -1,1 +1,19 @@
 project_id = "bnbzduurgsdyfylywyhr"
+
+[functions.premium-chat]
+verify_jwt = false
+
+[functions.search-schools]
+verify_jwt = false
+
+[functions.seed-schools]
+verify_jwt = false
+
+[functions.get-school-profile]
+verify_jwt = false
+
+[functions.enrich-school-profile]
+verify_jwt = false
+
+[functions.batch-enrich-schools]
+verify_jwt = false
