@@ -12,13 +12,29 @@ interface AuthGateProps {
 // Routes that don't require authentication
 const PUBLIC_ROUTES = ['/', '/signin', '/signup', '/email-confirmation', '/auth/callback', '/password-reset', '/update-password'];
 
-// Onboarding routes
+// Onboarding routes (subscription is part of onboarding for new users)
 const ONBOARDING_ROUTES = [
   '/onboarding/name',
   '/onboarding/name-confirm',
   '/onboarding/school',
   '/onboarding/aspirational-school',
   '/onboarding/school-confirm',
+  '/subscription',
+];
+
+// Routes that authenticated users can ALWAYS access regardless of onboarding status
+// These are in-app pages that should never redirect to onboarding/registration
+const PROTECTED_APP_ROUTES = [
+  '/school-community',
+  '/school/',
+  '/user/',
+  '/messages',
+  '/feed',
+  '/explore',
+  '/dashboard',
+  '/profile',
+  '/settings',
+  '/plan-management',
 ];
 
 const AuthGate = ({ children }: AuthGateProps) => {
@@ -50,6 +66,9 @@ const AuthGate = ({ children }: AuthGateProps) => {
   const isPublicRoute = PUBLIC_ROUTES.includes(currentPath);
   const isOnboardingRoute = ONBOARDING_ROUTES.includes(currentPath);
   const isAuthRoute = currentPath === '/signin' || currentPath === '/signup';
+  
+  // Check if current path is a protected app route (should never redirect to onboarding for logged-in users)
+  const isProtectedAppRoute = PROTECTED_APP_ROUTES.some(route => currentPath.startsWith(route));
 
   // Calculate loading state - only wait for dependent queries when user exists
   const isLoading = authLoading || (user && (profileLoading || adminLoading));
@@ -97,8 +116,14 @@ const AuthGate = ({ children }: AuthGateProps) => {
     }
 
     // Admin QA mode: force questionnaire every session
+    // BUT: If admin is on a protected app route, allow access (for QA purposes)
     if (isAdmin && !adminQuestionnaireDone) {
-      // If not on onboarding route, redirect to start questionnaire
+      // Allow admin to access protected app routes for QA even before questionnaire
+      if (isProtectedAppRoute) {
+        setHasRouted(true);
+        return;
+      }
+      // If not on onboarding route or protected app route, redirect to start questionnaire
       if (!isOnboardingRoute) {
         navigate('/onboarding/name', { replace: true });
       }
@@ -122,6 +147,7 @@ const AuthGate = ({ children }: AuthGateProps) => {
     currentPath,
     isPublicRoute,
     isOnboardingRoute,
+    isProtectedAppRoute,
     isAuthRoute,
     navigate,
   ]);

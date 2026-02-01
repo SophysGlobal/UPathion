@@ -48,10 +48,12 @@ const SchoolConfirm = () => {
       // Signal to AuthGate that admin questionnaire is done for this session
       window.dispatchEvent(new CustomEvent('admin-questionnaire-complete'));
 
-      toast.success("Welcome to UPathion!", {
-        description: "Your profile is all set up. Let's explore!",
+      toast.success("Profile saved!", {
+        description: "Just one more step...",
       });
-      navigate("/dashboard");
+      
+      // Navigate to subscription screen after onboarding (paywall)
+      navigate("/subscription");
     } catch (error: any) {
       console.error('Error saving profile:', error);
       if (error.message?.includes('duplicate key') || error.message?.includes('unique')) {
