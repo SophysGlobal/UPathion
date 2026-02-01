@@ -4,16 +4,18 @@ import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
+import UserProfileSheet from "@/components/UserProfileSheet";
 import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 
 interface PostCardProps {
   post: SeedFeedPost;
   onSchoolClick: (schoolName: string) => void;
+  onUserClick: (userId: string) => void;
   userSchool?: string;
 }
 
-const PostCard = memo(({ post, onSchoolClick, userSchool }: PostCardProps) => {
+const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCardProps) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -22,12 +24,20 @@ const PostCard = memo(({ post, onSchoolClick, userSchool }: PostCardProps) => {
       <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
         {/* Author Header */}
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+          <button
+            onClick={() => onUserClick(post.authorId)}
+            className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 transition-colors"
+          >
             <User className="w-5 h-5 text-primary" />
-          </div>
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-medium text-foreground">{post.authorName}</span>
+              <button
+                onClick={() => onUserClick(post.authorId)}
+                className="font-medium text-foreground hover:text-primary transition-colors"
+              >
+                {post.authorName}
+              </button>
               {post.authorBadge && (
                 <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent text-xs font-medium">
                   {post.authorBadge}
@@ -108,7 +118,9 @@ const Feed = () => {
   const { profile } = useProfileCompletion();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [schoolSheetOpen, setSchoolSheetOpen] = useState(false);
+  const [userSheetOpen, setUserSheetOpen] = useState(false);
 
   const hasAspirationalSchool = !!profile?.aspirational_school;
   const userSchool = profile?.school_name || '';
@@ -140,7 +152,12 @@ const Feed = () => {
 
   const handleSchoolClick = (schoolName: string) => {
     setSelectedSchool(schoolName);
-    setSheetOpen(true);
+    setSchoolSheetOpen(true);
+  };
+
+  const handleUserClick = (userId: string) => {
+    setSelectedUserId(userId);
+    setUserSheetOpen(true);
   };
 
   const renderEmptyState = () => (
