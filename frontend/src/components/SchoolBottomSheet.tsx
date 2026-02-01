@@ -22,6 +22,14 @@ interface SchoolInfo {
   ranking?: string;
 }
 
+interface SchoolProfileData {
+  enrollment: number | null;
+  ranking: string | null;
+  ranking_source: string | null;
+  chips: string[] | null;
+  about_text: string | null;
+}
+
 interface SchoolBottomSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -33,30 +41,58 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
   const navigate = useNavigate();
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [isLoadingId, setIsLoadingId] = useState(false);
+  const [profileData, setProfileData] = useState<SchoolProfileData | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   
-  // Look up the school ID when the sheet opens
+  // Look up the school ID and profile data when the sheet opens
   useEffect(() => {
-    const findSchoolId = async () => {
+    const findSchoolAndProfile = async () => {
       if (!school?.name || !open) return;
       
       setIsLoadingId(true);
+      setIsLoadingProfile(true);
       try {
-        const { data } = await supabase
+        // First find the school
+        const { data: schoolData } = await supabase
           .from('schools')
           .select('id')
           .ilike('name', school.name)
           .maybeSingle();
         
-        setSchoolId(data?.id || null);
+        setSchoolId(schoolData?.id || null);
+        
+        // If we found the school, fetch its profile
+        if (schoolData?.id) {
+          const { data: profile } = await supabase
+            .from('school_profiles')
+            .select('enrollment, ranking, ranking_source, chips, about_text')
+            .eq('school_id', schoolData.id)
+            .maybeSingle();
+          
+          setProfileData(profile);
+          
+          // If no profile exists, trigger enrichment
+          if (!profile) {
+            // Trigger async enrichment
+            const supabaseUrl = 'https://bnbzduurgsdyfylywyhr.supabase.co';
+            fetch(`${supabaseUrl}/functions/v1/enrich-school-profile`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ schoolId: schoolData.id }),
+            }).catch(err => console.error('Enrichment trigger failed:', err));
+          }
+        }
       } catch (err) {
         console.error('Error finding school:', err);
         setSchoolId(null);
+        setProfileData(null);
       } finally {
         setIsLoadingId(false);
+        setIsLoadingProfile(false);
       }
     };
     
-    findSchoolId();
+    findSchoolAndProfile();
   }, [school?.name, open]);
   
   if (!school) return null;
@@ -64,6 +100,27 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
   const isHighSchool = school.type === 'high_school';
   const typeLabel = isHighSchool ? 'High School' : 'University';
   
+  // Get students display value from profile data or fallback to props
+  const getStudentsDisplay = () => {
+    if (isLoadingProfile) return null; // Will show skeleton
+    if (profileData?.enrollment) {
+      return profileData.enrollment.toLocaleString();
+    }
+    if (school.studentCount) return school.studentCount;
+    return "N/A";
+  };
+  
+  // Get ranking display value from profile data or fallback to props
+  const getRankingDisplay = () => {
+    if (isLoadingProfile) return null; // Will show skeleton
+    if (profileData?.ranking) return profileData.ranking;
+    if (school.ranking) return school.ranking;
+    return "N/A";
+  };
+  
+  const studentsValue = getStudentsDisplay();
+  const rankingValue = getRankingDisplay();
+
   const handleConnect = () => {
     onOpenChange(false);
     navigate(`/school-community?school=${encodeURIComponent(school.name)}`);
@@ -77,11 +134,11 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
   };
 
   // Generate a basic description if not provided
-  const description = school.description || 
+  const description = profileData?.about_text || school.description || 
     `${school.name} is a distinguished educational institution committed to academic excellence and student success.`;
 
-  // Generate tags based on school type if not provided
-  const tags = school.tags || (isHighSchool 
+  // Use chips from profile data or generate tags based on school type
+  const tags = profileData?.chips || school.tags || (isHighSchool 
     ? ["Academics", "Athletics", "Arts", "Clubs", "College Prep"]
     : ["Research", "STEM", "Liberal Arts", "Internships", "Student Life"]);
 
@@ -118,24 +175,32 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
             </div>
           </div>
 
-          {/* Quick Stats */}
+          {/* Quick Stats - Always show Students and Ranking */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-lg bg-secondary/50 flex items-center gap-3">
               <Users className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-xs text-muted-foreground">Students</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {school.studentCount || "—"}
-                </p>
+                {isLoadingProfile ? (
+                  <Skeleton className="h-4 w-16 mt-1" />
+                ) : (
+                  <p className="text-sm font-semibold text-foreground">
+                    {studentsValue}
+                  </p>
+                )}
               </div>
             </div>
             <div className="p-3 rounded-lg bg-secondary/50 flex items-center gap-3">
               <Award className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-xs text-muted-foreground">Ranking</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {school.ranking || "—"}
-                </p>
+                {isLoadingProfile ? (
+                  <Skeleton className="h-4 w-16 mt-1" />
+                ) : (
+                  <p className="text-sm font-semibold text-foreground">
+                    {rankingValue}
+                  </p>
+                )}
               </div>
             </div>
           </div>
