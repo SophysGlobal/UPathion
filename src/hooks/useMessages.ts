@@ -16,7 +16,7 @@ export interface Message {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
-  } | null;
+  };
 }
 
 export interface MessageReaction {
@@ -49,7 +49,7 @@ export interface ConversationParticipant {
     avatar_url: string | null;
     school_name: string | null;
     grade_or_year: string | null;
-  } | null;
+  };
 }
 
 export function useConversations() {

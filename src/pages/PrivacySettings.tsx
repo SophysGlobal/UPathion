@@ -23,19 +23,6 @@ import { toast } from "sonner";
 type ProfileVisibility = 'public' | 'school-only' | 'private';
 type MessagePermission = 'everyone' | 'school' | 'none';
 
-interface PrivacySettingsItem {
-  icon: React.ElementType;
-  label: string;
-  description?: string;
-  action: React.ReactNode;
-  onClick?: () => void;
-}
-
-interface PrivacySettingsSection {
-  title: string;
-  items: PrivacySettingsItem[];
-}
-
 const PrivacySettings = () => {
   const navigate = useNavigate();
   
@@ -73,7 +60,7 @@ const PrivacySettings = () => {
     toast.info("Report form coming soon");
   };
 
-  const sections: PrivacySettingsSection[] = [
+  const sections = [
     {
       title: "Profile Visibility",
       items: [

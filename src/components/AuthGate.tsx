@@ -21,34 +21,6 @@ const ONBOARDING_ROUTES = [
   '/onboarding/school-confirm',
 ];
 
-// Subscription route - part of onboarding flow but accessible to all authenticated users
-const SUBSCRIPTION_ROUTE = '/subscription';
-
-// Protected app routes that should always be accessible to authenticated users
-// These routes should NEVER redirect to onboarding
-const PROTECTED_APP_ROUTES = [
-  '/dashboard',
-  '/feed',
-  '/explore',
-  '/profile',
-  '/edit-profile',
-  '/settings',
-  '/plan-management',
-  '/settings/plan',
-  '/school-info',
-  '/school-community',
-  '/privacy-settings',
-  '/messages',
-  '/welcome',
-  // Dynamic routes patterns
-  '/school/',
-  '/group/',
-  '/event/',
-  '/place/',
-  '/messages/',
-  '/user/',
-];
-
 const AuthGate = ({ children }: AuthGateProps) => {
   const { user, loading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading, hasCompletedOnboarding } = useProfileCompletion();
@@ -78,8 +50,6 @@ const AuthGate = ({ children }: AuthGateProps) => {
   const isPublicRoute = PUBLIC_ROUTES.includes(currentPath);
   const isOnboardingRoute = ONBOARDING_ROUTES.includes(currentPath);
   const isAuthRoute = currentPath === '/signin' || currentPath === '/signup';
-  const isSubscriptionRoute = currentPath === SUBSCRIPTION_ROUTE;
-  const isProtectedAppRoute = PROTECTED_APP_ROUTES.some(route => currentPath.startsWith(route));
 
   // Calculate loading state - only wait for dependent queries when user exists
   const isLoading = authLoading || (user && (profileLoading || adminLoading));
@@ -101,7 +71,7 @@ const AuthGate = ({ children }: AuthGateProps) => {
     // User is authenticated
     // If on auth routes (signin/signup), redirect appropriately
     if (isAuthRoute) {
-      // Admin: go to questionnaire if not done
+      // Admin: go to questionnaire
       if (isAdmin && !adminQuestionnaireDone) {
         navigate('/onboarding/name', { replace: true });
       } else if (!isAdmin && !hasCompletedOnboarding) {
@@ -126,23 +96,12 @@ const AuthGate = ({ children }: AuthGateProps) => {
       return;
     }
 
-    // IMPORTANT FIX: Allow access to protected app routes for ALL authenticated users
-    // This fixes the bug where "Connect with students" redirected to registration
-    if (isProtectedAppRoute) {
-      // Authenticated users can always access app routes
-      setHasRouted(true);
-      return;
-    }
-
-    // Allow subscription route for authenticated users (part of onboarding or accessed from settings)
-    if (isSubscriptionRoute) {
-      setHasRouted(true);
-      return;
-    }
-
-    // Admin QA mode: force questionnaire every session ONLY if not on protected app routes
-    if (isAdmin && !adminQuestionnaireDone && !isOnboardingRoute && !isProtectedAppRoute) {
-      navigate('/onboarding/name', { replace: true });
+    // Admin QA mode: force questionnaire every session
+    if (isAdmin && !adminQuestionnaireDone) {
+      // If not on onboarding route, redirect to start questionnaire
+      if (!isOnboardingRoute) {
+        navigate('/onboarding/name', { replace: true });
+      }
       setHasRouted(true);
       return;
     }
@@ -164,8 +123,6 @@ const AuthGate = ({ children }: AuthGateProps) => {
     isPublicRoute,
     isOnboardingRoute,
     isAuthRoute,
-    isSubscriptionRoute,
-    isProtectedAppRoute,
     navigate,
   ]);
 

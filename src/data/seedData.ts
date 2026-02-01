@@ -10,7 +10,6 @@ export const USE_SEED_DATA = true;
 // ============================================
 export interface SeedFeedPost {
   id: string;
-  authorId?: string;
   authorName: string;
   authorRole?: string;
   authorBadge?: string;

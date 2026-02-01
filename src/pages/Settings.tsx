@@ -1,12 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
-import { usePremiumStatus } from "@/hooks/usePremiumStatus";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Switch } from "@/components/ui/switch";
-import { ChevronLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, Mail, Trash2, ChevronRight, Crown, CreditCard } from "lucide-react";
+import { ChevronLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, Mail, Trash2, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -58,26 +57,10 @@ const ThemeToggle = () => {
   );
 };
 
-interface SettingsItem {
-  icon: React.ElementType;
-  label: string;
-  description: string;
-  action: React.ReactNode;
-  onClick?: () => void;
-  destructive?: boolean;
-  premium?: boolean;
-}
-
-interface SettingsSection {
-  title: string;
-  items: SettingsItem[];
-}
-
 const Settings = () => {
   const navigate = useNavigate();
   const { theme, resolvedTheme } = useTheme();
   const { signOut } = useAuth();
-  const { isPremium, loading: premiumLoading } = usePremiumStatus();
   const [notifications, setNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
@@ -86,28 +69,7 @@ const Settings = () => {
     toast.error("Account deletion requires confirmation. Please contact support.");
   };
 
-  const handleSubscriptionClick = () => {
-    if (isPremium) {
-      navigate("/plan-management");
-    } else {
-      navigate("/subscription");
-    }
-  };
-
-  const settingsSections: SettingsSection[] = [
-    {
-      title: "Account & Billing",
-      items: [
-        {
-          icon: isPremium ? Crown : CreditCard,
-          label: isPremium ? "Manage Plan" : "Upgrade Plan",
-          description: isPremium ? "Manage your premium subscription" : "Unlock premium features",
-          action: <ChevronRight className="w-5 h-5 text-muted-foreground" />,
-          onClick: handleSubscriptionClick,
-          premium: isPremium,
-        },
-      ],
-    },
+  const settingsSections = [
     {
       title: "Appearance",
       items: [
@@ -245,21 +207,11 @@ const Settings = () => {
                     <div className="flex items-center gap-4">
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          item.destructive 
-                            ? "bg-destructive/20" 
-                            : item.premium 
-                            ? "bg-gradient-to-br from-primary/20 to-accent/20" 
-                            : "bg-primary/20"
+                          item.destructive ? "bg-destructive/20" : "bg-primary/20"
                         }`}
                       >
                         <item.icon
-                          className={`w-5 h-5 ${
-                            item.destructive 
-                              ? "text-destructive" 
-                              : item.premium 
-                              ? "text-primary" 
-                              : "text-primary"
-                          }`}
+                          className={`w-5 h-5 ${item.destructive ? "text-destructive" : "text-primary"}`}
                         />
                       </div>
                       <div className="text-left">

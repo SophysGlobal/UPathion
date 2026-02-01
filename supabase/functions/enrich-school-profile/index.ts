@@ -264,30 +264,13 @@ serve(async (req) => {
         const searchName = school.name.replace(/[^\w\s]/g, '').trim();
         const searchUrl = `${SCORECARD_BASE_URL}?api_key=${scorecardApiKey}&school.name=${encodeURIComponent(searchName)}&fields=id,school.name,school.school_url,school.city,school.state,school.carnegie_size_setting,school.carnegie_basic,school.religious_affiliation,school.ownership,school.locale,latest.student.size,latest.admissions.admission_rate.overall,latest.student.grad_students,latest.academics.program_available.assoc,latest.academics.program_available.bachelors,latest.academics.program_available.masters,latest.academics.program_available.doctoral,latest.student.demographics.student_faculty_ratio,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.completion.rate_suppressed.overall&per_page=5`;
         
-        console.log(`=== COLLEGE SCORECARD API REQUEST ===`);
-        console.log(`School: ${school.name} (ID: ${schoolId})`);
-        console.log(`Search term: "${searchName}"`);
-        console.log(`URL: ${searchUrl.replace(scorecardApiKey, 'API_KEY_HIDDEN')}`);
+        console.log(`Searching College Scorecard for: ${searchName}`);
         
         const response = await fetch(searchUrl);
-        
-        console.log(`=== COLLEGE SCORECARD API RESPONSE ===`);
-        console.log(`Status: ${response.status} ${response.statusText}`);
+        const data = await response.json();
         
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`API Error Response:`, errorText);
-          throw new Error(`Scorecard API error: ${response.status} - ${errorText}`);
-        }
-        
-        const data = await response.json();
-        console.log(`Results count: ${data.results?.length || 0}`);
-        
-        if (data.results && data.results.length > 0) {
-          console.log(`Found ${data.results.length} matches:`);
-          data.results.forEach((r: any, i: number) => {
-            console.log(`  ${i + 1}. ${r['school.name']} (ID: ${r.id}) - ${r['school.city']}, ${r['school.state']}`);
-          });
+          throw new Error(`Scorecard API error: ${response.status}`);
         }
         
         const results = data.results as ScorecardSchool[];
@@ -295,36 +278,14 @@ serve(async (req) => {
         if (results && results.length > 0) {
           // Find best match (exact or closest name match)
           let bestMatch = results[0];
-          const schoolNameLower = school.name.toLowerCase();
-          
           for (const result of results) {
-            const resultNameLower = result['school.name'].toLowerCase();
-            // Exact match
-            if (resultNameLower === schoolNameLower) {
+            if (result['school.name'].toLowerCase() === school.name.toLowerCase()) {
               bestMatch = result;
-              console.log(`✓ Exact match found: ${result['school.name']}`);
               break;
-            }
-            // Contains match (better than first result)
-            if (resultNameLower.includes(schoolNameLower) || schoolNameLower.includes(resultNameLower)) {
-              bestMatch = result;
-              console.log(`✓ Partial match found: ${result['school.name']}`);
             }
           }
           
-          console.log(`=== SELECTED MATCH ===`);
-          console.log(`Name: ${bestMatch['school.name']}`);
-          console.log(`Scorecard ID: ${bestMatch.id}`);
-          console.log(`Location: ${bestMatch['school.city']}, ${bestMatch['school.state']}`);
-          
-          // Log extracted data
-          console.log(`=== EXTRACTED DATA ===`);
-          console.log(`Enrollment: ${bestMatch['latest.student.size']}`);
-          console.log(`Acceptance Rate: ${bestMatch['latest.admissions.admission_rate.overall']}`);
-          console.log(`Student-Faculty Ratio: ${bestMatch['latest.student.demographics.student_faculty_ratio']}`);
-          console.log(`Graduation Rate: ${bestMatch['latest.completion.rate_suppressed.overall']}`);
-          console.log(`Tuition In-State: ${bestMatch['latest.cost.tuition.in_state']}`);
-          console.log(`Tuition Out-of-State: ${bestMatch['latest.cost.tuition.out_of_state']}`);
+          console.log(`Found match: ${bestMatch['school.name']} (ID: ${bestMatch.id})`);
           
           // Extract data
           const enrollment = bestMatch['latest.student.size'];
@@ -347,11 +308,11 @@ serve(async (req) => {
           const enrichedProfile = {
             school_id: schoolId,
             enrollment,
-            acceptance_rate: acceptanceRate !== null && acceptanceRate !== undefined ? Math.round(acceptanceRate * 1000) / 10 : null, // Convert to percentage
+            acceptance_rate: acceptanceRate !== null ? Math.round(acceptanceRate * 1000) / 10 : null, // Convert to percentage
             student_faculty_ratio: studentFacultyRatio ? `${studentFacultyRatio}:1` : null,
             tuition_in_state: tuitionInState,
             tuition_out_of_state: tuitionOutOfState,
-            graduation_rate: graduationRate !== null && graduationRate !== undefined ? Math.round(graduationRate * 1000) / 10 : null,
+            graduation_rate: graduationRate !== null ? Math.round(graduationRate * 1000) / 10 : null,
             programs_count: programsCount,
             chips,
             website_url: websiteUrl,
@@ -373,9 +334,6 @@ serve(async (req) => {
             updated_at: new Date().toISOString(),
           };
           
-          console.log(`=== SAVING TO DATABASE ===`);
-          console.log(`Upserting profile for school_id: ${schoolId}`);
-          
           const { data: updatedProfile, error: updateError } = await supabase
             .from('school_profiles')
             .upsert(enrichedProfile, { onConflict: 'school_id' })
@@ -383,27 +341,22 @@ serve(async (req) => {
             .single();
           
           if (updateError) {
-            console.error('Database update error:', updateError);
             throw updateError;
           }
           
-          console.log('✓ Profile enriched and saved successfully');
-          console.log(`=== END ENRICHMENT ===`);
+          console.log('Profile enriched successfully');
           
           return new Response(
             JSON.stringify({ profile: updatedProfile, school, enriched: true }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         } else {
-          console.log('✗ No match found in College Scorecard');
+          console.log('No match found in College Scorecard');
           // No match found - generate basic profile
           throw new Error('No match found in College Scorecard');
         }
       } catch (enrichError) {
-        console.error('=== ENRICHMENT ERROR ===');
-        console.error('Error type:', enrichError instanceof Error ? enrichError.constructor.name : typeof enrichError);
-        console.error('Error message:', enrichError instanceof Error ? enrichError.message : String(enrichError));
-        console.error('Stack trace:', enrichError instanceof Error ? enrichError.stack : 'N/A');
+        console.error('Enrichment error:', enrichError);
         
         // Update with error status but provide generated fallback
         const fallbackProfile = {
