@@ -214,6 +214,7 @@ const Feed = () => {
               <PostCard 
                 post={post} 
                 onSchoolClick={handleSchoolClick}
+                onUserClick={handleUserClick}
                 userSchool={userSchool}
               />
             </div>
@@ -223,13 +224,20 @@ const Feed = () => {
 
       {/* School Bottom Sheet */}
       <SchoolBottomSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        open={schoolSheetOpen}
+        onOpenChange={setSchoolSheetOpen}
         school={selectedSchool ? { 
           name: selectedSchool, 
           type: selectedSchool.toLowerCase().includes('high') ? 'high_school' : 'university' 
         } : null}
         isOwnSchool={selectedSchool === userSchool}
+      />
+
+      {/* User Profile Sheet */}
+      <UserProfileSheet
+        open={userSheetOpen}
+        onOpenChange={setUserSheetOpen}
+        userId={selectedUserId}
       />
 
       <PremiumChatFAB />
