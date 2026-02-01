@@ -327,6 +327,34 @@ const SchoolProfilePage = () => {
               {isLoading ? "Loading..." : school?.name || "School Profile"}
             </h1>
           </div>
+          
+          {/* Admin refresh button and enrichment status */}
+          <div className="flex items-center gap-2">
+            {enrichmentPending && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/50 px-3 py-1.5 rounded-full">
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                <span>Updating...</span>
+              </div>
+            )}
+            {profile?.enrichment_status === 'failed' && isAdmin && (
+              <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-1.5 rounded-full">
+                <AlertCircle className="w-3 h-3" />
+                <span>Enrichment failed</span>
+              </div>
+            )}
+            {isAdmin && school?.type === 'university' && school?.country === 'US' && !isLoading && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
