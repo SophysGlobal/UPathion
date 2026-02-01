@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   ChevronLeft,
   GraduationCap,
@@ -21,6 +23,8 @@ import {
   DollarSign,
   Percent,
   Info,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 
 interface SchoolData {
@@ -163,10 +167,13 @@ const ProfileSkeleton = () => (
 const SchoolProfilePage = () => {
   const { schoolId } = useParams<{ schoolId: string }>();
   const navigate = useNavigate();
+  const { isAdmin } = useAdminStatus();
   const [school, setSchool] = useState<SchoolData | null>(null);
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [enrichmentPending, setEnrichmentPending] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -192,6 +199,13 @@ const SchoolProfilePage = () => {
         if (data?.school && data?.profile) {
           setSchool(data.school);
           setProfile(data.profile);
+          
+          // Check if enrichment is pending
+          if (data.enrichmentPending || data.profile?.enrichment_status === 'in_progress' || data.profile?.enrichment_status === 'pending') {
+            setEnrichmentPending(true);
+          } else {
+            setEnrichmentPending(false);
+          }
         } else if (data?.error) {
           setError(data.error);
         }
@@ -205,6 +219,70 @@ const SchoolProfilePage = () => {
 
     fetchProfile();
   }, [schoolId]);
+
+  // Poll for enrichment completion if pending
+  useEffect(() => {
+    if (!enrichmentPending || !schoolId) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data } = await supabase
+          .from('school_profiles')
+          .select('*')
+          .eq('school_id', schoolId)
+          .single();
+
+        if (data && data.enrichment_status === 'enriched') {
+          setProfile(data);
+          setEnrichmentPending(false);
+          toast.success('School profile data updated!');
+        } else if (data && data.enrichment_status === 'failed') {
+          setEnrichmentPending(false);
+          console.error('Enrichment failed:', data.enrichment_error);
+        }
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    // Clear interval after 2 minutes
+    const timeout = setTimeout(() => {
+      clearInterval(pollInterval);
+      setEnrichmentPending(false);
+    }, 120000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(timeout);
+    };
+  }, [enrichmentPending, schoolId]);
+
+  // Handle manual refresh (admin only)
+  const handleRefresh = async () => {
+    if (!schoolId) return;
+
+    setIsRefreshing(true);
+    try {
+      const { data, error: refreshError } = await supabase.functions.invoke(
+        "enrich-school-profile",
+        {
+          body: { schoolId, forceRefresh: true },
+        }
+      );
+
+      if (refreshError) throw refreshError;
+
+      if (data?.profile) {
+        setProfile(data.profile);
+        toast.success('Profile refreshed successfully!');
+      }
+    } catch (err) {
+      console.error("Error refreshing profile:", err);
+      toast.error('Failed to refresh profile');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const isUniversity = school?.type === "university";
   const SchoolIcon = isUniversity ? GraduationCap : School;
