@@ -125,30 +125,7 @@ serve(async (req) => {
 
     console.log(`Getting/generating profile for school: ${schoolId}`);
 
-    // First, check if profile already exists
-    const { data: existingProfile } = await supabaseAnon
-      .from('school_profiles')
-      .select('*')
-      .eq('school_id', schoolId)
-      .maybeSingle();
-
-    if (existingProfile) {
-      console.log('Found existing profile');
-      
-      // Also fetch school data for the response
-      const { data: school } = await supabaseAnon
-        .from('schools')
-        .select('*')
-        .eq('id', schoolId)
-        .single();
-
-      return new Response(
-        JSON.stringify({ profile: existingProfile, school }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Fetch school data
+    // Fetch school data first
     const { data: school, error: schoolError } = await supabaseAnon
       .from('schools')
       .select('*')
@@ -163,27 +140,62 @@ serve(async (req) => {
       );
     }
 
-    console.log('Generating new profile for:', school.name);
+    // Check if profile exists
+    const { data: existingProfile } = await supabaseAnon
+      .from('school_profiles')
+      .select('*')
+      .eq('school_id', schoolId)
+      .maybeSingle();
 
-    // Generate profile data
+    // If enriched profile exists and is recent, return it
+    if (existingProfile?.enrichment_status === 'enriched') {
+      console.log('Found enriched profile');
+      return new Response(
+        JSON.stringify({ profile: existingProfile, school }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // If profile exists but needs enrichment, trigger async enrichment
+    if (existingProfile && existingProfile.enrichment_status !== 'in_progress') {
+      console.log('Profile exists but needs enrichment, triggering async enrichment');
+      
+      // Trigger enrichment asynchronously (don't await)
+      const enrichmentUrl = `${supabaseUrl}/functions/v1/enrich-school-profile`;
+      fetch(enrichmentUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({ schoolId }),
+      }).catch(err => console.error('Async enrichment trigger failed:', err));
+      
+      return new Response(
+        JSON.stringify({ profile: existingProfile, school, enrichmentPending: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // No profile exists - create a basic one and trigger enrichment
+    console.log('No profile exists, creating basic and triggering enrichment');
+
+    // Generate basic profile data
     const tagline = generateTagline(school);
     const aboutText = generateAboutText(school);
     const chips = generateDefaultChips(school);
 
-    // Create empty stats object (no fake data)
-    const stats: Record<string, unknown> = {};
-
-    // Create the profile
     const newProfile = {
       school_id: schoolId,
       tagline,
       about_text: aboutText,
-      website_url: null, // No fake URLs
-      stats,
+      website_url: null,
+      stats: {},
       chips,
-      founded_year: null, // No fake years
-      enrollment: null, // No fake numbers
+      founded_year: null,
+      enrollment: null,
       data_source: 'generated',
+      enrichment_status: 'pending',
     };
 
     const { data: insertedProfile, error: insertError } = await supabaseService
@@ -207,14 +219,24 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
       throw insertError;
     }
 
-    console.log('Profile created successfully');
+    // Trigger enrichment asynchronously
+    const enrichmentUrl = `${supabaseUrl}/functions/v1/enrich-school-profile`;
+    fetch(enrichmentUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({ schoolId }),
+    }).catch(err => console.error('Async enrichment trigger failed:', err));
+
+    console.log('Profile created, enrichment triggered');
 
     return new Response(
-      JSON.stringify({ profile: insertedProfile, school }),
+      JSON.stringify({ profile: insertedProfile, school, enrichmentPending: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: unknown) {

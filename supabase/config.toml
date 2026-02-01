@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.get-school-profile]
 verify_jwt = false
+
+[functions.enrich-school-profile]
+verify_jwt = false
+
+[functions.batch-enrich-schools]
+verify_jwt = false
