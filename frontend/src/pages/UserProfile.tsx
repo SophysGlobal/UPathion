@@ -307,37 +307,6 @@ const UserProfile = () => {
             </div>
           </div>
         )}
-              <div>
-                <p className="font-medium text-foreground">{user.school}</p>
-                {user.badge && (
-                  <p className="text-sm text-muted-foreground">{user.badge}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bio */}
-        {user.bio && (
-          <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.12s', animationFillMode: 'both' }}>
-            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">About</h3>
-              <p className="text-foreground">{user.bio}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Interests/Tags Placeholder */}
-        <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.16s', animationFillMode: 'both' }}>
-          <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-3">Interests</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 rounded-full bg-secondary text-sm text-foreground">Academic</span>
-              <span className="px-3 py-1 rounded-full bg-secondary text-sm text-foreground">Community</span>
-              <span className="px-3 py-1 rounded-full bg-secondary text-sm text-foreground">Learning</span>
-            </div>
-          </div>
-        </div>
       </main>
 
       <PremiumChatFAB />
