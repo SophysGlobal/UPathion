@@ -171,19 +171,20 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            {/* View Full Profile Button */}
+            {/* View Full Profile Button - ALWAYS show this button */}
             {isLoadingId ? (
               <Skeleton className="h-12 w-full" />
-            ) : schoolId ? (
+            ) : (
               <Button
                 onClick={handleViewProfile}
                 variant="outline"
                 className="w-full py-6 group"
+                disabled={!schoolId}
               >
                 View Full School Profile
                 <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
-            ) : null}
+            )}
 
             {/* Connect Button */}
             <Button
