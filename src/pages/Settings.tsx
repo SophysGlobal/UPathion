@@ -1,11 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
+import { usePremiumStatus } from "@/hooks/usePremiumStatus";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Switch } from "@/components/ui/switch";
-import { ChevronLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, Mail, Trash2, ChevronRight } from "lucide-react";
+import { 
+  ChevronLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, Mail, Trash2, ChevronRight,
+  Crown, Wrench, CreditCard, School, MessageCircle, Compass, Users, Home, User
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -61,15 +66,51 @@ const Settings = () => {
   const navigate = useNavigate();
   const { theme, resolvedTheme } = useTheme();
   const { signOut } = useAuth();
+  const { isAdmin } = useAdminStatus();
+  const { isPremium } = usePremiumStatus();
   const [notifications, setNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   const handleDeleteAccount = () => {
     toast.error("Account deletion requires confirmation. Please contact support.");
   };
 
+  // Admin QA Menu items for testing all app pages
+  const adminQAItems = [
+    { icon: CreditCard, label: "Subscription/Paywall", path: "/subscription" },
+    { icon: Home, label: "Dashboard", path: "/dashboard" },
+    { icon: Compass, label: "Explore", path: "/explore" },
+    { icon: User, label: "Feed", path: "/feed" },
+    { icon: MessageCircle, label: "Messages", path: "/messages" },
+    { icon: School, label: "School Community", path: "/school-community?school=Harvard%20University" },
+    { icon: Users, label: "School Profile", path: "/school/2b9bfcb5-4a6a-4c10-9f1f-d4e88c28c41e" },
+    { icon: User, label: "User Profile", path: "/profile" },
+    { icon: Shield, label: "Privacy Settings", path: "/privacy-settings" },
+    { icon: Crown, label: "Plan Management", path: "/plan-management" },
+  ];
+
   const settingsSections = [
+    // Subscription/Plan section
+    {
+      title: "Subscription",
+      items: [
+        isPremium ? {
+          icon: Crown,
+          label: "Manage Your Plan",
+          description: "View your subscription details",
+          action: <ChevronRight className="w-5 h-5 text-muted-foreground" />,
+          onClick: () => navigate("/plan-management"),
+        } : {
+          icon: Crown,
+          label: "Upgrade to Premium",
+          description: "Get access to exclusive features",
+          action: <ChevronRight className="w-5 h-5 text-muted-foreground" />,
+          onClick: () => navigate("/subscription"),
+        },
+      ],
+    },
     {
       title: "Appearance",
       items: [
@@ -157,6 +198,18 @@ const Settings = () => {
         },
       ],
     },
+    // Admin QA section - only visible to admins
+    ...(isAdmin ? [{
+      title: "Admin QA Menu",
+      items: adminQAItems.map(item => ({
+        icon: item.icon,
+        label: item.label,
+        description: `Navigate to ${item.label}`,
+        action: <ChevronRight className="w-5 h-5 text-accent" />,
+        onClick: () => navigate(item.path),
+        admin: true,
+      })),
+    }] : []),
     {
       title: "Danger Zone",
       items: [
@@ -207,11 +260,15 @@ const Settings = () => {
                     <div className="flex items-center gap-4">
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          item.destructive ? "bg-destructive/20" : "bg-primary/20"
+                          item.destructive ? "bg-destructive/20" : 
+                          (item as any).admin ? "bg-accent/20" : "bg-primary/20"
                         }`}
                       >
                         <item.icon
-                          className={`w-5 h-5 ${item.destructive ? "text-destructive" : "text-primary"}`}
+                          className={`w-5 h-5 ${
+                            item.destructive ? "text-destructive" : 
+                            (item as any).admin ? "text-accent" : "text-primary"
+                          }`}
                         />
                       </div>
                       <div className="text-left">
