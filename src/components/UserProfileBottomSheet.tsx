@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserConnection } from "@/hooks/useUserConnection";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 import SchoolBottomSheet from "./SchoolBottomSheet";
 import {
   Drawer,
@@ -55,15 +56,20 @@ const UserProfileBottomSheet = ({
   const [isLoading, setIsLoading] = useState(false);
   const [schoolSheetOpen, setSchoolSheetOpen] = useState(false);
   
-  const { connectionState, isLoading: connectLoading, toggleConnection, getConnectionLabel } = useUserConnection(userId);
+  // Use provided userId, or generate stable ID from seed user for sample data
+  const effectiveUserId = userId || (seedUser?.id ? `sample-${seedUser.id}` : null);
+  const isSampleUser = !userId && !!seedUser;
+  
+  const { connectionState, isLoading: connectLoading, toggleConnection, getConnectionLabel } = useUserConnection(effectiveUserId);
   
   // Check if viewing own profile
   const isOwnProfile = currentUser?.id === userId;
 
-  // Fetch real user profile
+  // Fetch real user profile (only for real users with valid UUIDs)
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!userId || !open) return;
+      // Skip fetch for sample users or if no userId
+      if (!userId || !open || isSampleUser) return;
       
       setIsLoading(true);
       try {
@@ -88,7 +94,7 @@ const UserProfileBottomSheet = ({
     };
     
     fetchProfile();
-  }, [userId, open]);
+  }, [userId, open, isSampleUser]);
 
   // Derive display data from real profile or seed user
   const displayData = {
@@ -104,10 +110,23 @@ const UserProfileBottomSheet = ({
   };
 
   const handleViewProfile = () => {
+    // For real users, navigate to their profile
     if (userId) {
       onOpenChange(false);
       navigate(`/user/${userId}`);
+      return;
     }
+    
+    // For sample users, show a toast since they don't have real profiles
+    if (isSampleUser && seedUser) {
+      onOpenChange(false);
+      // Navigate to a demo profile page with sample data
+      toast.info(`${seedUser.name} is a sample user. Sign up to connect with real students!`);
+      return;
+    }
+    
+    // Fallback - show error toast
+    toast.error('Unable to load profile');
   };
 
   const handleMessage = () => {
