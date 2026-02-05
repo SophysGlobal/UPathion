@@ -32,7 +32,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useUserConnection } from "@/hooks/useUserConnection";
 import { USE_SEED_DATA, seedPeople, seedConversations } from "@/data/seedData";
 
-interface UserProfileData {
+// Public-safe profile interface (excludes email, is_premium, subscription_ends_at)
+// When viewing OTHER users, use public_profiles view to protect sensitive data
+interface PublicUserProfileData {
   id: string;
   display_name: string | null;
   username: string | null;
@@ -42,7 +44,6 @@ interface UserProfileData {
   school_type: string | null;
   grade_or_year: string | null;
   major: string | null;
-  is_premium: boolean;
 }
 
 // Find user by ID from seed data
@@ -90,7 +91,7 @@ const UserProfile = () => {
   const { userId } = useParams();
   const { user: currentUser } = useAuth();
   
-  const [profile, setProfile] = useState<UserProfileData | null>(null);
+  const [profile, setProfile] = useState<PublicUserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [schoolSheetOpen, setSchoolSheetOpen] = useState(false);
   
@@ -108,9 +109,11 @@ const UserProfile = () => {
       
       setIsLoading(true);
       try {
+        // Use public_profiles view to protect sensitive business data
+        // (is_premium, subscription_ends_at, email are excluded)
         const { data, error } = await supabase
-          .from('profiles')
-          .select('id, display_name, username, avatar_url, bio, school_name, school_type, grade_or_year, major, is_premium')
+          .from('public_profiles')
+          .select('id, display_name, username, avatar_url, bio, school_name, school_type, grade_or_year, major')
           .eq('id', userId)
           .maybeSingle();
         
@@ -142,7 +145,6 @@ const UserProfile = () => {
     bio: profile.bio || '',
     major: profile.major,
     avatarUrl: profile.avatar_url,
-    isPremium: profile.is_premium,
     avatarColor: 'bg-primary/20',
   } : seedUser ? {
     name: seedUser.name,
@@ -153,7 +155,6 @@ const UserProfile = () => {
     bio: seedUser.bio,
     major: undefined,
     avatarUrl: undefined,
-    isPremium: false,
     avatarColor: seedUser.avatarColor,
   } : null;
 
@@ -296,11 +297,6 @@ const UserProfile = () => {
             </div>
             <div className="flex items-center justify-center gap-2">
               <h2 className="text-xl font-bold text-foreground">{displayData.name}</h2>
-              {displayData.isPremium && (
-                <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent text-xs font-medium">
-                  Premium
-                </span>
-              )}
             </div>
             {displayData.username && (
               <p className="text-sm text-primary mt-1">@{displayData.username}</p>

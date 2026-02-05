@@ -3,8 +3,44 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Helper to verify admin authorization
+async function verifyAdminAuth(req: Request): Promise<{ userId: string } | { error: string; status: number }> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { error: 'Unauthorized: Missing or invalid authorization header', status: 401 };
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+  
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data, error } = await supabase.auth.getClaims(token);
+  
+  if (error || !data?.claims) {
+    return { error: 'Unauthorized: Invalid token', status: 401 };
+  }
+
+  const userId = data.claims.sub as string;
+  
+  // Check if user has admin role
+  const { data: isAdmin, error: roleError } = await supabase.rpc('has_role', { 
+    _user_id: userId, 
+    _role: 'admin' 
+  });
+
+  if (roleError || !isAdmin) {
+    return { error: 'Forbidden: Admin access required', status: 403 };
+  }
+
+  return { userId };
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,6 +48,17 @@ serve(async (req) => {
   }
 
   try {
+    // Verify admin authorization
+    const authResult = await verifyAdminAuth(req);
+    if ('error' in authResult) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: authResult.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`Admin ${authResult.userId} triggered batch enrichment`);
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;

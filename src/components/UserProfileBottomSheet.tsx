@@ -16,7 +16,8 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 
-interface UserProfile {
+// Public-safe profile interface (excludes email, is_premium, subscription_ends_at)
+interface PublicUserProfile {
   id: string;
   display_name: string | null;
   username: string | null;
@@ -26,7 +27,6 @@ interface UserProfile {
   school_type: string | null;
   grade_or_year: string | null;
   major: string | null;
-  is_premium: boolean;
 }
 
 interface UserProfileBottomSheetProps {
@@ -52,7 +52,7 @@ const UserProfileBottomSheet = ({
 }: UserProfileBottomSheetProps) => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [schoolSheetOpen, setSchoolSheetOpen] = useState(false);
   
@@ -73,9 +73,10 @@ const UserProfileBottomSheet = ({
       
       setIsLoading(true);
       try {
+        // Use public_profiles view to avoid exposing sensitive business data
         const { data, error } = await supabase
-          .from('profiles')
-          .select('id, display_name, username, avatar_url, bio, school_name, school_type, grade_or_year, major, is_premium')
+          .from('public_profiles')
+          .select('id, display_name, username, avatar_url, bio, school_name, school_type, grade_or_year, major')
           .eq('id', userId)
           .maybeSingle();
         
@@ -106,7 +107,6 @@ const UserProfileBottomSheet = ({
     bio: profile?.bio || seedUser?.bio || '',
     major: profile?.major,
     avatarUrl: profile?.avatar_url,
-    isPremium: profile?.is_premium || false,
   };
 
   const handleViewProfile = () => {
@@ -194,11 +194,6 @@ const UserProfileBottomSheet = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-foreground text-lg">{displayData.name}</h3>
-                      {displayData.isPremium && (
-                        <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent text-xs font-medium">
-                          Premium
-                        </span>
-                      )}
                     </div>
                     {displayData.username && (
                       <p className="text-sm text-primary">@{displayData.username}</p>
