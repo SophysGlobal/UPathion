@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +11,22 @@ interface ConfirmationRequest {
   email: string;
   confirmationUrl: string;
   type: "signup" | "resend";
+}
+
+// Validate email format to prevent abuse
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+}
+
+// Validate URL is from our domain
+function isValidConfirmationUrl(url: string, allowedOrigins: string[]): boolean {
+  try {
+    const parsedUrl = new URL(url);
+    return allowedOrigins.some(origin => parsedUrl.origin === origin);
+  } catch {
+    return false;
+  }
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -24,6 +41,31 @@ const handler = async (req: Request): Promise<Response> => {
     // Validate required fields
     if (!email || !confirmationUrl) {
       throw new Error("Missing required fields: email and confirmationUrl");
+    }
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Get allowed origins from environment or use defaults
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const allowedOrigins = [
+      'https://id-preview--0e7f78ff-83fb-4088-a02e-6ebaceea8103.lovable.app',
+      'http://localhost:8080',
+      'http://localhost:5173',
+    ];
+
+    // Validate confirmation URL is from allowed origins
+    if (!isValidConfirmationUrl(confirmationUrl, allowedOrigins)) {
+      console.error(`Invalid confirmation URL origin: ${confirmationUrl}`);
+      return new Response(
+        JSON.stringify({ error: "Invalid confirmation URL" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
     console.log(`Sending ${type} confirmation email to ${email}`);

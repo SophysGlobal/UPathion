@@ -375,7 +375,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          aspirational_school: string | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          grade_or_year: string | null
+          id: string | null
+          is_high_school: boolean | null
+          major: string | null
+          onboarding_completed: boolean | null
+          school_name: string | null
+          school_type: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          aspirational_school?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          grade_or_year?: string | null
+          id?: string | null
+          is_high_school?: boolean | null
+          major?: string | null
+          onboarding_completed?: boolean | null
+          school_name?: string | null
+          school_type?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          aspirational_school?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          grade_or_year?: string | null
+          id?: string | null
+          is_high_school?: boolean | null
+          major?: string | null
+          onboarding_completed?: boolean | null
+          school_name?: string | null
+          school_type?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
