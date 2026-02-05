@@ -5,7 +5,8 @@ import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
-import { Search, Filter, Users, BookOpen, Calendar, MapPin, UserPlus, User, Clock, Bookmark } from "lucide-react";
+import PersonCard from "@/components/PersonCard";
+import { Search, Filter, Users, BookOpen, Calendar, MapPin, User, Clock, Bookmark } from "lucide-react";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -73,11 +74,6 @@ const Explore = () => {
     setUserSheetOpen(true);
   };
 
-  const handleConnect = (e: React.MouseEvent, person: SeedPerson) => {
-    e.stopPropagation();
-    toast.success(`Connection request sent to ${person.name}!`);
-  };
-
   const handleJoinGroup = (group: SeedGroup) => {
     toast.success(`Joined ${group.name}!`);
   };
@@ -120,45 +116,12 @@ const Explore = () => {
     return (
       <div className="space-y-3">
         {filteredPeople.map((person, index) => (
-          <button 
+          <PersonCard
             key={person.id}
+            person={person}
+            index={index}
             onClick={() => handleUserClick(person)}
-            className="w-full gradient-border animate-fade-in text-left"
-            style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
-          >
-            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 hover:bg-secondary/50 transition-colors">
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-12 h-12 rounded-full ${person.avatarColor} flex items-center justify-center flex-shrink-0`}
-                >
-                  <User className="w-6 h-6 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-foreground">
-                      {person.name}
-                    </span>
-                    {person.badge && (
-                      <span className="px-2 py-0.5 rounded-full bg-accent/20 text-accent text-xs font-medium">
-                        {person.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-primary truncate">{person.school}</p>
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{person.bio}</p>
-                </div>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={(e) => handleConnect(e, person)}
-                  className="flex-shrink-0"
-                >
-                  <UserPlus className="w-4 h-4 mr-1" />
-                  Connect
-                </Button>
-              </div>
-            </div>
-          </button>
+          />
         ))}
       </div>
     );

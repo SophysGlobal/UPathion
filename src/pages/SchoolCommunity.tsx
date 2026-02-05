@@ -4,17 +4,15 @@ import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
-import { ChevronLeft, User, UserPlus, MessageCircle } from "lucide-react";
+import { ChevronLeft, User, UserPlus, MessageCircle, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { USE_SEED_DATA, generateSeedCommunityMembers, type SeedCommunityMember } from "@/data/seedData";
+import { useUserConnection } from "@/hooks/useUserConnection";
 
 const getRoleBadgeColor = (role: string) => {
   switch (role) {
     case 'student': return 'bg-primary/20 text-primary';
-    case 'teacher': return 'bg-blue-500/20 text-blue-400';
-    case 'counselor': return 'bg-green-500/20 text-green-400';
-    case 'staff': return 'bg-purple-500/20 text-purple-400';
     default: return 'bg-muted text-muted-foreground';
   }
 };
@@ -23,63 +21,74 @@ interface MemberCardProps {
   member: SeedCommunityMember;
   schoolName: string;
   onUserClick: () => void;
-  onConnect: () => void;
 }
 
-const MemberCard = ({ member, schoolName, onUserClick, onConnect }: MemberCardProps) => (
-  <button 
-    onClick={onUserClick}
-    className="w-full gradient-border text-left"
-  >
-    <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 hover:bg-secondary/50 transition-colors">
-      <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-          <User className="w-6 h-6 text-primary" />
+const MemberCard = ({ member, schoolName, onUserClick }: MemberCardProps) => {
+  const effectiveUserId = `sample-${member.id}`;
+  const { connectionState, isLoading, toggleConnection, getConnectionLabel } = useUserConnection(effectiveUserId);
+  
+  return (
+    <button 
+      onClick={onUserClick}
+      className="w-full gradient-border text-left"
+    >
+      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 hover:bg-secondary/50 transition-colors">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <User className="w-6 h-6 text-primary" />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-foreground">{member.name}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getRoleBadgeColor(member.role)}`}>
+                Student
+              </span>
+            </div>
+            {member.gradeOrPosition && (
+              <p className="text-xs text-muted-foreground mt-0.5">{member.gradeOrPosition}</p>
+            )}
+            {member.bio && (
+              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{member.bio}</p>
+            )}
+          </div>
         </div>
         
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-foreground">{member.name}</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${getRoleBadgeColor(member.role)}`}>
-              {member.role}
-            </span>
-          </div>
-          {member.gradeOrPosition && (
-            <p className="text-xs text-muted-foreground mt-0.5">{member.gradeOrPosition}</p>
-          )}
-          {member.bio && (
-            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{member.bio}</p>
-          )}
+        <div className="flex gap-2 mt-4">
+          <Button
+            variant={connectionState === 'none' ? 'outline' : 'secondary'}
+            size="sm"
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleConnection();
+            }}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : connectionState === 'none' ? (
+              <UserPlus className="w-4 h-4 mr-1" />
+            ) : (
+              <Check className="w-4 h-4 mr-1" />
+            )}
+            {getConnectionLabel()}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              toast.info("Messaging coming soon!");
+            }}
+          >
+            <MessageCircle className="w-4 h-4" />
+          </Button>
         </div>
       </div>
-      
-      <div className="flex gap-2 mt-4">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
-          onClick={(e) => {
-            e.stopPropagation();
-            onConnect();
-          }}
-        >
-          <UserPlus className="w-4 h-4 mr-1" />
-          Connect
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            toast.info("Messaging coming soon!");
-          }}
-        >
-          <MessageCircle className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
-  </button>
-);
+    </button>
+  );
+};
 
 const SchoolCommunity = () => {
   const navigate = useNavigate();
@@ -94,10 +103,6 @@ const SchoolCommunity = () => {
     if (!USE_SEED_DATA) return [];
     return generateSeedCommunityMembers(schoolName);
   }, [schoolName]);
-
-  const handleConnect = (member: SeedCommunityMember) => {
-    toast.success(`Connection request sent to ${member.name}!`);
-  };
 
   const handleUserClick = (member: SeedCommunityMember) => {
     setSelectedMember(member);
@@ -137,7 +142,7 @@ const SchoolCommunity = () => {
 
       <main className="relative z-10 px-6 py-6 space-y-4">
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {['All', 'Students', 'Staff', 'Faculty'].map((filter, index) => (
+          {['All', 'Undergrad', 'Grad Students', 'Freshmen'].map((filter, index) => (
             <button
               key={filter}
               className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
@@ -164,7 +169,6 @@ const SchoolCommunity = () => {
                 member={member} 
                 schoolName={schoolName}
                 onUserClick={() => handleUserClick(member)}
-                onConnect={() => handleConnect(member)} 
               />
             </div>
           ))
