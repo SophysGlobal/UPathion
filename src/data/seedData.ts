@@ -51,11 +51,11 @@ export const seedFeedPosts: SeedFeedPost[] = [
   },
   {
     id: '3',
-    authorName: 'Ms. Johnson',
-    authorRole: 'College Advisor',
-    authorBadge: 'Staff',
+    authorName: 'Jessica T.',
+    authorRole: 'Student',
+    authorBadge: 'Senior',
     createdAt: '6h ago',
-    bodyText: 'Reminder: Early decision deadlines are coming up! Make sure to check each school\'s requirements and deadlines.',
+    bodyText: 'Pro tip: Early decision deadlines are coming up! Make sure to check each school\'s requirements and deadlines. I almost missed one!',
     tags: ['#Admissions', '#Deadlines'],
     schoolScope: 'aspirational',
     schoolName: 'Northeastern University',
@@ -66,6 +66,7 @@ export const seedFeedPosts: SeedFeedPost[] = [
     id: '4',
     authorName: 'Mike T.',
     authorRole: 'Student',
+    authorBadge: 'Junior',
     createdAt: '8h ago',
     bodyText: 'Pro tip: Start your scholarship applications early! I found over $10,000 in local scholarships that most people overlook.',
     tags: ['#Scholarships', '#Tips'],
@@ -89,11 +90,11 @@ export const seedFeedPosts: SeedFeedPost[] = [
   },
   {
     id: '6',
-    authorName: 'Admissions Office',
-    authorRole: 'Admissions Staff',
-    authorBadge: 'Official',
+    authorName: 'Kevin L.',
+    authorRole: 'Student',
+    authorBadge: 'Freshman',
     createdAt: '1d ago',
-    bodyText: 'Virtual campus tours now available every Saturday! Sign up through the admissions portal to explore our facilities from home.',
+    bodyText: 'Just did a virtual campus tour of MIT - they\'re available every Saturday! Highly recommend signing up through their admissions portal.',
     tags: ['#CampusTour', '#Admissions'],
     schoolScope: 'aspirational',
     schoolName: 'MIT',
@@ -102,8 +103,9 @@ export const seedFeedPosts: SeedFeedPost[] = [
   },
   {
     id: '7',
-    authorName: 'Dr. Williams',
-    authorRole: 'Teacher',
+    authorName: 'Priya S.',
+    authorRole: 'Student',
+    authorBadge: 'Senior',
     createdAt: '1d ago',
     bodyText: 'The Pomodoro Technique changed my study habits completely. 25 minutes of focus, 5 minute break. Try it during finals week!',
     tags: ['#StudyTips', '#Productivity'],
@@ -127,11 +129,11 @@ export const seedFeedPosts: SeedFeedPost[] = [
   },
   {
     id: '9',
-    authorName: 'Financial Aid Office',
-    authorRole: 'Staff',
-    authorBadge: 'Official',
+    authorName: 'Marcus W.',
+    authorRole: 'Student',
+    authorBadge: 'Senior',
     createdAt: '2d ago',
-    bodyText: 'FAFSA opens October 1st! Make sure you have your family\'s tax documents ready. We\'re here to help with any questions.',
+    bodyText: 'Heads up: FAFSA opens October 1st! Make sure you have your family\'s tax documents ready. The financial aid office was super helpful when I had questions.',
     tags: ['#FAFSA', '#FinancialAid'],
     schoolScope: 'aspirational',
     schoolName: 'Harvard University',
@@ -140,8 +142,9 @@ export const seedFeedPosts: SeedFeedPost[] = [
   },
   {
     id: '10',
-    authorName: 'Career Center',
-    authorRole: 'Staff',
+    authorName: 'Nina C.',
+    authorRole: 'Student',
+    authorBadge: 'Junior',
     createdAt: '2d ago',
     bodyText: 'Summer internship applications are now open! Don\'t wait until the last minute - many positions fill up fast.',
     tags: ['#Internships', '#Career'],
@@ -165,9 +168,9 @@ export const seedFeedPosts: SeedFeedPost[] = [
   },
   {
     id: '12',
-    authorName: 'Mr. Chen',
-    authorRole: 'Counselor',
-    authorBadge: 'Staff',
+    authorName: 'Derek H.',
+    authorRole: 'Student',
+    authorBadge: 'Junior',
     createdAt: '3d ago',
     bodyText: 'Spring formal tickets go on sale next Monday! Early bird pricing available for the first 100 students.',
     tags: ['#Events', '#SchoolLife'],
@@ -184,7 +187,7 @@ export const seedFeedPosts: SeedFeedPost[] = [
 export interface SeedPerson {
   id: string;
   name: string;
-  role: 'Student' | 'Teacher' | 'Counselor';
+  role: 'Student';
   badge?: string;
   school: string;
   bio: string;
@@ -194,10 +197,12 @@ export interface SeedPerson {
 export const seedPeople: SeedPerson[] = [
   { id: 'p1', name: 'Jordan Lee', role: 'Student', badge: 'Senior', school: 'Acton-Boxborough Regional High School', bio: 'Aspiring computer scientist. Love hackathons and chess.', avatarColor: 'bg-primary/20' },
   { id: 'p2', name: 'Maria Santos', role: 'Student', badge: 'Junior', school: 'Lincoln-Sudbury Regional High School', bio: 'Varsity soccer captain. Planning to major in biology.', avatarColor: 'bg-accent/20' },
-  { id: 'p3', name: 'Dr. Emily Chen', role: 'Counselor', school: 'Westford Academy', bio: 'Here to help with college prep and career guidance.', avatarColor: 'bg-secondary' },
+  { id: 'p3', name: 'Emily Chen', role: 'Student', badge: 'Senior', school: 'Westford Academy', bio: 'Future biomedical engineer. Love tutoring younger students.', avatarColor: 'bg-secondary' },
   { id: 'p4', name: 'Tyler Brown', role: 'Student', badge: 'Sophomore', school: 'Concord-Carlisle High School', bio: 'Drummer in the jazz band. Also into photography.', avatarColor: 'bg-primary/20' },
-  { id: 'p5', name: 'Ms. Rachel Kim', role: 'Teacher', school: 'Acton-Boxborough Regional High School', bio: 'AP Physics teacher. Making science fun since 2015.', avatarColor: 'bg-accent/20' },
-  { id: 'p6', name: 'Aiden Patel', role: 'Student', badge: 'Senior', school: 'MIT', bio: 'CS major interested in AI and machine learning research.', avatarColor: 'bg-primary/20' },
+  { id: 'p5', name: 'Rachel Kim', role: 'Student', badge: 'Junior', school: 'Acton-Boxborough Regional High School', bio: 'Physics enthusiast. Running the science olympiad team!', avatarColor: 'bg-accent/20' },
+  { id: 'p6', name: 'Aiden Patel', role: 'Student', badge: 'Freshman', school: 'MIT', bio: 'CS major interested in AI and machine learning research.', avatarColor: 'bg-primary/20' },
+  { id: 'p7', name: 'Sophie Martinez', role: 'Student', badge: 'Graduate Student', school: 'Harvard University', bio: 'PhD candidate in neuroscience. Happy to chat about grad school!', avatarColor: 'bg-primary/20' },
+  { id: 'p8', name: 'Chris O\'Brien', role: 'Student', badge: 'Senior', school: 'Boston University', bio: 'Film major and aspiring director. Always looking for collaborators.', avatarColor: 'bg-accent/20' },
 ];
 
 // ============================================
@@ -269,7 +274,7 @@ export const seedPlaces: SeedPlace[] = [
 export interface SeedCommunityMember {
   id: string;
   name: string;
-  role: 'student' | 'teacher' | 'counselor' | 'staff';
+  role: 'student';
   gradeOrPosition?: string;
   bio?: string;
   avatar?: string;
@@ -282,20 +287,24 @@ export function generateSeedCommunityMembers(schoolName: string): SeedCommunityM
     return [
       { id: 'cm1', name: 'Alex Thompson', role: 'student', gradeOrPosition: 'Senior', bio: 'Varsity basketball captain, interested in sports medicine' },
       { id: 'cm2', name: 'Maya Patel', role: 'student', gradeOrPosition: 'Junior', bio: 'Debate team president, aspiring lawyer' },
-      { id: 'cm3', name: 'Dr. Sarah Williams', role: 'counselor', gradeOrPosition: 'College Counselor', bio: 'Here to help with college applications and career planning' },
+      { id: 'cm3', name: 'Sarah Williams', role: 'student', gradeOrPosition: 'Senior', bio: 'Heading to Stanford next year! Happy to share college app tips.' },
       { id: 'cm4', name: 'James Chen', role: 'student', gradeOrPosition: 'Senior', bio: 'Robotics club lead, MIT hopeful' },
-      { id: 'cm5', name: 'Ms. Emily Rodriguez', role: 'teacher', gradeOrPosition: 'AP English', bio: 'Published author, loves creative writing' },
+      { id: 'cm5', name: 'Emily Rodriguez', role: 'student', gradeOrPosition: 'Junior', bio: 'Creative writing enthusiast, working on my first novel' },
       { id: 'cm6', name: 'Ryan O\'Connor', role: 'student', gradeOrPosition: 'Sophomore', bio: 'Theater enthusiast, plays guitar' },
+      { id: 'cm7', name: 'Zoe Park', role: 'student', gradeOrPosition: 'Freshman', bio: 'New here! Looking to join the art club and make friends.' },
+      { id: 'cm8', name: 'Marcus Johnson', role: 'student', gradeOrPosition: 'Senior', bio: 'Captain of the swim team. Committed to UCLA!' },
     ];
   }
   
   return [
     { id: 'cm1', name: 'Jordan Lee', role: 'student', gradeOrPosition: 'Graduate Student', bio: 'PhD candidate in Computer Science, researching AI' },
-    { id: 'cm2', name: 'Prof. Michael Brown', role: 'teacher', gradeOrPosition: 'Department Chair', bio: 'Leading researcher in renewable energy' },
+    { id: 'cm2', name: 'Michael Brown', role: 'student', gradeOrPosition: 'Senior', bio: 'Physics major researching renewable energy solutions' },
     { id: 'cm3', name: 'Sofia Martinez', role: 'student', gradeOrPosition: 'Senior', bio: 'Pre-med student, volunteer at local hospital' },
-    { id: 'cm4', name: 'Dr. Lisa Park', role: 'counselor', gradeOrPosition: 'Academic Advisor', bio: 'Helping students navigate their academic journey' },
+    { id: 'cm4', name: 'Lisa Park', role: 'student', gradeOrPosition: 'Graduate Student', bio: 'MBA candidate, previously worked at McKinsey' },
     { id: 'cm5', name: 'David Kim', role: 'student', gradeOrPosition: 'Junior', bio: 'Business major, startup founder' },
-    { id: 'cm6', name: 'Amanda Foster', role: 'staff', gradeOrPosition: 'Career Services', bio: 'Connecting students with internship opportunities' },
+    { id: 'cm6', name: 'Amanda Foster', role: 'student', gradeOrPosition: 'Sophomore', bio: 'Looking for internship opportunities in marketing' },
+    { id: 'cm7', name: 'Raj Patel', role: 'student', gradeOrPosition: 'Freshman', bio: 'Computer engineering major. Looking for study partners!' },
+    { id: 'cm8', name: 'Olivia Chen', role: 'student', gradeOrPosition: 'Graduate Student', bio: 'PhD in biomedical engineering. Love coffee chats!' },
   ];
 }
 
@@ -328,10 +337,11 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv2', 
-    participantName: 'Dr. Emily Watson', 
-    participantRole: 'Teacher',
+    participantName: 'Emily Watson', 
+    participantRole: 'Student',
+    participantBadge: 'Senior',
     participantSchool: 'Acton-Boxborough Regional High School',
-    lastMessage: 'Your essay submission looks great. Just a few notes...',
+    lastMessage: 'Thanks for reviewing my essay! Your feedback was super helpful.',
     lastMessageTime: '1h ago',
     unreadCount: 1,
     isMuted: false
@@ -339,9 +349,10 @@ export const seedConversations: SeedConversation[] = [
   { 
     id: 'conv3', 
     participantName: 'Michael Brown', 
-    participantRole: 'Counselor',
+    participantRole: 'Student',
+    participantBadge: 'Junior',
     participantSchool: 'Westford Academy',
-    lastMessage: 'Let me know when you want to schedule our next meeting',
+    lastMessage: 'Let me know when you want to meet up for the group project!',
     lastMessageTime: '3h ago',
     unreadCount: 0,
     isMuted: false

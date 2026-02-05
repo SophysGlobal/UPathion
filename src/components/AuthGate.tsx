@@ -10,7 +10,7 @@ interface AuthGateProps {
 }
 
 // Routes that don't require authentication
-const PUBLIC_ROUTES = ['/', '/signin', '/signup', '/email-confirmation', '/auth/callback', '/password-reset', '/update-password'];
+const PUBLIC_ROUTES = ['/', '/signin', '/signup', '/email-confirmation', '/auth/callback', '/password-reset', '/update-password', '/welcome'];
 
 // Onboarding routes (subscription is part of onboarding for new users)
 const ONBOARDING_ROUTES = [

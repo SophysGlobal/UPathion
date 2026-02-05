@@ -248,6 +248,7 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
                 variant="outline"
                 className="w-full py-6 group"
                 disabled={!schoolId}
+                type="button"
               >
                 View Full School Profile
                 <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
@@ -258,6 +259,7 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
             <Button
               onClick={handleConnect}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-6"
+              type="button"
             >
               <Users className="w-4 h-4 mr-2" />
               {isOwnSchool ? "Connect with others at your school" : "Connect with people from this school"}
