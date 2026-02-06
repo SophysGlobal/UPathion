@@ -79,6 +79,7 @@ const AspirationalSchool = () => {
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg opacity-50" />
+          <div className="w-8 h-1 rounded-full bg-muted" />
         </div>
       </div>
     </div>

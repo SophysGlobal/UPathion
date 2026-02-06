@@ -64,7 +64,7 @@ const NameConfirm = () => {
           <GradientButton 
             variant="filled"
             className="flex-1"
-            onClick={() => navigate("/onboarding/school")}
+            onClick={() => navigate("/onboarding/how-did-you-hear")}
           >
             Confirm
           </GradientButton>
@@ -74,6 +74,7 @@ const NameConfirm = () => {
         <div className="flex justify-center gap-2 pt-4 animate-fade-in">
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
+          <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
         </div>

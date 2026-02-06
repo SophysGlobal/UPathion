@@ -6,6 +6,8 @@ import { useQuery } from '@tanstack/react-query';
 interface OnboardingData {
   fullName: string;
   username: string;
+  referralSource: string;
+  referralSourceOther: string;
   schoolType: 'high_school' | 'college' | 'other' | '';
   schoolName: string;
   gradeOrYear: string;
@@ -23,6 +25,8 @@ interface OnboardingContextType {
 const defaultData: OnboardingData = {
   fullName: '',
   username: '',
+  referralSource: '',
+  referralSourceOther: '',
   schoolType: '',
   schoolName: '',
   gradeOrYear: '',

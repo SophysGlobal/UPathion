@@ -151,6 +151,8 @@ export type Database = {
           is_premium: boolean
           major: string | null
           onboarding_completed: boolean | null
+          referral_source: string | null
+          referral_source_other: string | null
           school_name: string | null
           school_type: string | null
           subscription_ends_at: string | null
@@ -170,6 +172,8 @@ export type Database = {
           is_premium?: boolean
           major?: string | null
           onboarding_completed?: boolean | null
+          referral_source?: string | null
+          referral_source_other?: string | null
           school_name?: string | null
           school_type?: string | null
           subscription_ends_at?: string | null
@@ -189,6 +193,8 @@ export type Database = {
           is_premium?: boolean
           major?: string | null
           onboarding_completed?: boolean | null
+          referral_source?: string | null
+          referral_source_other?: string | null
           school_name?: string | null
           school_type?: string | null
           subscription_ends_at?: string | null

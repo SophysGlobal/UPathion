@@ -1,17 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 const NameSetup = () => {
   const navigate = useNavigate();
   const { data, updateData } = useOnboarding();
+  const { user } = useAuth();
   const [fullName, setFullName] = useState(data.fullName);
   const [username, setUsername] = useState(data.username);
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
+
+  // Autofill from Google OAuth profile
+  useEffect(() => {
+    if (user && !hasAutoFilled) {
+      const userMetadata = user.user_metadata;
+      
+      // Try to get name from Google OAuth metadata
+      const googleName = userMetadata?.full_name || 
+                         userMetadata?.name || 
+                         userMetadata?.given_name || 
+                         '';
+      
+      // Only autofill if we have a name and field is empty
+      if (googleName && !fullName) {
+        setFullName(googleName);
+        setHasAutoFilled(true);
+      }
+    }
+  }, [user, hasAutoFilled, fullName]);
 
   const handleContinue = () => {
     if (!fullName.trim()) {
@@ -61,6 +83,11 @@ const NameSetup = () => {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
+            {user?.user_metadata?.full_name && fullName === user.user_metadata.full_name && (
+              <p className="text-xs text-muted-foreground">
+                ✓ Auto-filled from your Google account
+              </p>
+            )}
           </div>
           
           <div className="space-y-2 animate-fade-in">
@@ -90,6 +117,7 @@ const NameSetup = () => {
         {/* Progress indicator */}
         <div className="flex justify-center gap-2 pt-4 animate-fade-in">
           <div className="w-8 h-1 rounded-full gradient-bg" />
+          <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
