@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import AppEntryGate from "@/components/AppEntryGate";
 import AuthGate from "@/components/AuthGate";
 import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
@@ -16,6 +17,7 @@ import PasswordReset from "./pages/PasswordReset";
 import UpdatePassword from "./pages/UpdatePassword";
 import NameSetup from "./pages/onboarding/NameSetup";
 import NameConfirm from "./pages/onboarding/NameConfirm";
+import HowDidYouHear from "./pages/onboarding/HowDidYouHear";
 import SchoolSetup from "./pages/onboarding/SchoolSetup";
 import AspirationalSchool from "./pages/onboarding/AspirationalSchool";
 import SchoolConfirm from "./pages/onboarding/SchoolConfirm";
@@ -52,44 +54,47 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <AuthGate>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/signin" element={<SignIn />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/email-confirmation" element={<EmailConfirmation />} />
-                  <Route path="/auth/callback" element={<AuthCallback />} />
-                  <Route path="/password-reset" element={<PasswordReset />} />
-                  <Route path="/update-password" element={<UpdatePassword />} />
-                  <Route path="/onboarding/name" element={<NameSetup />} />
-                  <Route path="/onboarding/name-confirm" element={<NameConfirm />} />
-                  <Route path="/onboarding/school" element={<SchoolSetup />} />
-                  <Route path="/onboarding/aspirational-school" element={<AspirationalSchool />} />
-                  <Route path="/onboarding/school-confirm" element={<SchoolConfirm />} />
-                  <Route path="/subscription" element={<Subscription />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/feed" element={<Feed />} />
-                  <Route path="/explore" element={<Explore />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/edit-profile" element={<EditProfile />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/plan-management" element={<PlanManagement />} />
-                  <Route path="/settings/plan" element={<PlanManagement />} />
-                  <Route path="/school-info" element={<SchoolInfo />} />
-                  <Route path="/school-community" element={<SchoolCommunity />} />
-                  <Route path="/school/:schoolId" element={<SchoolProfilePage />} />
-                  <Route path="/privacy-settings" element={<PrivacySettings />} />
-                  <Route path="/group/:groupId" element={<GroupDetail />} />
-                  <Route path="/event/:eventId" element={<EventDetail />} />
-                  <Route path="/place/:placeId" element={<PlaceDetail />} />
-                  <Route path="/messages" element={<Messages />} />
-                  <Route path="/messages/compose" element={<ComposeMessage />} />
-                  <Route path="/messages/:conversationId" element={<MessageThread />} />
-                  <Route path="/user/:userId" element={<UserProfile />} />
-                  <Route path="/welcome" element={<Welcome />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AuthGate>
+              <AppEntryGate>
+                <AuthGate>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/signin" element={<SignIn />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    <Route path="/email-confirmation" element={<EmailConfirmation />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route path="/password-reset" element={<PasswordReset />} />
+                    <Route path="/update-password" element={<UpdatePassword />} />
+                    <Route path="/onboarding/name" element={<NameSetup />} />
+                    <Route path="/onboarding/name-confirm" element={<NameConfirm />} />
+                    <Route path="/onboarding/how-did-you-hear" element={<HowDidYouHear />} />
+                    <Route path="/onboarding/school" element={<SchoolSetup />} />
+                    <Route path="/onboarding/aspirational-school" element={<AspirationalSchool />} />
+                    <Route path="/onboarding/school-confirm" element={<SchoolConfirm />} />
+                    <Route path="/subscription" element={<Subscription />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/feed" element={<Feed />} />
+                    <Route path="/explore" element={<Explore />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/edit-profile" element={<EditProfile />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/plan-management" element={<PlanManagement />} />
+                    <Route path="/settings/plan" element={<PlanManagement />} />
+                    <Route path="/school-info" element={<SchoolInfo />} />
+                    <Route path="/school-community" element={<SchoolCommunity />} />
+                    <Route path="/school/:schoolId" element={<SchoolProfilePage />} />
+                    <Route path="/privacy-settings" element={<PrivacySettings />} />
+                    <Route path="/group/:groupId" element={<GroupDetail />} />
+                    <Route path="/event/:eventId" element={<EventDetail />} />
+                    <Route path="/place/:placeId" element={<PlaceDetail />} />
+                    <Route path="/messages" element={<Messages />} />
+                    <Route path="/messages/compose" element={<ComposeMessage />} />
+                    <Route path="/messages/:conversationId" element={<MessageThread />} />
+                    <Route path="/user/:userId" element={<UserProfile />} />
+                    <Route path="/welcome" element={<Welcome />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AuthGate>
+              </AppEntryGate>
             </BrowserRouter>
           </OnboardingProvider>
         </AuthProvider>

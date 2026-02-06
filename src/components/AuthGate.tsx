@@ -16,6 +16,7 @@ const PUBLIC_ROUTES = ['/', '/signin', '/signup', '/email-confirmation', '/auth/
 const ONBOARDING_ROUTES = [
   '/onboarding/name',
   '/onboarding/name-confirm',
+  '/onboarding/how-did-you-hear',
   '/onboarding/school',
   '/onboarding/aspirational-school',
   '/onboarding/school-confirm',
