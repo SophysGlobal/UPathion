@@ -47,7 +47,7 @@ const ComposeMessage = () => {
       setIsSearching(true);
       try {
         const { data, error } = await supabase
-          .from('profiles')
+          .from('public_profiles')
           .select('id, display_name, avatar_url, school_name, grade_or_year')
           .neq('id', user?.id || '')
           .or(`display_name.ilike.%${debouncedQuery}%,username.ilike.%${debouncedQuery}%`)
