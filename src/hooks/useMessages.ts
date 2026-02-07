@@ -104,7 +104,7 @@ export function useConversations() {
           const participantProfiles = await Promise.all(
             (participants || []).map(async (p) => {
               const { data: profile } = await supabase
-                .from('profiles')
+                .from('public_profiles')
                 .select('id, display_name, avatar_url, school_name, grade_or_year')
                 .eq('id', p.user_id)
                 .maybeSingle();
@@ -269,7 +269,7 @@ export function useMessages(conversationId: string | undefined) {
       const messagesWithDetails = await Promise.all(
         (data || []).map(async (msg) => {
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('public_profiles')
             .select('id, display_name, avatar_url')
             .eq('id', msg.sender_id)
             .maybeSingle();
@@ -318,7 +318,7 @@ export function useMessages(conversationId: string | undefined) {
           
           // Fetch sender profile
           const { data: profile } = await supabase
-            .from('profiles')
+            .from('public_profiles')
             .select('id, display_name, avatar_url')
             .eq('id', newMessage.sender_id)
             .maybeSingle();
