@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import AnimatedBackground from '@/components/AnimatedBackground';
 import upathionLogo from '@/assets/upathion-logo.png';
 
 interface WelcomeScreensProps {
@@ -7,54 +6,41 @@ interface WelcomeScreensProps {
 }
 
 const WelcomeScreens = ({ onComplete }: WelcomeScreensProps) => {
-  const [phase, setPhase] = useState<'welcome-in' | 'welcome' | 'transition' | 'started-in' | 'started' | 'done'>('welcome-in');
+  const [phase, setPhase] = useState<'enter' | 'welcome' | 'fade-out' | 'started' | 'done'>('enter');
 
   useEffect(() => {
-    // Phase 1: "Welcome" animates in
-    const welcomeShowTimer = setTimeout(() => {
-      setPhase('welcome');
-    }, 100);
-
-    // Phase 2: After ~2 seconds total, start transition to next text
-    const transitionTimer = setTimeout(() => {
-      setPhase('transition');
-    }, 2000);
-
-    // Phase 3: "Let's Get You Started" animates in
-    const startedInTimer = setTimeout(() => {
-      setPhase('started-in');
-    }, 2300); // 300ms for fade out
-
-    // Phase 4: Show "Let's Get You Started" 
-    const startedTimer = setTimeout(() => {
-      setPhase('started');
-    }, 2400);
-
-    // Phase 5: After ~2 more seconds, complete
-    const completeTimer = setTimeout(() => {
+    // Show welcome text
+    const t1 = setTimeout(() => setPhase('welcome'), 100);
+    // Fade out "Welcome"
+    const t2 = setTimeout(() => setPhase('fade-out'), 2000);
+    // Show "Let's Get You Started"
+    const t3 = setTimeout(() => setPhase('started'), 2400);
+    // Complete
+    const t4 = setTimeout(() => {
       setPhase('done');
       onComplete();
-    }, 4400); // 2000ms + 300ms transition + 2100ms for second text
+    }, 4400);
 
-    return () => {
-      clearTimeout(welcomeShowTimer);
-      clearTimeout(transitionTimer);
-      clearTimeout(startedInTimer);
-      clearTimeout(startedTimer);
-      clearTimeout(completeTimer);
-    };
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [onComplete]);
 
-  const isWelcomePhase = phase === 'welcome-in' || phase === 'welcome' || phase === 'transition';
-  const isStartedPhase = phase === 'started-in' || phase === 'started' || phase === 'done';
+  const isWelcomeVisible = phase === 'welcome';
+  const isStartedVisible = phase === 'started' || phase === 'done';
+
+  // Logo position: starts centered, then shifts up to match questionnaire placement
+  const logoAtTop = phase !== 'enter';
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background overflow-hidden">
-      <AnimatedBackground />
-      
-      <div className="relative z-10 flex flex-col items-center gap-8">
-        {/* Logo - consistent with questionnaire placement */}
-        <div className="flex items-center gap-3">
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden">
+      <div 
+        className="relative z-10 flex flex-col items-center w-full max-w-md px-4"
+        style={{
+          transform: logoAtTop ? 'translateY(-40px)' : 'translateY(0px)',
+          transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
+        {/* Logo + wordmark - same layout as questionnaire pages */}
+        <div className="flex items-center gap-3 mb-10">
           <img 
             src={upathionLogo} 
             alt="UPathion Logo" 
@@ -63,26 +49,28 @@ const WelcomeScreens = ({ onComplete }: WelcomeScreensProps) => {
           <span className="text-2xl font-bold gradient-text">UPathion</span>
         </div>
 
-        {/* Text container with fixed height to prevent layout shift */}
-        <div className="h-20 flex items-center justify-center">
-          {/* Welcome text */}
+        {/* Text container with fixed height to prevent shifts */}
+        <div className="h-20 flex items-center justify-center relative w-full">
+          {/* "Welcome" */}
           <h1 
-            className={`text-5xl md:text-6xl font-bold text-foreground transition-all duration-500 ease-out absolute ${
-              isWelcomePhase && phase !== 'transition'
-                ? 'opacity-100 translate-y-0 scale-100' 
-                : 'opacity-0 translate-y-4 scale-95'
-            }`}
+            className="text-5xl md:text-6xl font-bold text-foreground absolute"
+            style={{
+              opacity: isWelcomeVisible ? 1 : 0,
+              transform: isWelcomeVisible ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.97)',
+              transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+            }}
           >
             Welcome
           </h1>
 
-          {/* Let's Get You Started text */}
+          {/* "Let's Get You Started" - single line */}
           <h1 
-            className={`text-4xl md:text-5xl font-bold text-foreground transition-all duration-500 ease-out absolute text-center ${
-              isStartedPhase && phase !== 'started-in'
-                ? 'opacity-100 translate-y-0 scale-100' 
-                : 'opacity-0 translate-y-[-10px] scale-95'
-            }`}
+            className="text-3xl md:text-4xl font-bold text-foreground absolute whitespace-nowrap"
+            style={{
+              opacity: isStartedVisible ? 1 : 0,
+              transform: isStartedVisible ? 'translateY(0) scale(1)' : 'translateY(-8px) scale(0.97)',
+              transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+            }}
           >
             Let's Get You Started
           </h1>

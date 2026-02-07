@@ -19,6 +19,7 @@ const ONBOARDING_ROUTES = [
   '/onboarding/how-did-you-hear',
   '/onboarding/school',
   '/onboarding/aspirational-school',
+  '/onboarding/interests',
   '/onboarding/school-confirm',
   '/subscription',
 ];
@@ -34,8 +35,10 @@ const PROTECTED_APP_ROUTES = [
   '/explore',
   '/dashboard',
   '/profile',
+  '/edit-profile',
   '/settings',
   '/plan-management',
+  '/privacy-settings',
 ];
 
 const AuthGate = ({ children }: AuthGateProps) => {

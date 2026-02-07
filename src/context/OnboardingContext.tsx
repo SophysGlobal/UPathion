@@ -13,6 +13,7 @@ interface OnboardingData {
   gradeOrYear: string;
   major: string;
   aspirationalSchool: string;
+  interests: string[];
 }
 
 interface OnboardingContextType {
@@ -32,6 +33,7 @@ const defaultData: OnboardingData = {
   gradeOrYear: '',
   major: '',
   aspirationalSchool: '',
+  interests: [],
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
