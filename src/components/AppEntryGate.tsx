@@ -1,4 +1,5 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
+import AnimatedBackground from '@/components/AnimatedBackground';
 import SplashScreen from './SplashScreen';
 import WelcomeScreens from './WelcomeScreens';
 import { useAppEntry } from '@/hooks/useAppEntry';
@@ -12,13 +13,8 @@ interface AppEntryGateProps {
 /**
  * AppEntryGate - Manages the app entry experience
  * 
- * Flow:
- * 1. Always show splash animation first (logo + text reveal)
- * 2. After splash, conditionally show welcome screens:
- *    - First time on device: Show welcome
- *    - Previous session was admin: Show welcome (for QA)
- *    - Otherwise: Skip welcome
- * 3. Then render children (auth gate + app)
+ * A single persistent background lives here. Splash and Welcome
+ * render as content layers ON TOP of it — no background remounting.
  */
 const AppEntryGate = ({ children }: AppEntryGateProps) => {
   const { user } = useAuth();
@@ -33,37 +29,64 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
     markAdminSession,
   } = useAppEntry();
 
-  // When user signs in successfully, mark the device as having signed in
+  // Fade-out overlay: when transitioning from welcome/splash to app
+  const [fadeOut, setFadeOut] = useState(false);
+
   useEffect(() => {
     if (user) {
       markDeviceSignedIn();
     }
   }, [user, markDeviceSignedIn]);
 
-  // Track if current session is admin (for next app entry)
   useEffect(() => {
     if (user && isAdmin !== undefined) {
       markAdminSession(isAdmin);
     }
   }, [user, isAdmin, markAdminSession]);
 
-  // Show splash first
-  if (showSplash) {
-    return <SplashScreen onComplete={onSplashComplete} />;
-  }
+  // When welcome completes, start fade-out then show children
+  const handleWelcomeComplete = () => {
+    setFadeOut(true);
+    setTimeout(() => {
+      onWelcomeComplete();
+      setFadeOut(false);
+    }, 500);
+  };
 
-  // Then welcome screens if needed
-  if (showWelcome) {
-    return <WelcomeScreens onComplete={onWelcomeComplete} />;
-  }
+  // When splash completes and no welcome needed, also fade
+  const handleSplashComplete = () => {
+    onSplashComplete();
+  };
 
-  // Finally render the app
-  if (isReady) {
-    return <>{children}</>;
-  }
+  const showOverlay = showSplash || showWelcome || fadeOut;
 
-  // Fallback loading state (should not happen normally)
-  return null;
+  return (
+    <>
+      {/* Persistent background that never unmounts during entry flow */}
+      {showOverlay && (
+        <div 
+          className={`fixed inset-0 z-[99] bg-background transition-opacity duration-500 ${
+            fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+        >
+          <AnimatedBackground />
+        </div>
+      )}
+
+      {/* Splash content */}
+      {showSplash && (
+        <SplashScreen onComplete={handleSplashComplete} />
+      )}
+
+      {/* Welcome content */}
+      {showWelcome && !showSplash && (
+        <WelcomeScreens onComplete={handleWelcomeComplete} />
+      )}
+
+      {/* App content - render underneath, becomes visible when overlay fades */}
+      {isReady && <>{children}</>}
+    </>
+  );
 };
 
 export default AppEntryGate;

@@ -36,6 +36,7 @@ const SchoolConfirm = () => {
         is_high_school: isHighSchool,
         referral_source: data.referralSource || null,
         referral_source_other: data.referralSourceOther || null,
+        interests: data.interests?.length ? data.interests : [],
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };
@@ -171,6 +172,7 @@ const SchoolConfirm = () => {
 
         {/* Progress indicator */}
         <div className="flex justify-center gap-2 pt-4 animate-fade-in">
+          <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />

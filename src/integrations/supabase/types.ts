@@ -147,6 +147,7 @@ export type Database = {
           email: string | null
           grade_or_year: string | null
           id: string
+          interests: string[] | null
           is_high_school: boolean | null
           is_premium: boolean
           major: string | null
@@ -168,6 +169,7 @@ export type Database = {
           email?: string | null
           grade_or_year?: string | null
           id: string
+          interests?: string[] | null
           is_high_school?: boolean | null
           is_premium?: boolean
           major?: string | null
@@ -189,6 +191,7 @@ export type Database = {
           email?: string | null
           grade_or_year?: string | null
           id?: string
+          interests?: string[] | null
           is_high_school?: boolean | null
           is_premium?: boolean
           major?: string | null
@@ -390,6 +393,7 @@ export type Database = {
           display_name: string | null
           grade_or_year: string | null
           id: string | null
+          interests: string[] | null
           is_high_school: boolean | null
           major: string | null
           onboarding_completed: boolean | null
@@ -406,6 +410,7 @@ export type Database = {
           display_name?: string | null
           grade_or_year?: string | null
           id?: string | null
+          interests?: string[] | null
           is_high_school?: boolean | null
           major?: string | null
           onboarding_completed?: boolean | null
@@ -422,6 +427,7 @@ export type Database = {
           display_name?: string | null
           grade_or_year?: string | null
           id?: string | null
+          interests?: string[] | null
           is_high_school?: boolean | null
           major?: string | null
           onboarding_completed?: boolean | null

@@ -18,14 +18,13 @@ const AspirationalSchool = () => {
   const [selectedSchools, setSelectedSchools] = useState<string[]>(initialSchools);
 
   const handleContinue = () => {
-    // Store as comma-separated string for backward compatibility
     updateData({ aspirationalSchool: selectedSchools.join(', ') });
-    navigate("/onboarding/school-confirm");
+    navigate("/onboarding/interests");
   };
 
   const handleSkip = () => {
     updateData({ aspirationalSchool: "" });
-    navigate("/onboarding/school-confirm");
+    navigate("/onboarding/interests");
   };
 
   return (
@@ -79,6 +78,7 @@ const AspirationalSchool = () => {
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg opacity-50" />
+          <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
         </div>
       </div>

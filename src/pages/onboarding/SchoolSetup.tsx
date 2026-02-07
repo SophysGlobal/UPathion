@@ -43,11 +43,12 @@ const SchoolSetup = () => {
       major: major.trim(),
     });
     
-    // High schoolers get the aspirational school question
+    // High schoolers get the aspirational school question, then interests
     if (schoolType === 'high_school') {
       navigate("/onboarding/aspirational-school");
     } else {
-      navigate("/onboarding/school-confirm");
+      // College students go directly to interests
+      navigate("/onboarding/interests");
     }
   };
 
@@ -166,6 +167,7 @@ const SchoolSetup = () => {
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
+          <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
         </div>
