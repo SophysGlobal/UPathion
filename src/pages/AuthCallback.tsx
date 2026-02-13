@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
 import { CheckCircle, XCircle } from "lucide-react";
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -39,7 +38,7 @@ const AuthCallback = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
-      <AnimatedBackground />
+      
       
       <div className="w-full max-w-md space-y-8 relative z-10 text-center">
         {/* Logo */}

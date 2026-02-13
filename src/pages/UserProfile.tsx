@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -181,7 +180,7 @@ const UserProfile = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
-        <AnimatedBackground />
+        
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
           <div className="flex items-center gap-4 px-6 py-3">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors">
@@ -214,7 +213,7 @@ const UserProfile = () => {
   if (!displayData) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
-        <AnimatedBackground />
+        
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
           <div className="flex items-center gap-4 px-6 py-3">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors">
@@ -241,7 +240,7 @@ const UserProfile = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <AnimatedBackground />
+      
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">

@@ -1,35 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import upathionLogo from '@/assets/upathion-logo.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
+type SplashPhase = 'initial' | 'logo' | 'text' | 'hold';
+
 const SplashScreen = ({ onComplete }: SplashScreenProps) => {
-  const [phase, setPhase] = useState<'initial' | 'logo' | 'text' | 'hold'>('initial');
+  const [phase, setPhase] = useState<SplashPhase>('initial');
+
+  const stableComplete = useCallback(onComplete, []);
 
   useEffect(() => {
-    // Kick off after a single frame to ensure mount
-    const startTimer = requestAnimationFrame(() => {
-      setPhase('logo');
-    });
+    // Use a single coordinated timeline via a state machine
+    // Phase 1: Show logo (frame after mount)
+    const raf = requestAnimationFrame(() => setPhase('logo'));
 
-    // Phase 2: Start text reveal
-    const textTimer = setTimeout(() => setPhase('text'), 400);
+    // Phase 2: Start text reveal after logo animates in
+    const t1 = setTimeout(() => setPhase('text'), 500);
 
     // Phase 3: Hold combined lockup
-    const holdTimer = setTimeout(() => setPhase('hold'), 1200);
+    const t2 = setTimeout(() => setPhase('hold'), 1300);
 
-    // Phase 4: Complete
-    const completeTimer = setTimeout(() => onComplete(), 2200);
+    // Phase 4: Complete after 1s hold
+    const t3 = setTimeout(() => stableComplete(), 2300);
 
     return () => {
-      cancelAnimationFrame(startTimer);
-      clearTimeout(textTimer);
-      clearTimeout(holdTimer);
-      clearTimeout(completeTimer);
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
     };
-  }, [onComplete]);
+  }, [stableComplete]);
 
   const showLogo = phase !== 'initial';
   const showText = phase === 'text' || phase === 'hold';
@@ -38,13 +41,12 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
     <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
       {/* Content: logo + wordmark as a single centered block */}
       <div className="relative z-10 flex items-center gap-3">
-        {/* Logo */}
+        {/* Logo — fade + scale in */}
         <div 
-          className="transition-all duration-600 ease-out"
           style={{
             opacity: showLogo ? 1 : 0,
             transform: showLogo ? 'scale(1)' : 'scale(0.85)',
-            transition: 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           <img 
@@ -54,7 +56,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           />
         </div>
 
-        {/* Wordmark with clip reveal */}
+        {/* Wordmark — clip reveal left-to-right */}
         <div 
           className="overflow-hidden"
           style={{

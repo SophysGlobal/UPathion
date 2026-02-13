@@ -2,7 +2,6 @@ import { useState, useMemo, memo } from "react";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
@@ -183,7 +182,6 @@ const Feed = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <AnimatedBackground />
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">

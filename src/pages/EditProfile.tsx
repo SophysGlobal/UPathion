@@ -5,7 +5,6 @@ import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -462,7 +461,6 @@ const EditProfile = () => {
   if (profileLoading) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
-        <AnimatedBackground />
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
           <div className="flex items-center justify-between px-6 py-3">
             <div className="flex items-center gap-4">
@@ -495,7 +493,6 @@ const EditProfile = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <AnimatedBackground />
 
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="flex items-center justify-between px-6 py-3">
