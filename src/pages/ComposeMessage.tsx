@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
 import { 
@@ -108,7 +107,7 @@ const ComposeMessage = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <AnimatedBackground />
+      
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">

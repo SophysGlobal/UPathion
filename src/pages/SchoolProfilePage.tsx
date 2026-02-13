@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -233,7 +232,7 @@ const SchoolProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-24 relative">
-      <AnimatedBackground />
+      
 
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">

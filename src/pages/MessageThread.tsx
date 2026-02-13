@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { Button } from "@/components/ui/button";
 import { 
@@ -149,7 +148,7 @@ const MessageThread = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative flex items-center justify-center">
-        <AnimatedBackground />
+        
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
         <BottomNav />
       </div>
@@ -159,7 +158,7 @@ const MessageThread = () => {
   if (!conversation && !loading) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
-        <AnimatedBackground />
+        
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
           <div className="flex items-center gap-4 px-6 py-3">
             <button onClick={() => navigate('/messages')} className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors">
@@ -181,7 +180,7 @@ const MessageThread = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative flex flex-col">
-      <AnimatedBackground />
+      
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">

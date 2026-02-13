@@ -1,5 +1,4 @@
 import { ReactNode, useEffect, useState } from 'react';
-import AnimatedBackground from '@/components/AnimatedBackground';
 import SplashScreen from './SplashScreen';
 import WelcomeScreens from './WelcomeScreens';
 import { useAppEntry } from '@/hooks/useAppEntry';
@@ -13,8 +12,8 @@ interface AppEntryGateProps {
 /**
  * AppEntryGate - Manages the app entry experience
  * 
- * A single persistent background lives here. Splash and Welcome
- * render as content layers ON TOP of it — no background remounting.
+ * Background lives at App.tsx level (never remounts).
+ * This component only renders splash/welcome overlays ON TOP of it.
  */
 const AppEntryGate = ({ children }: AppEntryGateProps) => {
   const { user } = useAuth();
@@ -62,15 +61,13 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
 
   return (
     <>
-      {/* Persistent background that never unmounts during entry flow */}
+      {/* Overlay that blocks app content during splash/welcome */}
       {showOverlay && (
         <div 
           className={`fixed inset-0 z-[99] bg-background transition-opacity duration-500 ${
             fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
-        >
-          <AnimatedBackground />
-        </div>
+        />
       )}
 
       {/* Splash content */}

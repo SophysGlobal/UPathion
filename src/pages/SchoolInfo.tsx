@@ -3,7 +3,6 @@ import { useOnboarding } from "@/context/OnboardingContext";
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import { ChevronLeft, MapPin, Users, GraduationCap, Calendar, BookOpen, Building2, Globe, Award } from "lucide-react";
 
 const SchoolInfo = () => {
@@ -45,7 +44,7 @@ Known for its commitment to research and community engagement, the institution h
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <AnimatedBackground />
+      
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">

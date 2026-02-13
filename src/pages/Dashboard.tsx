@@ -5,7 +5,6 @@ import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight } from "lucide-react";
 
@@ -64,7 +63,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <AnimatedBackground />
       
       {/* Profile completion prompt for new users */}
       {showProfilePrompt && (

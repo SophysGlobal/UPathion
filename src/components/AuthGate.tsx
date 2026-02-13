@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
-import AnimatedBackground from '@/components/AnimatedBackground';
 
 interface AuthGateProps {
   children: ReactNode;
@@ -25,7 +24,6 @@ const ONBOARDING_ROUTES = [
 ];
 
 // Routes that authenticated users can ALWAYS access regardless of onboarding status
-// These are in-app pages that should never redirect to onboarding/registration
 const PROTECTED_APP_ROUTES = [
   '/school-community',
   '/school/',
@@ -48,16 +46,12 @@ const AuthGate = ({ children }: AuthGateProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Track if admin has gone through questionnaire this session
   const [adminQuestionnaireDone, setAdminQuestionnaireDone] = useState(() => {
     return sessionStorage.getItem('admin-questionnaire-done') === 'true';
   });
 
-  // Track if we've done initial routing decision
   const [hasRouted, setHasRouted] = useState(false);
 
-  // When auth user changes (sign-in/sign-out/refresh), re-run routing deterministically.
-  // Also reset the admin questionnaire flag so admins are forced through onboarding on every app launch/login.
   useEffect(() => {
     setHasRouted(false);
     if (user?.id) {
@@ -70,31 +64,23 @@ const AuthGate = ({ children }: AuthGateProps) => {
   const isPublicRoute = PUBLIC_ROUTES.includes(currentPath);
   const isOnboardingRoute = ONBOARDING_ROUTES.includes(currentPath);
   const isAuthRoute = currentPath === '/signin' || currentPath === '/signup';
-  
-  // Check if current path is a protected app route (should never redirect to onboarding for logged-in users)
   const isProtectedAppRoute = PROTECTED_APP_ROUTES.some(route => currentPath.startsWith(route));
 
-  // Calculate loading state - only wait for dependent queries when user exists
   const isLoading = authLoading || (user && (profileLoading || adminLoading));
 
   const performRouting = useCallback(() => {
-    // Not authenticated
     if (!user) {
-      // Allow public routes
       if (isPublicRoute) {
         setHasRouted(true);
         return;
       }
-      // Redirect to signin for protected routes
       navigate('/signin', { replace: true });
       setHasRouted(true);
       return;
     }
 
     // User is authenticated
-    // If on auth routes (signin/signup), redirect appropriately
     if (isAuthRoute) {
-      // Admin: go to questionnaire
       if (isAdmin && !adminQuestionnaireDone) {
         navigate('/onboarding/name', { replace: true });
       } else if (!isAdmin && !hasCompletedOnboarding) {
@@ -106,7 +92,6 @@ const AuthGate = ({ children }: AuthGateProps) => {
       return;
     }
 
-    // If authenticated and on landing page, treat it as an entry point and route to the correct stack
     if (currentPath === '/') {
       if (isAdmin && !adminQuestionnaireDone) {
         navigate('/onboarding/name', { replace: true });
@@ -119,15 +104,12 @@ const AuthGate = ({ children }: AuthGateProps) => {
       return;
     }
 
-    // Admin QA mode: force questionnaire every session
-    // BUT: If admin is on a protected app route, allow access (for QA purposes)
+    // Admin QA mode
     if (isAdmin && !adminQuestionnaireDone) {
-      // Allow admin to access protected app routes for QA even before questionnaire
       if (isProtectedAppRoute) {
         setHasRouted(true);
         return;
       }
-      // If not on onboarding route or protected app route, redirect to start questionnaire
       if (!isOnboardingRoute) {
         navigate('/onboarding/name', { replace: true });
       }
@@ -161,28 +143,24 @@ const AuthGate = ({ children }: AuthGateProps) => {
       setHasRouted(false);
       return;
     }
-
     performRouting();
   }, [isLoading, performRouting]);
 
-  // Expose a way for SchoolConfirm to mark admin questionnaire as done
   useEffect(() => {
     const handleAdminQuestionnaireDone = () => {
       setAdminQuestionnaireDone(true);
       sessionStorage.setItem('admin-questionnaire-done', 'true');
     };
-
     window.addEventListener('admin-questionnaire-complete', handleAdminQuestionnaireDone);
     return () => {
       window.removeEventListener('admin-questionnaire-complete', handleAdminQuestionnaireDone);
     };
   }, []);
 
-  // Show loading screen while checking auth or performing initial routing
+  // Loading screen — no AnimatedBackground here (it's at App root)
   if (isLoading || !hasRouted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <AnimatedBackground />
         <div className="relative z-10 flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-muted-foreground text-sm">Loading...</p>

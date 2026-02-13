@@ -1,7 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Users, BookOpen, MapPin } from "lucide-react";
 import { USE_SEED_DATA, seedGroups } from "@/data/seedData";
@@ -17,7 +16,7 @@ const GroupDetail = () => {
   if (!group) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
-        <AnimatedBackground />
+        
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
           <div className="flex items-center gap-4 px-6 py-3">
             <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors">
@@ -36,7 +35,7 @@ const GroupDetail = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <AnimatedBackground />
+      
       
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="flex items-center gap-4 px-6 py-3">

@@ -1,33 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import upathionLogo from '@/assets/upathion-logo.png';
 
 interface WelcomeScreensProps {
   onComplete: () => void;
 }
 
+type WelcomePhase = 'enter' | 'welcome' | 'transition' | 'started' | 'done';
+
 const WelcomeScreens = ({ onComplete }: WelcomeScreensProps) => {
-  const [phase, setPhase] = useState<'enter' | 'welcome' | 'fade-out' | 'started' | 'done'>('enter');
+  const [phase, setPhase] = useState<WelcomePhase>('enter');
+
+  const stableComplete = useCallback(onComplete, []);
 
   useEffect(() => {
-    // Show welcome text
+    // Coordinated state machine — each phase drives the next
+    // enter → welcome (show "Welcome")
     const t1 = setTimeout(() => setPhase('welcome'), 100);
-    // Fade out "Welcome"
-    const t2 = setTimeout(() => setPhase('fade-out'), 2000);
-    // Show "Let's Get You Started"
-    const t3 = setTimeout(() => setPhase('started'), 2400);
-    // Complete
+    // welcome → transition (fade out "Welcome")
+    const t2 = setTimeout(() => setPhase('transition'), 2100);
+    // transition → started (show "Let's Get You Started")
+    const t3 = setTimeout(() => setPhase('started'), 2500);
+    // started → done (complete)
     const t4 = setTimeout(() => {
       setPhase('done');
-      onComplete();
-    }, 4400);
+      stableComplete();
+    }, 4500);
 
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [onComplete]);
+  }, [stableComplete]);
 
   const isWelcomeVisible = phase === 'welcome';
   const isStartedVisible = phase === 'started' || phase === 'done';
 
-  // Logo position: starts centered, then shifts up to match questionnaire placement
+  // Logo shifts up after enter phase
   const logoAtTop = phase !== 'enter';
 
   return (
@@ -39,7 +44,7 @@ const WelcomeScreens = ({ onComplete }: WelcomeScreensProps) => {
           transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        {/* Logo + wordmark - same layout as questionnaire pages */}
+        {/* Logo + wordmark */}
         <div className="flex items-center gap-3 mb-10">
           <img 
             src={upathionLogo} 
@@ -49,27 +54,29 @@ const WelcomeScreens = ({ onComplete }: WelcomeScreensProps) => {
           <span className="text-2xl font-bold gradient-text">UPathion</span>
         </div>
 
-        {/* Text container with fixed height to prevent shifts */}
+        {/* Text container with fixed height */}
         <div className="h-20 flex items-center justify-center relative w-full">
-          {/* "Welcome" */}
+          {/* "Welcome" — only visible during welcome phase */}
           <h1 
-            className="text-5xl md:text-6xl font-bold text-foreground absolute"
+            className="text-5xl md:text-6xl font-semibold text-foreground absolute font-display"
             style={{
               opacity: isWelcomeVisible ? 1 : 0,
               transform: isWelcomeVisible ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.97)',
               transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+              pointerEvents: 'none',
             }}
           >
             Welcome
           </h1>
 
-          {/* "Let's Get You Started" - single line */}
+          {/* "Let's Get You Started" — single line, visible during started phase */}
           <h1 
-            className="text-3xl md:text-4xl font-bold text-foreground absolute whitespace-nowrap"
+            className="text-3xl md:text-4xl font-semibold text-foreground absolute whitespace-nowrap font-display"
             style={{
               opacity: isStartedVisible ? 1 : 0,
               transform: isStartedVisible ? 'translateY(0) scale(1)' : 'translateY(-8px) scale(0.97)',
               transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+              pointerEvents: 'none',
             }}
           >
             Let's Get You Started

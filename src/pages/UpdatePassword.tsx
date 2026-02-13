@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import Logo from "@/components/Logo";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -77,7 +76,6 @@ const UpdatePassword = () => {
   if (isValidSession === null) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 relative">
-        <AnimatedBackground />
         <div className="text-foreground">Loading...</div>
       </div>
     );
@@ -87,7 +85,6 @@ const UpdatePassword = () => {
   if (!isValidSession) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 relative">
-        <AnimatedBackground />
         
         <div className="w-full max-w-md space-y-8 relative z-10">
           <div className="flex justify-center animate-fade-in">
@@ -117,7 +114,6 @@ const UpdatePassword = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
-      <AnimatedBackground />
       
       <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="flex justify-center animate-fade-in">

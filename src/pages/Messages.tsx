@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import AnimatedBackground from "@/components/AnimatedBackground";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
@@ -118,7 +117,6 @@ const Messages = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <AnimatedBackground />
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
