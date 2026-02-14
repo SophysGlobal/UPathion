@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Logo from "@/components/Logo";
 import { CheckCircle, XCircle } from "lucide-react";
 import { GradientButton } from "@/components/ui/GradientButton";
+import { markSessionSignedIn } from "@/components/AuthGate";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -23,13 +24,13 @@ const AuthCallback = () => {
       return;
     }
 
-    // If no error, the auth state change listener will handle the redirect
-    // Give it a moment to process
+    // Mark session as explicitly signed in (OAuth callback = user signed in)
+    markSessionSignedIn();
+
     const timer = setTimeout(() => {
       setStatus("success");
-      // Navigate to dashboard after showing success
       setTimeout(() => {
-        navigate("/dashboard", { replace: true });
+        navigate("/", { replace: true });
       }, 1500);
     }, 1000);
 

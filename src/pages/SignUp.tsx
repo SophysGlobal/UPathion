@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { validatePassword, getPasswordRequirements } from "@/lib/passwordValidation";
 import { Check, X, Eye, EyeOff } from "lucide-react";
+import { markSessionSignedIn } from "@/components/AuthGate";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const SignUp = () => {
   // AuthGate handles redirects for logged-in users
 
   const handleGoogleSignUp = async () => {
+    markSessionSignedIn();
     const { error } = await signInWithGoogle();
     if (error) {
       toast.error(error.message || "Failed to sign up with Google");
@@ -99,7 +101,7 @@ const SignUp = () => {
         toast.success("Account created! Check your email to confirm.");
         navigate("/email-confirmation", { state: { email } });
       } else if (data.session) {
-        // No email confirmation required (shouldn't happen with our setup, but handle it)
+        markSessionSignedIn();
         toast.success("Account created successfully!");
         navigate("/onboarding/name");
       }
