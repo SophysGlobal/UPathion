@@ -8,6 +8,27 @@ interface AuthGateProps {
   children: ReactNode;
 }
 
+// Session-level sign-in gate key
+// This flag is ONLY set when the user explicitly signs in during this browser session.
+// It prevents auto-routing to questionnaire from a persisted Supabase session.
+const SESSION_SIGNED_IN_KEY = 'upathion_signed_in_this_session';
+
+export const markSessionSignedIn = () => {
+  try {
+    sessionStorage.setItem(SESSION_SIGNED_IN_KEY, 'true');
+  } catch {
+    // sessionStorage unavailable
+  }
+};
+
+const hasSignedInThisSession = (): boolean => {
+  try {
+    return sessionStorage.getItem(SESSION_SIGNED_IN_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
 // Routes that don't require authentication
 const PUBLIC_ROUTES = ['/', '/signin', '/signup', '/email-confirmation', '/auth/callback', '/password-reset', '/update-password', '/welcome'];
 
@@ -66,22 +87,27 @@ const AuthGate = ({ children }: AuthGateProps) => {
   const isAuthRoute = currentPath === '/signin' || currentPath === '/signup';
   const isProtectedAppRoute = PROTECTED_APP_ROUTES.some(route => currentPath.startsWith(route));
 
-  const isLoading = authLoading || (user && (profileLoading || adminLoading));
+  const isLoading = authLoading || (user && hasSignedInThisSession() && (profileLoading || adminLoading));
 
   const performRouting = useCallback(() => {
-    if (!user) {
-      // Unauthenticated: allow public routes, redirect everything else to sign-in
+    const signedInThisSession = hasSignedInThisSession();
+
+    // RULE 1: If user has NOT explicitly signed in this session,
+    // treat them as unauthenticated regardless of persisted Supabase session.
+    // This ensures splash → sign-in ALWAYS, never splash → questionnaire.
+    if (!user || !signedInThisSession) {
       if (isPublicRoute) {
         setHasRouted(true);
         return;
       }
-      // CRITICAL: questionnaire and all other routes require sign-in
+      // Any non-public route without explicit sign-in → force to sign-in
       navigate('/signin', { replace: true });
       setHasRouted(true);
       return;
     }
 
-    // User is authenticated
+    // RULE 2: User is authenticated AND has signed in this session.
+    // Now normal routing logic applies.
     if (isAuthRoute || currentPath === '/') {
       if (isAdmin && !adminQuestionnaireDone) {
         navigate('/onboarding/name', { replace: true });
@@ -147,10 +173,9 @@ const AuthGate = ({ children }: AuthGateProps) => {
     };
   }, []);
 
-  // Loading screen — no AnimatedBackground here (it's at App root)
   if (isLoading || !hasRouted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="relative z-10 flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-muted-foreground text-sm">Loading...</p>

@@ -6,6 +6,7 @@ import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { markSessionSignedIn } from "@/components/AuthGate";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,13 +24,14 @@ const SignIn = () => {
     setError(null);
     setIsLoading(true);
     try {
+      // Mark session BEFORE OAuth redirect so callback knows we explicitly signed in
+      markSessionSignedIn();
       const { error } = await signInWithGoogle();
       if (error) {
         console.error("Google sign-in error:", error);
         setError(error.message || "Failed to sign in with Google");
         toast.error(error.message || "Failed to sign in with Google");
       }
-      // Redirect handled by OAuth flow
     } catch (err) {
       console.error("Unexpected Google sign-in error:", err);
       setError("An unexpected error occurred");
@@ -96,8 +98,8 @@ const SignIn = () => {
         return;
       }
 
-      // Success: do NOT toast here; AuthGate must transition the app out of this screen.
-      // Keep loading state until this component unmounts due to routing.
+      // Success: mark session as explicitly signed in, then let AuthGate route.
+      markSessionSignedIn();
     } catch (err) {
       console.error("Unexpected sign-in error:", err);
       const errorMessage = "An unexpected error occurred. Please try again.";
