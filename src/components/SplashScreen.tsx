@@ -1,75 +1,80 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import upathionLogo from '@/assets/upathion-logo.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
-type SplashPhase = 'initial' | 'logo' | 'text' | 'hold';
-
+/**
+ * Splash: logo fades+scales in, then wordmark reveals left-to-right.
+ * Uses a single RAF-driven timeline to avoid setTimeout race conditions.
+ */
 const SplashScreen = ({ onComplete }: SplashScreenProps) => {
-  const [phase, setPhase] = useState<SplashPhase>('initial');
-
-  const stableComplete = useCallback(onComplete, []);
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(0);
+  const completeRef = useRef(onComplete);
+  completeRef.current = onComplete;
 
   useEffect(() => {
-    // Use a single coordinated timeline via a state machine
-    // Phase 1: Show logo (frame after mount)
-    const raf = requestAnimationFrame(() => setPhase('logo'));
+    startRef.current = performance.now();
+    let raf: number;
 
-    // Phase 2: Start text reveal after logo animates in
-    const t1 = setTimeout(() => setPhase('text'), 500);
-
-    // Phase 3: Hold combined lockup
-    const t2 = setTimeout(() => setPhase('hold'), 1300);
-
-    // Phase 4: Complete after 1s hold
-    const t3 = setTimeout(() => stableComplete(), 2300);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+    const tick = (now: number) => {
+      const ms = now - startRef.current;
+      setElapsed(ms);
+      if (ms < 2300) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        completeRef.current();
+      }
     };
-  }, [stableComplete]);
 
-  const showLogo = phase !== 'initial';
-  const showText = phase === 'text' || phase === 'hold';
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Timeline: 0-600ms logo fades in, 500ms+ wordmark reveals, hold until 2300ms
+  const logoProgress = Math.min(1, elapsed / 600);
+  const showText = elapsed > 500;
+  const textProgress = showText ? Math.min(1, (elapsed - 500) / 800) : 0;
+
+  // Eased values (ease-out cubic)
+  const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+  const logoEased = easeOut(logoProgress);
+  const textEased = easeOut(textProgress);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
-      {/* Content: logo + wordmark as a single centered block */}
       <div className="relative z-10 flex items-center gap-3">
         {/* Logo — fade + scale in */}
-        <div 
+        <div
           style={{
-            opacity: showLogo ? 1 : 0,
-            transform: showLogo ? 'scale(1)' : 'scale(0.85)',
-            transition: 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            opacity: logoEased,
+            transform: `scale(${0.85 + 0.15 * logoEased})`,
+            willChange: 'opacity, transform',
           }}
         >
-          <img 
-            src={upathionLogo} 
-            alt="UPathion Logo" 
+          <img
+            src={upathionLogo}
+            alt="UPathion Logo"
             className="w-16 h-16 md:w-20 md:h-20 object-contain"
           />
         </div>
 
         {/* Wordmark — clip reveal left-to-right */}
-        <div 
+        <div
           className="overflow-hidden"
           style={{
-            maxWidth: showText ? '200px' : '0px',
-            transition: 'max-width 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+            maxWidth: `${textEased * 200}px`,
+            willChange: 'max-width',
           }}
         >
-          <span 
+          <span
             className="text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block"
             style={{
-              opacity: showText ? 1 : 0,
-              transform: showText ? 'translateX(0)' : 'translateX(-20px)',
-              transition: 'opacity 0.6s ease-out 0.15s, transform 0.6s ease-out 0.15s',
+              opacity: textEased,
+              transform: `translateX(${(1 - textEased) * -20}px)`,
+              willChange: 'opacity, transform',
             }}
           >
             UPathion

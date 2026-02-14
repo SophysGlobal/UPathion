@@ -62,9 +62,10 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
   return (
     <>
       {/* Overlay that blocks app content during splash/welcome */}
+      {/* Transparent overlay — background shows through from frame 1 */}
       {showOverlay && (
         <div 
-          className={`fixed inset-0 z-[99] bg-background transition-opacity duration-500 ${
+          className={`fixed inset-0 z-[99] transition-opacity duration-500 ${
             fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         />

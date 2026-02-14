@@ -1,82 +1,101 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import upathionLogo from '@/assets/upathion-logo.png';
 
 interface WelcomeScreensProps {
   onComplete: () => void;
 }
 
-type WelcomePhase = 'enter' | 'welcome' | 'transition' | 'started' | 'done';
-
+/**
+ * Welcome flow: single RAF-driven timeline.
+ * 0–100ms: enter (logo centered)
+ * 100–900ms: logo shifts up
+ * 200–700ms: "Welcome" fades in
+ * 2100–2500ms: "Welcome" fades out
+ * 2500–3000ms: "Let's Get You Started" fades in
+ * 4500ms: complete
+ */
 const WelcomeScreens = ({ onComplete }: WelcomeScreensProps) => {
-  const [phase, setPhase] = useState<WelcomePhase>('enter');
-
-  const stableComplete = useCallback(onComplete, []);
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(0);
+  const completeRef = useRef(onComplete);
+  completeRef.current = onComplete;
+  const doneRef = useRef(false);
 
   useEffect(() => {
-    // Coordinated state machine — each phase drives the next
-    // enter → welcome (show "Welcome")
-    const t1 = setTimeout(() => setPhase('welcome'), 100);
-    // welcome → transition (fade out "Welcome")
-    const t2 = setTimeout(() => setPhase('transition'), 2100);
-    // transition → started (show "Let's Get You Started")
-    const t3 = setTimeout(() => setPhase('started'), 2500);
-    // started → done (complete)
-    const t4 = setTimeout(() => {
-      setPhase('done');
-      stableComplete();
-    }, 4500);
+    startRef.current = performance.now();
+    let raf: number;
 
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [stableComplete]);
+    const tick = (now: number) => {
+      const ms = now - startRef.current;
+      setElapsed(ms);
+      if (ms >= 4500 && !doneRef.current) {
+        doneRef.current = true;
+        completeRef.current();
+        return;
+      }
+      if (!doneRef.current) {
+        raf = requestAnimationFrame(tick);
+      }
+    };
 
-  const isWelcomeVisible = phase === 'welcome';
-  const isStartedVisible = phase === 'started' || phase === 'done';
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
-  // Logo shifts up after enter phase
-  const logoAtTop = phase !== 'enter';
+  const easeOut = (t: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
+
+  // Logo shift: 100ms–900ms
+  const shiftProgress = easeOut((elapsed - 100) / 800);
+  const logoY = -40 * shiftProgress;
+
+  // "Welcome": fade in 200–700ms, fade out 2100–2500ms
+  const welcomeIn = easeOut((elapsed - 200) / 500);
+  const welcomeOut = elapsed > 2100 ? easeOut((elapsed - 2100) / 400) : 0;
+  const welcomeOpacity = Math.max(0, welcomeIn - welcomeOut);
+
+  // "Let's Get You Started": fade in 2500–3000ms
+  const startedOpacity = easeOut((elapsed - 2500) / 500);
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden">
-      <div 
+      <div
         className="relative z-10 flex flex-col items-center w-full max-w-md px-4"
         style={{
-          transform: logoAtTop ? 'translateY(-40px)' : 'translateY(0px)',
-          transition: 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+          transform: `translateY(${logoY}px)`,
+          willChange: 'transform',
         }}
       >
         {/* Logo + wordmark */}
         <div className="flex items-center gap-3 mb-10">
-          <img 
-            src={upathionLogo} 
-            alt="UPathion Logo" 
+          <img
+            src={upathionLogo}
+            alt="UPathion Logo"
             className="w-12 h-12 object-contain"
           />
           <span className="text-2xl font-bold gradient-text">UPathion</span>
         </div>
 
-        {/* Text container with fixed height */}
+        {/* Text container — fixed height prevents reflow */}
         <div className="h-20 flex items-center justify-center relative w-full">
-          {/* "Welcome" — only visible during welcome phase */}
-          <h1 
+          <h1
             className="text-5xl md:text-6xl font-semibold text-foreground absolute font-display"
             style={{
-              opacity: isWelcomeVisible ? 1 : 0,
-              transform: isWelcomeVisible ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.97)',
-              transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+              opacity: welcomeOpacity,
+              transform: `translateY(${(1 - welcomeIn) * 12}px) scale(${0.97 + 0.03 * welcomeIn})`,
               pointerEvents: 'none',
+              willChange: 'opacity, transform',
             }}
           >
             Welcome
           </h1>
 
-          {/* "Let's Get You Started" — single line, visible during started phase */}
-          <h1 
+          <h1
             className="text-3xl md:text-4xl font-semibold text-foreground absolute whitespace-nowrap font-display"
             style={{
-              opacity: isStartedVisible ? 1 : 0,
-              transform: isStartedVisible ? 'translateY(0) scale(1)' : 'translateY(-8px) scale(0.97)',
-              transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+              opacity: startedOpacity,
+              transform: `translateY(${(1 - startedOpacity) * -8}px) scale(${0.97 + 0.03 * startedOpacity})`,
               pointerEvents: 'none',
+              willChange: 'opacity, transform',
             }}
           >
             Let's Get You Started
