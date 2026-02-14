@@ -70,29 +70,19 @@ const AuthGate = ({ children }: AuthGateProps) => {
 
   const performRouting = useCallback(() => {
     if (!user) {
+      // Unauthenticated: allow public routes, redirect everything else to sign-in
       if (isPublicRoute) {
         setHasRouted(true);
         return;
       }
+      // CRITICAL: questionnaire and all other routes require sign-in
       navigate('/signin', { replace: true });
       setHasRouted(true);
       return;
     }
 
     // User is authenticated
-    if (isAuthRoute) {
-      if (isAdmin && !adminQuestionnaireDone) {
-        navigate('/onboarding/name', { replace: true });
-      } else if (!isAdmin && !hasCompletedOnboarding) {
-        navigate('/onboarding/name', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
-      setHasRouted(true);
-      return;
-    }
-
-    if (currentPath === '/') {
+    if (isAuthRoute || currentPath === '/') {
       if (isAdmin && !adminQuestionnaireDone) {
         navigate('/onboarding/name', { replace: true });
       } else if (!isAdmin && !hasCompletedOnboarding) {
