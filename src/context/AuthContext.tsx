@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,29 +14,58 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Maximum time to wait for auth to resolve before giving up
+const AUTH_TIMEOUT_MS = 5000;
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const resolvedRef = useRef(false);
 
   useEffect(() => {
+    // Safety timeout: if auth never resolves (stale tokens, network issues),
+    // force loading to false so the app doesn't stall forever.
+    const timeout = setTimeout(() => {
+      if (!resolvedRef.current) {
+        resolvedRef.current = true;
+        setLoading(false);
+      }
+    }, AUTH_TIMEOUT_MS);
+
+    const markResolved = (s: Session | null) => {
+      if (!resolvedRef.current) {
+        resolvedRef.current = true;
+      }
+      setSession(s);
+      setUser(s?.user ?? null);
+      setLoading(false);
+    };
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+      (_event, session) => {
+        markResolved(session);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      // If refresh failed, treat as no session
+      if (error) {
+        markResolved(null);
+        return;
+      }
+      markResolved(session);
+    }).catch(() => {
+      // Network error or other failure — don't stall
+      markResolved(null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
@@ -55,7 +84,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
     });
 
-    // Defensive: ensure local state updates even if onAuthStateChange is delayed
     if (!error) {
       setSession(data.session);
       setUser(data.session?.user ?? null);
