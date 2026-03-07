@@ -14,56 +14,61 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Maximum time to wait for auth to resolve before giving up
-const AUTH_TIMEOUT_MS = 5000;
+// Maximum time to wait for auth to resolve before treating as unauthenticated
+const AUTH_TIMEOUT_MS = 3000;
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const resolvedRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    // Safety timeout: if auth never resolves (stale tokens, network issues),
-    // force loading to false so the app doesn't stall forever.
-    const timeout = setTimeout(() => {
-      if (!resolvedRef.current) {
-        resolvedRef.current = true;
-        setLoading(false);
-      }
-    }, AUTH_TIMEOUT_MS);
-
-    const markResolved = (s: Session | null) => {
-      if (!resolvedRef.current) {
-        resolvedRef.current = true;
-      }
+    const resolve = (s: Session | null) => {
+      resolvedRef.current = true;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
     };
 
-    // Set up auth state listener FIRST
+    // Safety net: if auth never resolves (stale tokens retrying with backoff,
+    // network down, etc.), force-resolve as unauthenticated after timeout.
+    timeoutRef.current = setTimeout(() => {
+      if (!resolvedRef.current) {
+        console.warn('[AuthContext] Auth timed out — treating as unauthenticated');
+        resolve(null);
+      }
+    }, AUTH_TIMEOUT_MS);
+
+    // 1. Set up auth state listener FIRST (catches token refresh results)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        markResolved(session);
+        // Always update state, even if already resolved (handles sign-in/out after init)
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (!resolvedRef.current) {
+          resolve(session);
+        } else {
+          setLoading(false);
+        }
       }
     );
 
-    // THEN check for existing session
+    // 2. Then check for existing session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      // If refresh failed, treat as no session
-      if (error) {
-        markResolved(null);
-        return;
+      if (!resolvedRef.current) {
+        resolve(error ? null : session);
       }
-      markResolved(session);
     }).catch(() => {
-      // Network error or other failure — don't stall
-      markResolved(null);
+      if (!resolvedRef.current) {
+        resolve(null);
+      }
     });
 
     return () => {
-      clearTimeout(timeout);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       subscription.unsubscribe();
     };
   }, []);

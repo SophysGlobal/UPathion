@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState, useCallback } from 'react';
+import { ReactNode, useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
@@ -9,8 +9,6 @@ interface AuthGateProps {
 }
 
 // Session-level sign-in gate key
-// This flag is ONLY set when the user explicitly signs in during this browser session.
-// It prevents auto-routing to questionnaire from a persisted Supabase session.
 const SESSION_SIGNED_IN_KEY = 'upathion_signed_in_this_session';
 
 export const markSessionSignedIn = () => {
@@ -32,7 +30,7 @@ const hasSignedInThisSession = (): boolean => {
 // Routes that don't require authentication
 const PUBLIC_ROUTES = ['/', '/signin', '/signup', '/email-confirmation', '/auth/callback', '/password-reset', '/update-password', '/welcome'];
 
-// Onboarding routes (subscription is part of onboarding for new users)
+// Onboarding routes
 const ONBOARDING_ROUTES = [
   '/onboarding/name',
   '/onboarding/name-confirm',
@@ -44,7 +42,7 @@ const ONBOARDING_ROUTES = [
   '/subscription',
 ];
 
-// Routes that authenticated users can ALWAYS access regardless of onboarding status
+// Protected app routes
 const PROTECTED_APP_ROUTES = [
   '/school-community',
   '/school/',
@@ -60,6 +58,9 @@ const PROTECTED_APP_ROUTES = [
   '/privacy-settings',
 ];
 
+// Maximum time to wait for profile/admin data before proceeding anyway
+const SECONDARY_LOADING_TIMEOUT_MS = 4000;
+
 const AuthGate = ({ children }: AuthGateProps) => {
   const { user, loading: authLoading } = useAuth();
   const { profile, isLoading: profileLoading, hasCompletedOnboarding } = useProfileCompletion();
@@ -72,6 +73,8 @@ const AuthGate = ({ children }: AuthGateProps) => {
   });
 
   const [hasRouted, setHasRouted] = useState(false);
+  const [secondaryTimedOut, setSecondaryTimedOut] = useState(false);
+  const secondaryTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     setHasRouted(false);
@@ -87,27 +90,45 @@ const AuthGate = ({ children }: AuthGateProps) => {
   const isAuthRoute = currentPath === '/signin' || currentPath === '/signup';
   const isProtectedAppRoute = PROTECTED_APP_ROUTES.some(route => currentPath.startsWith(route));
 
-  const isLoading = authLoading || (user && hasSignedInThisSession() && (profileLoading || adminLoading));
+  const signedInThisSession = hasSignedInThisSession();
+
+  // Primary loading: auth state must resolve (handled by AuthContext timeout)
+  // Secondary loading: profile + admin status, only when user is signed in this session
+  const needsSecondaryData = !!user && signedInThisSession;
+  const secondaryStillLoading = needsSecondaryData && (profileLoading || adminLoading) && !secondaryTimedOut;
+  const isLoading = authLoading || secondaryStillLoading;
+
+  // Safety timeout for secondary data (profile/admin queries)
+  useEffect(() => {
+    if (needsSecondaryData && (profileLoading || adminLoading)) {
+      secondaryTimeoutRef.current = setTimeout(() => {
+        setSecondaryTimedOut(true);
+      }, SECONDARY_LOADING_TIMEOUT_MS);
+    } else {
+      // Data resolved, clear timeout
+      if (secondaryTimeoutRef.current) {
+        clearTimeout(secondaryTimeoutRef.current);
+      }
+      setSecondaryTimedOut(false);
+    }
+    return () => {
+      if (secondaryTimeoutRef.current) clearTimeout(secondaryTimeoutRef.current);
+    };
+  }, [needsSecondaryData, profileLoading, adminLoading]);
 
   const performRouting = useCallback(() => {
-    const signedInThisSession = hasSignedInThisSession();
-
-    // RULE 1: If user has NOT explicitly signed in this session,
-    // treat them as unauthenticated regardless of persisted Supabase session.
-    // This ensures splash → sign-in ALWAYS, never splash → questionnaire.
+    // RULE 1: No session sign-in flag → treat as unauthenticated
     if (!user || !signedInThisSession) {
       if (isPublicRoute) {
         setHasRouted(true);
         return;
       }
-      // Any non-public route without explicit sign-in → force to sign-in
       navigate('/signin', { replace: true });
       setHasRouted(true);
       return;
     }
 
-    // RULE 2: User is authenticated AND has signed in this session.
-    // Now normal routing logic applies.
+    // RULE 2: Authenticated + signed in this session
     if (isAuthRoute || currentPath === '/') {
       if (isAdmin && !adminQuestionnaireDone) {
         navigate('/onboarding/name', { replace: true });
@@ -133,7 +154,7 @@ const AuthGate = ({ children }: AuthGateProps) => {
       return;
     }
 
-    // Normal users: if already completed onboarding, skip questionnaire
+    // Normal users: completed onboarding → skip questionnaire
     if (!isAdmin && hasCompletedOnboarding && isOnboardingRoute) {
       navigate('/dashboard', { replace: true });
       setHasRouted(true);
@@ -143,6 +164,7 @@ const AuthGate = ({ children }: AuthGateProps) => {
     setHasRouted(true);
   }, [
     user,
+    signedInThisSession,
     isAdmin,
     hasCompletedOnboarding,
     adminQuestionnaireDone,
