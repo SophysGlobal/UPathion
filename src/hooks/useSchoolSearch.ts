@@ -29,12 +29,14 @@ export function useSchoolSearch(options: UseSchoolSearchOptions = {}) {
   const { data: schools = [], isLoading, error } = useQuery({
     queryKey: ["schools", debouncedQuery, schoolType, country, limit],
     queryFn: async (): Promise<School[]> => {
+      // Use RPC for both empty and non-empty queries
+      // Empty query returns notable/default schools
       const { data, error } = await supabase.functions.invoke("search-schools", {
         body: {
-          searchQuery: debouncedQuery,
+          searchQuery: debouncedQuery || "",
           schoolType,
           country,
-          limit,
+          limit: debouncedQuery ? limit : 20, // fewer defaults when empty
         },
       });
 
@@ -42,7 +44,7 @@ export function useSchoolSearch(options: UseSchoolSearchOptions = {}) {
       return data?.schools || [];
     },
     enabled,
-    staleTime: 60000, // Cache for 1 minute
+    staleTime: 60000,
   });
 
   const clearSearch = useCallback(() => {
