@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.batch-enrich-schools]
 verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
