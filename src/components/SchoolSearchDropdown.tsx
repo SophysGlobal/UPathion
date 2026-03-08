@@ -167,11 +167,11 @@ const SchoolSearchDropdown = ({
         </div>
       )}
 
-      {/* Initial state */}
-      {!isLoading && searchQuery.length < 2 && (
+      {/* Initial state — no results yet */}
+      {!isLoading && schools.length === 0 && searchQuery.length < 2 && (
         <div className="py-6 px-4 text-center">
           <p className="text-muted-foreground">
-            Type at least 2 characters to search
+            Type to search for your school
           </p>
         </div>
       )}

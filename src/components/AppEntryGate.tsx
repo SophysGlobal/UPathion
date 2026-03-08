@@ -1,6 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
 import SplashScreen from './SplashScreen';
-import WelcomeScreens from './WelcomeScreens';
 import { useAppEntry } from '@/hooks/useAppEntry';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
@@ -10,10 +9,8 @@ interface AppEntryGateProps {
 }
 
 /**
- * AppEntryGate - Manages the app entry experience
- * 
- * Background lives at App.tsx level (never remounts).
- * This component only renders splash/welcome overlays ON TOP of it.
+ * AppEntryGate — single SplashScreen component handles both splash + welcome
+ * in one continuous animation. No unmount/remount = no flicker.
  */
 const AppEntryGate = ({ children }: AppEntryGateProps) => {
   const { user } = useAuth();
@@ -26,62 +23,56 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
     onWelcomeComplete,
     markDeviceSignedIn,
     markAdminSession,
+    shouldShowWelcome,
   } = useAppEntry();
 
-  // Fade-out overlay: when transitioning from welcome/splash to app
   const [fadeOut, setFadeOut] = useState(false);
+  const [includeWelcome] = useState(() => shouldShowWelcome());
 
   useEffect(() => {
-    if (user) {
-      markDeviceSignedIn();
-    }
+    if (user) markDeviceSignedIn();
   }, [user, markDeviceSignedIn]);
 
   useEffect(() => {
-    if (user && isAdmin !== undefined) {
-      markAdminSession(isAdmin);
-    }
+    if (user && isAdmin !== undefined) markAdminSession(isAdmin);
   }, [user, isAdmin, markAdminSession]);
 
-  // When welcome completes, start fade-out then show children
-  const handleWelcomeComplete = () => {
+  // Full sequence complete (splash+welcome or splash-only)
+  const handleComplete = () => {
     setFadeOut(true);
     setTimeout(() => {
-      onWelcomeComplete();
+      if (includeWelcome) {
+        onWelcomeComplete();
+      } else {
+        onSplashComplete();
+      }
       setFadeOut(false);
-    }, 500);
-  };
-
-  // When splash completes and no welcome needed, also fade
-  const handleSplashComplete = () => {
-    onSplashComplete();
+    }, 400);
   };
 
   const showOverlay = showSplash || showWelcome || fadeOut;
 
   return (
     <>
-      {/* Overlay that blocks app content during splash/welcome */}
-      {/* Transparent overlay — background shows through from frame 1 */}
       {showOverlay && (
-        <div 
-          className={`fixed inset-0 z-[99] transition-opacity duration-500 ${
+        <div
+          className={`fixed inset-0 z-[99] transition-opacity duration-400 ${
             fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         />
       )}
 
-      {/* Splash content */}
-      {showSplash && (
-        <SplashScreen onComplete={handleSplashComplete} />
+      {(showSplash || showWelcome) && !fadeOut && (
+        <SplashScreen
+          includeWelcome={includeWelcome}
+          onSplashPhaseComplete={() => {
+            // Mark splash shown so navigation knows
+            onSplashComplete();
+          }}
+          onComplete={handleComplete}
+        />
       )}
 
-      {/* Welcome content */}
-      {showWelcome && !showSplash && (
-        <WelcomeScreens onComplete={handleWelcomeComplete} />
-      )}
-
-      {/* App content - render underneath, becomes visible when overlay fades */}
       {isReady && <>{children}</>}
     </>
   );
