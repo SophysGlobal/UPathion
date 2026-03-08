@@ -42,8 +42,15 @@ const HowDidYouHear = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && selectedSource) {
+      e.preventDefault();
+      handleContinue();
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
+    <div className="min-h-screen flex items-center justify-center p-4 relative" onKeyDown={handleKeyDown}>
       
       <div className="w-full max-w-md space-y-8 relative z-10">
         {/* Logo */}

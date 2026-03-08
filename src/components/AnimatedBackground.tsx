@@ -67,4 +67,4 @@ const AnimatedBackground = () => {
   );
 };
 
-export default AnimatedBackground;
+export default memo(AnimatedBackground);

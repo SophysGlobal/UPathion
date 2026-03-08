@@ -156,6 +156,17 @@ const Subscription = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground animate-fade-in">Cancel anytime. Terms apply.</p>
+
+        {isAdmin && (
+          <div className="animate-fade-in">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Go to Admin Dashboard
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
