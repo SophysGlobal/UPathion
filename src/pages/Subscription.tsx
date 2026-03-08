@@ -16,6 +16,7 @@ const PRICES = {
 
 const Subscription = () => {
   const navigate = useNavigate();
+  const { isAdmin } = useAdminStatus();
   const [isYearly, setIsYearly] = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
