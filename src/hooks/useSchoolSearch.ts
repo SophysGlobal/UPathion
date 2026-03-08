@@ -41,7 +41,7 @@ export function useSchoolSearch(options: UseSchoolSearchOptions = {}) {
       if (error) throw error;
       return data?.schools || [];
     },
-    enabled: enabled && debouncedQuery.length >= 2,
+    enabled,
     staleTime: 60000, // Cache for 1 minute
   });
 
