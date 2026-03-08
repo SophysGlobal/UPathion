@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 
 const PRICES = {
   monthly: "price_1T8nR6QaZOki2KO0sb3eSsvK",
