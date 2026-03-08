@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import { useAdminStatus } from "@/hooks/useAdminStatus";
 
 const PRICES = {
   monthly: "price_1T8nR6QaZOki2KO0sb3eSsvK",
@@ -15,6 +16,7 @@ const PRICES = {
 
 const Subscription = () => {
   const navigate = useNavigate();
+  const { isAdmin } = useAdminStatus();
   const [isYearly, setIsYearly] = useState(false);
   const [showClose, setShowClose] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -154,6 +156,17 @@ const Subscription = () => {
         </div>
 
         <p className="text-center text-xs text-muted-foreground animate-fade-in">Cancel anytime. Terms apply.</p>
+
+        {isAdmin && (
+          <div className="animate-fade-in">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Go to Admin Dashboard
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

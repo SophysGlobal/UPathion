@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useTheme } from "@/context/ThemeContext";
 
 /**
@@ -66,4 +67,4 @@ const AnimatedBackground = () => {
   );
 };
 
-export default AnimatedBackground;
+export default memo(AnimatedBackground);
