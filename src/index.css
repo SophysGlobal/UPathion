@@ -146,6 +146,63 @@
   }
 }
 
+/* ─── Micro-interaction layer ─── */
+
+/* Interactive card lift on hover */
+.gradient-border {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gradient-border:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px -6px hsl(var(--primary) / 0.12);
+}
+.gradient-border:active {
+  transform: translateY(0);
+  transition-duration: 0.1s;
+}
+
+/* Button press micro-interaction */
+button:not(.gradient-border):not([data-state]):not([role="tab"]):not([role="switch"]) {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+button:not(.gradient-border):not([data-state]):not([role="tab"]):not([role="switch"]):active {
+  transform: scale(0.97);
+}
+
+/* Smooth page content entrance */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+main {
+  animation: page-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Icon hover pulse — apply via .icon-hover parent */
+.icon-hover svg {
+  transition: transform 0.2s ease;
+}
+.icon-hover:hover svg {
+  transform: scale(1.12);
+}
+
+/* Smooth switch / toggle transitions */
+[role="switch"] {
+  transition: background-color 0.2s ease !important;
+}
+
+/* Bottom sheet / dialog entrance */
+[data-state="open"][role="dialog"] {
+  animation: page-enter 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Dynamic background animations */
 @keyframes morph-1 {
   0%, 100% {
