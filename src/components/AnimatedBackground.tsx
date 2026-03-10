@@ -1,19 +1,33 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useTheme } from "@/context/ThemeContext";
 
 /**
  * Persistent animated background. Mounted once at App.tsx root level.
- * All blur elements use translateZ(0) to force GPU compositing layers,
- * preventing tiled/square redraw artifacts from CSS blur filters.
+ * 
+ * All elements use `contain: strict` and GPU compositing hints to prevent
+ * repaints from propagating across layers — fixing flicker during splash
+ * text animations (Welcome / Let's Get You Started).
  */
 const AnimatedBackground = () => {
   const { resolvedTheme } = useTheme();
 
-  // Shared style to force GPU compositing and prevent square artifacts
-  const gpuLayer: React.CSSProperties = { transform: 'translateZ(0)', backfaceVisibility: 'hidden' };
+  // Stable style objects — never recreated between renders
+  const gpuLayer = useMemo<React.CSSProperties>(() => ({
+    transform: 'translateZ(0)',
+    backfaceVisibility: 'hidden',
+    willChange: 'transform',
+    contain: 'layout style paint',
+  }), []);
+
+  const containerStyle = useMemo<React.CSSProperties>(() => ({
+    transform: 'translateZ(0)',
+    backfaceVisibility: 'hidden',
+    contain: 'strict',
+    isolation: 'isolate',
+  }), []);
 
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10" style={gpuLayer}>
+    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10" style={containerStyle}>
       {/* Morphing gradient blobs */}
       <div className="absolute top-0 -left-1/4 w-[70vw] h-[70vw] max-w-[800px] max-h-[800px] bg-primary/25 rounded-full blur-[120px] animate-morph-1" style={gpuLayer} />
       <div className="absolute -top-20 right-0 w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] bg-accent/20 rounded-full blur-[100px] animate-morph-2" style={gpuLayer} />
