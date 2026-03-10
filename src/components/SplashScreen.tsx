@@ -114,7 +114,7 @@ const SplashScreen = ({
   const shiftY = -50 * morphProgress; // shift up
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden" style={{ contain: 'layout style paint', isolation: 'isolate' }}>
       <div
         className="relative z-10 flex flex-col items-center"
         style={{
