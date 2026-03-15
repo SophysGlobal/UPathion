@@ -438,6 +438,7 @@ export interface SeedMessage {
   timestamp: string;
   reactions?: string[];
   isDeleted?: boolean;
+  senderName?: string;
 }
 
 export const seedMessages: SeedMessage[] = [
