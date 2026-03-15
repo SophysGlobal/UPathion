@@ -4,7 +4,7 @@ import Logo from "@/components/Logo";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { Check } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
 
 const REFERRAL_OPTIONS = [
   { id: 'search', label: 'Search engine', icon: '🔍' },
@@ -115,7 +115,7 @@ const HowDidYouHear = () => {
         )}
 
         {/* Continue Button */}
-        <div className="animate-fade-in">
+        <div className="space-y-3 animate-fade-in">
           <GradientButton 
             variant="filled" 
             className="w-full"
@@ -124,6 +124,14 @@ const HowDidYouHear = () => {
           >
             Continue
           </GradientButton>
+
+          <button
+            onClick={() => { updateData({ referralSource: selectedSource, referralSourceOther: selectedSource === 'other' ? otherText.trim() : '' }); navigate("/onboarding/name-confirm"); }}
+            className="w-full flex items-center justify-center gap-1 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </button>
         </div>
 
         {/* Progress indicator */}

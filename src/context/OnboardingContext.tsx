@@ -51,7 +51,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { data: userData, error } = await supabase
           .from('profiles')
-          .select('display_name, school_type')
+          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -60,7 +60,15 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
         const result: OnboardingData = {
           ...defaultData,
           fullName: userData?.display_name || '',
+          username: userData?.username || '',
           schoolType: (userData?.school_type as OnboardingData['schoolType']) || '',
+          schoolName: userData?.school_name || '',
+          gradeOrYear: userData?.grade_or_year || '',
+          major: userData?.major || '',
+          aspirationalSchool: userData?.aspirational_school || '',
+          referralSource: userData?.referral_source || '',
+          referralSourceOther: userData?.referral_source_other || '',
+          interests: userData?.interests || [],
         };
         
         initialDataRef.current = result;
