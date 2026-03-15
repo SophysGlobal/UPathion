@@ -311,9 +311,13 @@ export function generateSeedCommunityMembers(schoolName: string): SeedCommunityM
 // ============================================
 // DIRECT MESSAGES - CONVERSATIONS
 // ============================================
+export type SeedConversationType = 'individual' | 'group';
+
 export interface SeedConversation {
   id: string;
+  type: SeedConversationType;
   participantName: string;
+  participantNames?: string[]; // for group chats
   participantRole: 'Student' | 'Teacher' | 'Counselor';
   participantBadge?: string;
   participantSchool: string;
