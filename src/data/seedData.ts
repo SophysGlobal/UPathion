@@ -330,6 +330,7 @@ export interface SeedConversation {
 export const seedConversations: SeedConversation[] = [
   { 
     id: 'conv1', 
+    type: 'individual',
     participantName: 'Sarah Mitchell', 
     participantRole: 'Student', 
     participantBadge: 'Senior',
@@ -341,6 +342,7 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv2', 
+    type: 'individual',
     participantName: 'Emily Watson', 
     participantRole: 'Student',
     participantBadge: 'Senior',
@@ -352,6 +354,7 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv3', 
+    type: 'individual',
     participantName: 'Michael Brown', 
     participantRole: 'Student',
     participantBadge: 'Junior',
@@ -363,6 +366,7 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv4', 
+    type: 'individual',
     participantName: 'James Chen', 
     participantRole: 'Student',
     participantBadge: 'Junior',
@@ -374,12 +378,50 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv5', 
+    type: 'individual',
     participantName: 'Lisa Park', 
     participantRole: 'Student',
     participantBadge: 'Sophomore',
     participantSchool: 'Concord-Carlisle High School',
     lastMessage: 'Thanks for helping with the project 🙏',
     lastMessageTime: '2d ago',
+    unreadCount: 0,
+    isMuted: false
+  },
+  // Group chats
+  { 
+    id: 'conv6', 
+    type: 'group',
+    participantName: 'AP Chemistry Study Group', 
+    participantNames: ['Sarah M.', 'Alex K.', 'You'],
+    participantRole: 'Student',
+    participantSchool: 'Acton-Boxborough Regional High School',
+    lastMessage: 'Alex: Can someone share the lab notes from today?',
+    lastMessageTime: '30m ago',
+    unreadCount: 5,
+    isMuted: false
+  },
+  { 
+    id: 'conv7', 
+    type: 'group',
+    participantName: 'Robotics Club', 
+    participantNames: ['James C.', 'Rachel K.', 'Tyler B.', 'You'],
+    participantRole: 'Student',
+    participantSchool: 'Lincoln-Sudbury Regional High School',
+    lastMessage: 'James: Meeting moved to Room 204',
+    lastMessageTime: '2h ago',
+    unreadCount: 2,
+    isMuted: false
+  },
+  { 
+    id: 'conv8', 
+    type: 'group',
+    participantName: 'College App Support', 
+    participantNames: ['Jessica T.', 'Emma L.', 'Marcus W.', 'You'],
+    participantRole: 'Student',
+    participantSchool: 'Various Schools',
+    lastMessage: 'Marcus: Has anyone heard back from Harvard yet?',
+    lastMessageTime: '1d ago',
     unreadCount: 0,
     isMuted: false
   },
