@@ -4,7 +4,7 @@ import Logo from "@/components/Logo";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { Check } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
 
 const REFERRAL_OPTIONS = [
   { id: 'search', label: 'Search engine', icon: '🔍' },
