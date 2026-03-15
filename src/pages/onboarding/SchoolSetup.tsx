@@ -5,7 +5,7 @@ import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { toast } from "sonner";
-import { GraduationCap, School } from "lucide-react";
+import { GraduationCap, School, ChevronLeft } from "lucide-react";
 import SchoolSearchDropdown from "@/components/SchoolSearchDropdown";
 
 const SchoolSetup = () => {
