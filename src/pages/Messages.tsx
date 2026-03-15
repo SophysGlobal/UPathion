@@ -2,286 +2,239 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
+import ChatList from "@/components/messages/ChatList";
+import ChatPanel from "@/components/messages/ChatPanel";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
-import { 
-  Search, 
-  User, 
-  MoreVertical, 
-  VolumeX, 
-  Volume2, 
-  Trash2, 
-  MailOpen, 
-  Mail,
-  MessageCircle,
-  PenSquare,
-  Loader2
-} from "lucide-react";
-import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useConversations, type Conversation } from "@/hooks/useMessages";
-import { useAuth } from "@/context/AuthContext";
-import { formatDistanceToNow } from "date-fns";
+import { Search, PenSquare, MessageCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { USE_SEED_DATA, seedConversations, type SeedConversation, type SeedConversationType } from "@/data/seedData";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+type ChatFilter = 'all' | 'individual' | 'group';
 
 const Messages = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // User profile preview state
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [userSheetOpen, setUserSheetOpen] = useState(false);
-  
-  const {
-    conversations,
-    loading,
-    markAsRead,
-    toggleMute,
-    deleteConversation,
-  } = useConversations();
+  const [activeFilter, setActiveFilter] = useState<ChatFilter>('all');
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
-  const filteredConversations = useMemo(() => 
-    conversations.filter(c => {
-      const otherParticipant = c.participants.find(p => p.user_id !== user?.id);
-      const name = otherParticipant?.profile?.display_name || '';
-      const lastMessage = c.last_message?.content || '';
-      return name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
-    }), [conversations, searchQuery, user?.id]);
+  // Use seed data or empty
+  const conversations: SeedConversation[] = USE_SEED_DATA ? seedConversations : [];
 
-  const handleOpenThread = (conversation: Conversation) => {
-    markAsRead(conversation.id);
-    navigate(`/messages/${conversation.id}`);
-  };
+  const filteredConversations = useMemo(() => {
+    let filtered = conversations;
 
-  const handleViewProfile = (e: React.MouseEvent, participantId: string) => {
-    e.stopPropagation();
-    setSelectedUserId(participantId);
-    setUserSheetOpen(true);
-  };
+    // Apply type filter
+    if (activeFilter === 'individual') {
+      filtered = filtered.filter(c => c.type === 'individual');
+    } else if (activeFilter === 'group') {
+      filtered = filtered.filter(c => c.type === 'group');
+    }
 
-  const handleToggleMute = async (e: React.MouseEvent, conversationId: string) => {
-    e.stopPropagation();
-    await toggleMute(conversationId);
-    toast.success('Conversation updated');
-  };
+    // Apply search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(c =>
+        c.participantName.toLowerCase().includes(q) ||
+        c.lastMessage.toLowerCase().includes(q)
+      );
+    }
 
-  const handleToggleRead = async (e: React.MouseEvent, conversationId: string) => {
-    e.stopPropagation();
-    await markAsRead(conversationId);
-  };
+    return filtered;
+  }, [conversations, activeFilter, searchQuery]);
 
-  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
-    e.stopPropagation();
-    await deleteConversation(conversationId);
-    toast.success('Conversation deleted');
+  const filters: { key: ChatFilter; label: string }[] = [
+    { key: 'all', label: 'All Chats' },
+    { key: 'individual', label: 'Individual' },
+    { key: 'group', label: 'Group' },
+  ];
+
+  const handleSelectConversation = (id: string) => {
+    setSelectedConversationId(id);
+    // On mobile, navigate to thread view
+    if (isMobile) {
+      // For seed data, stay on page; for real data, navigate
+      // For now, just select it
+    }
   };
 
   const handleNewMessage = () => {
     navigate('/messages/compose');
   };
 
-  const getOtherParticipant = (conversation: Conversation) => {
-    return conversation.participants.find(p => p.user_id !== user?.id);
-  };
+  const unreadTotal = conversations.filter(c => c.unreadCount > 0).length;
 
-  const formatTime = (dateString: string) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: false });
-    } catch {
-      return '';
-    }
-  };
-
-  const renderEmptyState = () => (
-    <div className="text-center py-12">
-      <div className="w-20 h-20 rounded-full bg-secondary/50 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
-        <MessageCircle className="w-10 h-10 text-muted-foreground" />
-      </div>
-      <h3 className="font-medium text-foreground mb-2">No Messages Yet</h3>
-      <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-4">
-        Start a conversation with someone from your school community
-      </p>
-      <Button onClick={handleNewMessage}>
-        <PenSquare className="w-4 h-4 mr-2" />
-        New Message
-      </Button>
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-background/80 pb-20 relative">
-      
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="flex items-center justify-between px-6 py-3">
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Messages</h1>
-            <p className="text-xs text-muted-foreground">
-              {conversations.filter(c => c.unread_count > 0).length} unread
-            </p>
-          </div>
-          <Button size="icon" variant="ghost" onClick={handleNewMessage}>
-            <PenSquare className="w-5 h-5" />
-          </Button>
+  // Mobile: show either list or chat panel
+  if (isMobile) {
+    if (selectedConversationId) {
+      return (
+        <div className="min-h-screen bg-background/80 pb-20 flex flex-col relative">
+          {/* Back button header */}
+          <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+            <div className="flex items-center gap-3 px-4 py-3">
+              <button
+                onClick={() => setSelectedConversationId(null)}
+                className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors text-foreground"
+              >
+                ←
+              </button>
+              <h1 className="text-base font-semibold text-foreground truncate">
+                {seedConversations.find(c => c.id === selectedConversationId)?.participantName || 'Chat'}
+              </h1>
+            </div>
+          </header>
+          <ChatPanel conversationId={selectedConversationId} />
+          <BottomNav />
         </div>
-      </header>
+      );
+    }
 
-      <main className="relative z-10 px-6 py-6 space-y-4">
-        {/* Search */}
-        <div className="animate-fade-in">
+    return (
+      <div className="min-h-screen bg-background/80 pb-20 relative">
+        {/* Header */}
+        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Messages</h1>
+              <p className="text-xs text-muted-foreground">{unreadTotal} unread</p>
+            </div>
+            <Button size="icon" variant="ghost" onClick={handleNewMessage}>
+              <PenSquare className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Filters */}
+          <div className="px-6 pb-3 flex gap-2">
+            {filters.map(f => (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  activeFilter === f.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </header>
+
+        <main className="relative z-10 px-4 py-4 space-y-3">
+          {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <GradientInput 
-              placeholder="Search messages..." 
-              className="pl-10"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <GradientInput
+              placeholder="Search messages..."
+              className="pl-9 h-9 text-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {filteredConversations.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium text-foreground mb-2">No Messages Yet</h3>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-4">
+                Start a conversation with someone from your school community
+              </p>
+              <Button onClick={handleNewMessage} size="sm">
+                <PenSquare className="w-4 h-4 mr-2" />
+                New Message
+              </Button>
+            </div>
+          ) : (
+            <ChatList
+              conversations={filteredConversations}
+              selectedId={selectedConversationId}
+              onSelect={handleSelectConversation}
+            />
+          )}
+        </main>
+
+        <PremiumChatFAB />
+        <BottomNav />
+      </div>
+    );
+  }
+
+  // Desktop: split panel layout
+  return (
+    <div className="min-h-screen bg-background/80 pb-20 relative">
+      <div className="flex h-[calc(100vh-4rem)]">
+        {/* Left Panel - Chat List */}
+        <div className="w-[340px] flex-shrink-0 border-r border-border/50 flex flex-col bg-background/60">
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-border/50">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h1 className="text-lg font-semibold text-foreground">Messages</h1>
+                <p className="text-xs text-muted-foreground">{unreadTotal} unread</p>
+              </div>
+              <Button size="icon" variant="ghost" onClick={handleNewMessage} className="h-8 w-8">
+                <PenSquare className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Filters */}
+            <div className="flex gap-1.5 mb-3">
+              {filters.map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setActiveFilter(f.key)}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all",
+                    activeFilter === f.key
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <GradientInput
+                placeholder="Search..."
+                className="pl-9 h-8 text-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Conversation List */}
+          <div className="flex-1 overflow-y-auto">
+            {filteredConversations.length === 0 ? (
+              <div className="text-center py-12 px-4">
+                <MessageCircle className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No conversations found</p>
+              </div>
+            ) : (
+              <ChatList
+                conversations={filteredConversations}
+                selectedId={selectedConversationId}
+                onSelect={handleSelectConversation}
+              />
+            )}
+          </div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          </div>
-        )}
-
-        {/* Conversations List */}
-        {!loading && filteredConversations.length === 0 ? (
-          renderEmptyState()
-        ) : !loading && (
-          <div className="space-y-2">
-            {filteredConversations.map((conversation, index) => {
-              const otherParticipant = getOtherParticipant(conversation);
-              const isMuted = conversation.participants.find(p => p.user_id === user?.id)?.is_muted;
-              
-              return (
-                <button
-                  key={conversation.id}
-                  onClick={() => handleOpenThread(conversation)}
-                  className="w-full gradient-border group animate-fade-in"
-                  style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
-                >
-                  <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3 transition-colors group-hover:bg-secondary/50">
-                    {/* Avatar - clickable for profile */}
-                    <button
-                      onClick={(e) => otherParticipant && handleViewProfile(e, otherParticipant.user_id)}
-                      className="relative flex-shrink-0 hover:opacity-80 transition-opacity"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
-                        {otherParticipant?.profile?.avatar_url ? (
-                          <img 
-                            src={otherParticipant.profile.avatar_url} 
-                            alt={otherParticipant.profile.display_name || 'User'} 
-                            className="w-12 h-12 object-cover"
-                          />
-                        ) : (
-                          <User className="w-6 h-6 text-primary" />
-                        )}
-                      </div>
-                      {conversation.unread_count > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-                          {conversation.unread_count > 9 ? '9+' : conversation.unread_count}
-                        </span>
-                      )}
-                    </button>
-                    
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={(e) => otherParticipant && handleViewProfile(e, otherParticipant.user_id)}
-                          className="font-medium hover:underline"
-                        >
-                          <span className={conversation.unread_count > 0 ? 'text-foreground' : 'text-foreground/80'}>
-                            {otherParticipant?.profile?.display_name || 'Unknown User'}
-                          </span>
-                        </button>
-                        {otherParticipant?.profile?.grade_or_year && (
-                          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/20 text-primary">
-                            {otherParticipant.profile.grade_or_year}
-                          </span>
-                        )}
-                        {isMuted && (
-                          <VolumeX className="w-3 h-3 text-muted-foreground" />
-                        )}
-                      </div>
-                      <p className={`text-sm truncate ${conversation.unread_count > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                        {conversation.last_message?.content || 'No messages yet'}
-                      </p>
-                      {conversation.last_message && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatTime(conversation.last_message.created_at)}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Actions Menu */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button size="icon" variant="ghost" className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-card border-border">
-                        <DropdownMenuItem onClick={(e) => handleToggleRead(e as any, conversation.id)}>
-                          {conversation.unread_count > 0 ? (
-                            <>
-                              <MailOpen className="w-4 h-4 mr-2" />
-                              Mark as read
-                            </>
-                          ) : (
-                            <>
-                              <Mail className="w-4 h-4 mr-2" />
-                              Mark as unread
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => handleToggleMute(e as any, conversation.id)}>
-                          {isMuted ? (
-                            <>
-                              <Volume2 className="w-4 h-4 mr-2" />
-                              Unmute
-                            </>
-                          ) : (
-                            <>
-                              <VolumeX className="w-4 h-4 mr-2" />
-                              Mute
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={(e) => handleDeleteConversation(e as any, conversation.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </main>
-
-      {/* User Profile Bottom Sheet */}
-      <UserProfileBottomSheet
-        open={userSheetOpen}
-        onOpenChange={setUserSheetOpen}
-        userId={selectedUserId}
-        seedUser={null}
-      />
+        {/* Right Panel - Chat */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <ChatPanel conversationId={selectedConversationId} />
+        </div>
+      </div>
 
       <PremiumChatFAB />
       <BottomNav />

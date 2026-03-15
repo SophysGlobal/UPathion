@@ -311,9 +311,13 @@ export function generateSeedCommunityMembers(schoolName: string): SeedCommunityM
 // ============================================
 // DIRECT MESSAGES - CONVERSATIONS
 // ============================================
+export type SeedConversationType = 'individual' | 'group';
+
 export interface SeedConversation {
   id: string;
+  type: SeedConversationType;
   participantName: string;
+  participantNames?: string[]; // for group chats
   participantRole: 'Student' | 'Teacher' | 'Counselor';
   participantBadge?: string;
   participantSchool: string;
@@ -326,6 +330,7 @@ export interface SeedConversation {
 export const seedConversations: SeedConversation[] = [
   { 
     id: 'conv1', 
+    type: 'individual',
     participantName: 'Sarah Mitchell', 
     participantRole: 'Student', 
     participantBadge: 'Senior',
@@ -337,6 +342,7 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv2', 
+    type: 'individual',
     participantName: 'Emily Watson', 
     participantRole: 'Student',
     participantBadge: 'Senior',
@@ -348,6 +354,7 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv3', 
+    type: 'individual',
     participantName: 'Michael Brown', 
     participantRole: 'Student',
     participantBadge: 'Junior',
@@ -359,6 +366,7 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv4', 
+    type: 'individual',
     participantName: 'James Chen', 
     participantRole: 'Student',
     participantBadge: 'Junior',
@@ -370,12 +378,50 @@ export const seedConversations: SeedConversation[] = [
   },
   { 
     id: 'conv5', 
+    type: 'individual',
     participantName: 'Lisa Park', 
     participantRole: 'Student',
     participantBadge: 'Sophomore',
     participantSchool: 'Concord-Carlisle High School',
     lastMessage: 'Thanks for helping with the project 🙏',
     lastMessageTime: '2d ago',
+    unreadCount: 0,
+    isMuted: false
+  },
+  // Group chats
+  { 
+    id: 'conv6', 
+    type: 'group',
+    participantName: 'AP Chemistry Study Group', 
+    participantNames: ['Sarah M.', 'Alex K.', 'You'],
+    participantRole: 'Student',
+    participantSchool: 'Acton-Boxborough Regional High School',
+    lastMessage: 'Alex: Can someone share the lab notes from today?',
+    lastMessageTime: '30m ago',
+    unreadCount: 5,
+    isMuted: false
+  },
+  { 
+    id: 'conv7', 
+    type: 'group',
+    participantName: 'Robotics Club', 
+    participantNames: ['James C.', 'Rachel K.', 'Tyler B.', 'You'],
+    participantRole: 'Student',
+    participantSchool: 'Lincoln-Sudbury Regional High School',
+    lastMessage: 'James: Meeting moved to Room 204',
+    lastMessageTime: '2h ago',
+    unreadCount: 2,
+    isMuted: false
+  },
+  { 
+    id: 'conv8', 
+    type: 'group',
+    participantName: 'College App Support', 
+    participantNames: ['Jessica T.', 'Emma L.', 'Marcus W.', 'You'],
+    participantRole: 'Student',
+    participantSchool: 'Various Schools',
+    lastMessage: 'Marcus: Has anyone heard back from Harvard yet?',
+    lastMessageTime: '1d ago',
     unreadCount: 0,
     isMuted: false
   },
@@ -392,6 +438,7 @@ export interface SeedMessage {
   timestamp: string;
   reactions?: string[];
   isDeleted?: boolean;
+  senderName?: string;
 }
 
 export const seedMessages: SeedMessage[] = [
@@ -423,4 +470,22 @@ export const seedMessages: SeedMessage[] = [
   { id: 'm17', conversationId: 'conv5', senderId: 'me', text: 'Here are the notes from class', timestamp: '3d ago' },
   { id: 'm18', conversationId: 'conv5', senderId: 'other', text: 'You\'re a lifesaver! 🙌', timestamp: '2d ago' },
   { id: 'm19', conversationId: 'conv5', senderId: 'other', text: 'Thanks for helping with the project 🙏', timestamp: '2d ago' },
+];
+
+// Group chat messages
+export const seedGroupMessages: SeedMessage[] = [
+  // AP Chemistry Study Group
+  { id: 'gm1', conversationId: 'conv6', senderId: 'other', text: 'Does anyone have the formula sheet for Chapter 12?', timestamp: '2:00 PM', senderName: 'Sarah M.' },
+  { id: 'gm2', conversationId: 'conv6', senderId: 'me', text: 'I\'ll upload it tonight!', timestamp: '2:05 PM' },
+  { id: 'gm3', conversationId: 'conv6', senderId: 'other', text: 'Can someone share the lab notes from today?', timestamp: '3:30 PM', senderName: 'Alex K.' },
+
+  // Robotics Club
+  { id: 'gm4', conversationId: 'conv7', senderId: 'other', text: 'Great progress on the drone today!', timestamp: '4:00 PM', senderName: 'James C.' },
+  { id: 'gm5', conversationId: 'conv7', senderId: 'other', text: 'We need to order more propellers', timestamp: '4:15 PM', senderName: 'Rachel K.' },
+  { id: 'gm6', conversationId: 'conv7', senderId: 'other', text: 'Meeting moved to Room 204', timestamp: '5:00 PM', senderName: 'James C.' },
+
+  // College App Support
+  { id: 'gm7', conversationId: 'conv8', senderId: 'other', text: 'Just submitted my Stanford app! 🎉', timestamp: 'Yesterday', senderName: 'Jessica T.' },
+  { id: 'gm8', conversationId: 'conv8', senderId: 'me', text: 'Congrats! I\'m still working on mine', timestamp: 'Yesterday' },
+  { id: 'gm9', conversationId: 'conv8', senderId: 'other', text: 'Has anyone heard back from Harvard yet?', timestamp: 'Today', senderName: 'Marcus W.' },
 ];
