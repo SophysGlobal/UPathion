@@ -470,3 +470,21 @@ export const seedMessages: SeedMessage[] = [
   { id: 'm18', conversationId: 'conv5', senderId: 'other', text: 'You\'re a lifesaver! 🙌', timestamp: '2d ago' },
   { id: 'm19', conversationId: 'conv5', senderId: 'other', text: 'Thanks for helping with the project 🙏', timestamp: '2d ago' },
 ];
+
+// Group chat messages
+export const seedGroupMessages: SeedMessage[] = [
+  // AP Chemistry Study Group
+  { id: 'gm1', conversationId: 'conv6', senderId: 'other', text: 'Does anyone have the formula sheet for Chapter 12?', timestamp: '2:00 PM', senderName: 'Sarah M.' },
+  { id: 'gm2', conversationId: 'conv6', senderId: 'me', text: 'I\'ll upload it tonight!', timestamp: '2:05 PM' },
+  { id: 'gm3', conversationId: 'conv6', senderId: 'other', text: 'Can someone share the lab notes from today?', timestamp: '3:30 PM', senderName: 'Alex K.' },
+
+  // Robotics Club
+  { id: 'gm4', conversationId: 'conv7', senderId: 'other', text: 'Great progress on the drone today!', timestamp: '4:00 PM', senderName: 'James C.' },
+  { id: 'gm5', conversationId: 'conv7', senderId: 'other', text: 'We need to order more propellers', timestamp: '4:15 PM', senderName: 'Rachel K.' },
+  { id: 'gm6', conversationId: 'conv7', senderId: 'other', text: 'Meeting moved to Room 204', timestamp: '5:00 PM', senderName: 'James C.' },
+
+  // College App Support
+  { id: 'gm7', conversationId: 'conv8', senderId: 'other', text: 'Just submitted my Stanford app! 🎉', timestamp: 'Yesterday', senderName: 'Jessica T.' },
+  { id: 'gm8', conversationId: 'conv8', senderId: 'me', text: 'Congrats! I\'m still working on mine', timestamp: 'Yesterday' },
+  { id: 'gm9', conversationId: 'conv8', senderId: 'other', text: 'Has anyone heard back from Harvard yet?', timestamp: 'Today', senderName: 'Marcus W.' },
+];
