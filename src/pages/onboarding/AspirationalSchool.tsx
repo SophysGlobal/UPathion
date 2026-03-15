@@ -4,6 +4,7 @@ import Logo from "@/components/Logo";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import MultiSelectSchools from "@/components/MultiSelectSchools";
+import { ChevronLeft } from "lucide-react";
 
 const AspirationalSchool = () => {
   const navigate = useNavigate();
