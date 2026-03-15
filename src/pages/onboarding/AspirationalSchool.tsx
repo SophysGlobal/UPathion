@@ -76,6 +76,14 @@ const AspirationalSchool = () => {
           >
             Skip for now
           </button>
+
+          <button
+            onClick={() => { updateData({ aspirationalSchool: selectedSchools.join(', ') }); navigate("/onboarding/school"); }}
+            className="w-full flex items-center justify-center gap-1 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </button>
         </div>
 
         {/* Progress indicator */}

@@ -156,7 +156,7 @@ const SchoolSetup = () => {
             </div>
           )}
 
-          <div className="animate-fade-in pt-2">
+          <div className="space-y-3 animate-fade-in pt-2">
             <GradientButton 
               variant="filled" 
               className="w-full"
@@ -164,6 +164,14 @@ const SchoolSetup = () => {
             >
               Continue
             </GradientButton>
+
+            <button
+              onClick={() => { updateData({ schoolType, schoolName: schoolName.trim(), gradeOrYear, major: major.trim() }); navigate("/onboarding/how-did-you-hear"); }}
+              className="w-full flex items-center justify-center gap-1 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Back
+            </button>
           </div>
         </div>
 
