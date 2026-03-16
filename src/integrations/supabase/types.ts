@@ -145,6 +145,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string | null
+          extracurriculars: string[] | null
           grade_or_year: string | null
           id: string
           interests: string[] | null
@@ -167,6 +168,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          extracurriculars?: string[] | null
           grade_or_year?: string | null
           id: string
           interests?: string[] | null
@@ -189,6 +191,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          extracurriculars?: string[] | null
           grade_or_year?: string | null
           id?: string
           interests?: string[] | null
