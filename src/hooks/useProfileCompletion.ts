@@ -17,6 +17,8 @@ export interface ProfileData {
   bio: string | null;
   email: string | null;
   is_premium: boolean;
+  interests: string[] | null;
+  extracurriculars: string[] | null;
 }
 
 export const useProfileCompletion = () => {
@@ -41,7 +43,7 @@ export const useProfileCompletion = () => {
       return data as ProfileData | null;
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
   });
 

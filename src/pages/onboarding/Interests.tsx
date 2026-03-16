@@ -7,53 +7,185 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Check, Search, X, ChevronLeft } from "lucide-react";
 
 const ALL_MAJORS = [
+  // STEM
   "Computer Science",
-  "Biology",
-  "Economics",
-  "Psychology",
+  "Software Engineering",
+  "Data Science",
+  "Artificial Intelligence",
+  "Cybersecurity",
+  "Information Technology",
+  "Information Systems",
   "Mechanical Engineering",
   "Electrical Engineering",
   "Civil Engineering",
   "Chemical Engineering",
-  "Political Science",
+  "Aerospace Engineering",
+  "Biomedical Engineering",
+  "Industrial Engineering",
+  "Materials Science & Engineering",
+  "Environmental Engineering",
+  "Nuclear Engineering",
+  "Computer Engineering",
+  "Physics",
+  "Chemistry",
   "Mathematics",
+  "Applied Mathematics",
+  "Statistics",
+  "Biology",
+  "Biochemistry",
+  "Molecular Biology",
+  "Microbiology",
+  "Genetics",
+  "Neuroscience",
+  "Environmental Science",
+  "Marine Biology",
+  "Ecology",
+  "Geology",
+  "Astronomy",
+  "Astrophysics",
+  "Bioinformatics",
+  "Biotechnology",
+  "Pharmaceutical Sciences",
+
+  // Business
   "Business Administration",
   "Finance",
   "Accounting",
   "Marketing",
-  "Chemistry",
-  "Physics",
-  "Sociology",
-  "Environmental Science",
-  "English",
-  "History",
-  "Philosophy",
-  "Communications",
-  "Nursing",
-  "Pre-Med",
-  "Pre-Law",
-  "Architecture",
-  "Art & Design",
-  "Music",
-  "Theater",
-  "Film Studies",
-  "Data Science",
-  "Information Technology",
-  "Cybersecurity",
-  "Biochemistry",
-  "Neuroscience",
-  "Public Health",
-  "International Relations",
-  "Anthropology",
-  "Linguistics",
-  "Education",
-  "Journalism",
-  "Criminal Justice",
-  "Kinesiology",
+  "Entrepreneurship",
   "Supply Chain Management",
-  "Statistics",
-  "Aerospace Engineering",
-  "Biomedical Engineering",
+  "Management Information Systems",
+  "International Business",
+  "Real Estate",
+  "Human Resources Management",
+  "Operations Management",
+  "Business Analytics",
+  "Hospitality Management",
+  "Sports Management",
+  "Risk Management & Insurance",
+  "Actuarial Science",
+
+  // Social Sciences
+  "Economics",
+  "Political Science",
+  "Psychology",
+  "Sociology",
+  "Anthropology",
+  "International Relations",
+  "Public Policy",
+  "Public Administration",
+  "Criminal Justice",
+  "Criminology",
+  "Social Work",
+  "Urban Planning",
+  "Geography",
+  "Gender Studies",
+  "Ethnic Studies",
+  "Human Development",
+
+  // Humanities
+  "Philosophy",
+  "History",
+  "English",
+  "English Literature",
+  "Comparative Literature",
+  "Linguistics",
+  "Religious Studies",
+  "Theology",
+  "Classics",
+  "Art History",
+  "American Studies",
+  "African American Studies",
+  "Asian Studies",
+  "Latin American Studies",
+  "Middle Eastern Studies",
+  "European Studies",
+
+  // Arts
+  "Graphic Design",
+  "Studio Art",
+  "Film Production",
+  "Film Studies",
+  "Music",
+  "Music Performance",
+  "Music Production",
+  "Theatre",
+  "Dance",
+  "Creative Writing",
+  "Animation",
+  "Photography",
+  "Fashion Design",
+  "Interior Design",
+  "Industrial Design",
+  "Architecture",
+  "Landscape Architecture",
+  "Game Design",
+
+  // Communications & Media
+  "Communications",
+  "Journalism",
+  "Public Relations",
+  "Advertising",
+  "Media Studies",
+  "Digital Media",
+  "Broadcasting",
+  "Strategic Communications",
+
+  // Health & Medical
+  "Nursing",
+  "Public Health",
+  "Pre-Med",
+  "Pre-Dental",
+  "Pre-Veterinary",
+  "Kinesiology",
+  "Health Sciences",
+  "Nutrition & Dietetics",
+  "Speech-Language Pathology",
+  "Occupational Therapy",
+  "Physical Therapy",
+  "Athletic Training",
+  "Biomedical Sciences",
+  "Epidemiology",
+  "Health Administration",
+  "Dental Hygiene",
+  "Respiratory Therapy",
+  "Radiologic Technology",
+  "Medical Laboratory Science",
+
+  // Education
+  "Elementary Education",
+  "Secondary Education",
+  "Special Education",
+  "Early Childhood Education",
+  "Educational Leadership",
+  "Curriculum & Instruction",
+  "Higher Education Administration",
+  "Physical Education",
+  "TESOL / ESL",
+
+  // Law & Government
+  "Pre-Law",
+  "Legal Studies",
+  "Paralegal Studies",
+  "Political Science (Pre-Law)",
+  "Homeland Security",
+  "Military Science",
+
+  // Agriculture & Environment
+  "Agriculture",
+  "Agricultural Engineering",
+  "Animal Science",
+  "Food Science",
+  "Forestry",
+  "Environmental Policy",
+  "Sustainable Development",
+  "Wildlife Biology",
+  "Horticulture",
+
+  // Other
+  "Undecided / Exploratory",
+  "Liberal Arts",
+  "Interdisciplinary Studies",
 ] as const;
 
 const Interests = () => {
@@ -81,12 +213,12 @@ const Interests = () => {
 
   const handleContinue = () => {
     updateData({ interests: selected });
-    navigate("/onboarding/school-confirm");
+    navigate("/onboarding/extracurriculars");
   };
 
   const handleSkip = () => {
     updateData({ interests: [] });
-    navigate("/onboarding/school-confirm");
+    navigate("/onboarding/extracurriculars");
   };
 
   const handleBack = () => {
@@ -112,7 +244,6 @@ const Interests = () => {
           <p className="text-muted-foreground">Select your intended majors</p>
         </div>
 
-        {/* Selected chips */}
         {selected.length > 0 && (
           <div className="flex flex-wrap gap-2 animate-fade-in">
             {selected.map((major) => (
@@ -132,7 +263,6 @@ const Interests = () => {
           </div>
         )}
 
-        {/* Search input */}
         <div className="relative animate-fade-in">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
@@ -144,7 +274,6 @@ const Interests = () => {
           />
         </div>
 
-        {/* Scrollable list */}
         <div className="max-h-52 overflow-y-auto rounded-lg border border-border bg-card animate-fade-in">
           {filteredMajors.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-6">
@@ -176,7 +305,6 @@ const Interests = () => {
           )}
         </div>
 
-        {/* Actions */}
         <div className="space-y-3 animate-fade-in pt-1">
           <GradientButton
             variant="filled"
@@ -202,7 +330,6 @@ const Interests = () => {
           </button>
         </div>
 
-        {/* Progress indicator */}
         <div className="flex justify-center gap-2 pt-4 animate-fade-in">
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />

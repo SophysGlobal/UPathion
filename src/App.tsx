@@ -22,6 +22,7 @@ import HowDidYouHear from "./pages/onboarding/HowDidYouHear";
 import SchoolSetup from "./pages/onboarding/SchoolSetup";
 import AspirationalSchool from "./pages/onboarding/AspirationalSchool";
 import Interests from "./pages/onboarding/Interests";
+import Extracurriculars from "./pages/onboarding/Extracurriculars";
 import SchoolConfirm from "./pages/onboarding/SchoolConfirm";
 import Subscription from "./pages/Subscription";
 import Dashboard from "./pages/Dashboard";
@@ -74,6 +75,7 @@ const App = () => (
                     <Route path="/onboarding/school" element={<SchoolSetup />} />
                     <Route path="/onboarding/aspirational-school" element={<AspirationalSchool />} />
                     <Route path="/onboarding/interests" element={<Interests />} />
+                    <Route path="/onboarding/extracurriculars" element={<Extracurriculars />} />
                     <Route path="/onboarding/school-confirm" element={<SchoolConfirm />} />
                     <Route path="/subscription" element={<Subscription />} />
                     <Route path="/dashboard" element={<Dashboard />} />

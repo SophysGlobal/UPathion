@@ -8,15 +8,14 @@ interface AuthGateProps {
   children: ReactNode;
 }
 
-// Session-level sign-in gate key
 const SESSION_SIGNED_IN_KEY = 'upathion_signed_in_this_session';
+const SUBSCRIPTION_SHOWN_KEY = 'upathion_sub_shown_timestamps';
+const MAX_SUB_SHOWS_PER_WEEK = 2;
 
 export const markSessionSignedIn = () => {
   try {
     sessionStorage.setItem(SESSION_SIGNED_IN_KEY, 'true');
-  } catch {
-    // sessionStorage unavailable
-  }
+  } catch {}
 };
 
 const hasSignedInThisSession = (): boolean => {
@@ -25,6 +24,30 @@ const hasSignedInThisSession = (): boolean => {
   } catch {
     return false;
   }
+};
+
+/** Check if subscription screen should be shown (max 2x per week for non-premium) */
+const shouldShowSubscription = (): boolean => {
+  try {
+    const raw = localStorage.getItem(SUBSCRIPTION_SHOWN_KEY);
+    const timestamps: number[] = raw ? JSON.parse(raw) : [];
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const recentShows = timestamps.filter((t) => t > oneWeekAgo);
+    return recentShows.length < MAX_SUB_SHOWS_PER_WEEK;
+  } catch {
+    return true;
+  }
+};
+
+const markSubscriptionShown = () => {
+  try {
+    const raw = localStorage.getItem(SUBSCRIPTION_SHOWN_KEY);
+    const timestamps: number[] = raw ? JSON.parse(raw) : [];
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const recentShows = timestamps.filter((t) => t > oneWeekAgo);
+    recentShows.push(Date.now());
+    localStorage.setItem(SUBSCRIPTION_SHOWN_KEY, JSON.stringify(recentShows));
+  } catch {}
 };
 
 // Routes that don't require authentication
@@ -38,6 +61,7 @@ const ONBOARDING_ROUTES = [
   '/onboarding/school',
   '/onboarding/aspirational-school',
   '/onboarding/interests',
+  '/onboarding/extracurriculars',
   '/onboarding/school-confirm',
   '/subscription',
 ];
@@ -58,7 +82,6 @@ const PROTECTED_APP_ROUTES = [
   '/privacy-settings',
 ];
 
-// Maximum time to wait for profile/admin data before proceeding anyway
 const SECONDARY_LOADING_TIMEOUT_MS = 4000;
 
 const AuthGate = ({ children }: AuthGateProps) => {
@@ -92,20 +115,16 @@ const AuthGate = ({ children }: AuthGateProps) => {
 
   const signedInThisSession = hasSignedInThisSession();
 
-  // Primary loading: auth state must resolve (handled by AuthContext timeout)
-  // Secondary loading: profile + admin status, only when user is signed in this session
   const needsSecondaryData = !!user && signedInThisSession;
   const secondaryStillLoading = needsSecondaryData && (profileLoading || adminLoading) && !secondaryTimedOut;
   const isLoading = authLoading || secondaryStillLoading;
 
-  // Safety timeout for secondary data (profile/admin queries)
   useEffect(() => {
     if (needsSecondaryData && (profileLoading || adminLoading)) {
       secondaryTimeoutRef.current = setTimeout(() => {
         setSecondaryTimedOut(true);
       }, SECONDARY_LOADING_TIMEOUT_MS);
     } else {
-      // Data resolved, clear timeout
       if (secondaryTimeoutRef.current) {
         clearTimeout(secondaryTimeoutRef.current);
       }
@@ -128,20 +147,40 @@ const AuthGate = ({ children }: AuthGateProps) => {
       return;
     }
 
+    const isPremium = profile?.is_premium ?? false;
+
     // RULE 2: Authenticated + signed in this session
     if (isAuthRoute || currentPath === '/') {
       if (isAdmin && !adminQuestionnaireDone) {
+        // Admins always go through questionnaire
         navigate('/onboarding/name', { replace: true });
-      } else if (!isAdmin && !hasCompletedOnboarding) {
-        navigate('/onboarding/name', { replace: true });
-      } else {
+      } else if (isAdmin) {
         navigate('/dashboard', { replace: true });
+      } else if (isPremium) {
+        // Premium users go straight to dashboard
+        navigate('/dashboard', { replace: true });
+      } else if (!hasCompletedOnboarding) {
+        // Normal first-time users: go to subscription (skip questionnaire)
+        if (shouldShowSubscription()) {
+          markSubscriptionShown();
+          navigate('/subscription', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+      } else {
+        // Returning non-premium: show subscription 2x/week
+        if (shouldShowSubscription()) {
+          markSubscriptionShown();
+          navigate('/subscription', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       }
       setHasRouted(true);
       return;
     }
 
-    // Admin QA mode
+    // Admin QA mode: admins go through questionnaire each session
     if (isAdmin && !adminQuestionnaireDone) {
       if (isProtectedAppRoute) {
         setHasRouted(true);
@@ -154,8 +193,15 @@ const AuthGate = ({ children }: AuthGateProps) => {
       return;
     }
 
-    // Normal users: completed onboarding → skip questionnaire
-    if (!isAdmin && hasCompletedOnboarding && isOnboardingRoute) {
+    // Admin who completed questionnaire: skip subscription, go to dashboard
+    if (isAdmin && adminQuestionnaireDone && currentPath === '/subscription') {
+      navigate('/dashboard', { replace: true });
+      setHasRouted(true);
+      return;
+    }
+
+    // Normal users: if completed onboarding, skip onboarding routes (except subscription)
+    if (!isAdmin && hasCompletedOnboarding && isOnboardingRoute && currentPath !== '/subscription') {
       navigate('/dashboard', { replace: true });
       setHasRouted(true);
       return;
@@ -174,6 +220,7 @@ const AuthGate = ({ children }: AuthGateProps) => {
     isProtectedAppRoute,
     isAuthRoute,
     navigate,
+    profile?.is_premium,
   ]);
 
   useEffect(() => {

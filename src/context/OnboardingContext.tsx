@@ -14,6 +14,7 @@ interface OnboardingData {
   major: string;
   aspirationalSchool: string;
   interests: string[];
+  extracurriculars: string[];
 }
 
 interface OnboardingContextType {
@@ -34,6 +35,7 @@ const defaultData: OnboardingData = {
   major: '',
   aspirationalSchool: '',
   interests: [],
+  extracurriculars: [],
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -51,7 +53,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { data: userData, error } = await supabase
           .from('profiles')
-          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests')
+          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests, extracurriculars')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -69,6 +71,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
           referralSource: userData?.referral_source || '',
           referralSourceOther: userData?.referral_source_other || '',
           interests: userData?.interests || [],
+          extracurriculars: (userData as any)?.extracurriculars || [],
         };
         
         initialDataRef.current = result;
@@ -83,7 +86,6 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
     gcTime: 1000 * 60 * 10,
   });
 
-  // Merge fetched data with local overrides
   const data: OnboardingData = {
     ...(fetchedData ?? defaultData),
     ...localOverrides,
