@@ -359,6 +359,22 @@ const EditProfile = () => {
             description: isHighSchool ? "What you're interested in studying" : "Your field of study or interests",
             value: formData.major,
           },
+          {
+            type: "text",
+            field: "interestsDisplay",
+            label: "Intended Majors (from questionnaire)",
+            description: "Selected during onboarding",
+            value: formData.interests.join(', ') || "None selected",
+            readOnly: true,
+          },
+          {
+            type: "text",
+            field: "extracurricularsDisplay",
+            label: "Extracurricular Interests",
+            description: "Activities you're interested in",
+            value: formData.extracurriculars.join(', ') || "None selected",
+            readOnly: true,
+          },
         ],
       },
       {
