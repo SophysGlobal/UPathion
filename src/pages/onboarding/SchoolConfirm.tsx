@@ -5,7 +5,7 @@ import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { School, GraduationCap, BookOpen, Calendar, Sparkles } from "lucide-react";
+import { School, GraduationCap, BookOpen, Calendar, Sparkles, Activity } from "lucide-react";
 import { toast } from "sonner";
 
 const SchoolConfirm = () => {
@@ -24,7 +24,7 @@ const SchoolConfirm = () => {
     setIsLoading(true);
     try {
       const isHighSchool = data.schoolType === 'high_school';
-      const updates = {
+      const updates: Record<string, any> = {
         display_name: data.fullName || null,
         username: data.username || null,
         school_name: data.schoolName || null,
@@ -36,6 +36,7 @@ const SchoolConfirm = () => {
         referral_source: data.referralSource || null,
         referral_source_other: data.referralSourceOther || null,
         interests: data.interests?.length ? data.interests : [],
+        extracurriculars: data.extracurriculars?.length ? data.extracurriculars : [],
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };
@@ -47,14 +48,12 @@ const SchoolConfirm = () => {
 
       if (error) throw error;
 
-      // Signal to AuthGate that admin questionnaire is done for this session
       window.dispatchEvent(new CustomEvent('admin-questionnaire-complete'));
 
       toast.success("Profile saved!", {
         description: "Just one more step...",
       });
       
-      // Navigate to subscription screen after onboarding (paywall)
       navigate("/subscription");
     } catch (error: any) {
       console.error('Error saving profile:', error);
@@ -79,18 +78,15 @@ const SchoolConfirm = () => {
     <div className="min-h-screen flex items-center justify-center p-4 relative" onKeyDown={handleKeyDown} tabIndex={0}>
       
       <div className="w-full max-w-md space-y-8 relative z-10">
-        {/* Logo */}
         <div className="flex justify-center animate-fade-in">
           <Logo />
         </div>
 
-        {/* Title */}
         <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">Almost there!</h1>
           <p className="text-muted-foreground">Confirm your details</p>
         </div>
 
-        {/* Info Card */}
         <div className="gradient-border animate-fade-in">
           <div className="bg-card rounded-lg p-6 space-y-4">
             <div className="flex items-center gap-4">
@@ -121,17 +117,31 @@ const SchoolConfirm = () => {
               </div>
             </div>
 
-            {data.major && (
+            {data.interests && data.interests.length > 0 && (
               <>
                 <div className="h-px bg-border" />
-                
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
                     <BookOpen className="w-6 h-6 text-accent" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Major(s)</p>
-                    <p className="text-lg font-semibold text-foreground">{data.major}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Intended Major(s)</p>
+                    <p className="text-sm font-semibold text-foreground">{data.interests.join(', ')}</p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {data.extracurriculars && data.extracurriculars.length > 0 && (
+              <>
+                <div className="h-px bg-border" />
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                    <Activity className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Extracurriculars</p>
+                    <p className="text-sm font-semibold text-foreground">{data.extracurriculars.slice(0, 3).join(', ')}{data.extracurriculars.length > 3 ? ` +${data.extracurriculars.length - 3} more` : ''}</p>
                   </div>
                 </div>
               </>
@@ -140,7 +150,6 @@ const SchoolConfirm = () => {
             {data.aspirationalSchool && (
               <>
                 <div className="h-px bg-border" />
-                
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
                     <Sparkles className="w-6 h-6 text-primary" />
@@ -155,7 +164,6 @@ const SchoolConfirm = () => {
           </div>
         </div>
 
-        {/* Buttons */}
         <div className="flex gap-4 animate-fade-in">
           <GradientButton 
             variant="default"
@@ -175,7 +183,6 @@ const SchoolConfirm = () => {
           </GradientButton>
         </div>
 
-        {/* Progress indicator */}
         <div className="flex justify-center gap-2 pt-4 animate-fade-in">
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />

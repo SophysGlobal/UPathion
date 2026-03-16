@@ -112,6 +112,20 @@ const Profile = () => {
                 {data.major && (
                   <p className="text-xs text-muted-foreground">{data.major}</p>
                 )}
+                {data.interests && data.interests.length > 0 && (
+                  <div className="flex flex-wrap gap-1 justify-center mt-2">
+                    {data.interests.slice(0, 3).map((interest) => (
+                      <span key={interest} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                        {interest}
+                      </span>
+                    ))}
+                    {data.interests.length > 3 && (
+                      <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
+                        +{data.interests.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="h-6 mt-2">
                   {profile.is_premium && (
                     <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">

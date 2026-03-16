@@ -74,6 +74,8 @@ const EditProfile = () => {
     gradeOrYear: "",
     major: "",
     aspirationalSchool: "",
+    interests: [] as string[],
+    extracurriculars: [] as string[],
     instagram: "",
     tiktok: "",
     linkedin: "",
@@ -102,6 +104,8 @@ const EditProfile = () => {
         gradeOrYear: profile.grade_or_year || "",
         major: profile.major || "",
         aspirationalSchool: profile.aspirational_school || "",
+        interests: profile.interests || [],
+        extracurriculars: profile.extracurriculars || [],
         instagram: "",
         tiktok: "",
         linkedin: "",
@@ -180,7 +184,7 @@ const EditProfile = () => {
 
     setIsSaving(true);
     try {
-      const updates = {
+      const updates: Record<string, any> = {
         display_name: formData.displayName || null,
         username: formData.username || null,
         bio: formData.bio || null,
@@ -190,6 +194,8 @@ const EditProfile = () => {
         major: formData.major || null,
         aspirational_school: isHighSchool ? (formData.aspirationalSchool || null) : null,
         is_high_school: isHighSchool,
+        interests: formData.interests || [],
+        extracurriculars: formData.extracurriculars || [],
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };
@@ -352,6 +358,22 @@ const EditProfile = () => {
             label: isHighSchool ? "Intended Major / Interests" : "Major / Interests",
             description: isHighSchool ? "What you're interested in studying" : "Your field of study or interests",
             value: formData.major,
+          },
+          {
+            type: "text",
+            field: "interestsDisplay",
+            label: "Intended Majors (from questionnaire)",
+            description: "Selected during onboarding",
+            value: formData.interests.join(', ') || "None selected",
+            readOnly: true,
+          },
+          {
+            type: "text",
+            field: "extracurricularsDisplay",
+            label: "Extracurricular Interests",
+            description: "Activities you're interested in",
+            value: formData.extracurriculars.join(', ') || "None selected",
+            readOnly: true,
           },
         ],
       },
