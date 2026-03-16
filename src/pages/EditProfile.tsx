@@ -104,6 +104,8 @@ const EditProfile = () => {
         gradeOrYear: profile.grade_or_year || "",
         major: profile.major || "",
         aspirationalSchool: profile.aspirational_school || "",
+        interests: profile.interests || [],
+        extracurriculars: profile.extracurriculars || [],
         instagram: "",
         tiktok: "",
         linkedin: "",
