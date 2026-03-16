@@ -184,7 +184,7 @@ const EditProfile = () => {
 
     setIsSaving(true);
     try {
-      const updates = {
+      const updates: Record<string, any> = {
         display_name: formData.displayName || null,
         username: formData.username || null,
         bio: formData.bio || null,
@@ -194,6 +194,8 @@ const EditProfile = () => {
         major: formData.major || null,
         aspirational_school: isHighSchool ? (formData.aspirationalSchool || null) : null,
         is_high_school: isHighSchool,
+        interests: formData.interests || [],
+        extracurriculars: formData.extracurriculars || [],
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };
