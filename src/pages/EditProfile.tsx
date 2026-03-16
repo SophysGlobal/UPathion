@@ -74,6 +74,8 @@ const EditProfile = () => {
     gradeOrYear: "",
     major: "",
     aspirationalSchool: "",
+    interests: [] as string[],
+    extracurriculars: [] as string[],
     instagram: "",
     tiktok: "",
     linkedin: "",
