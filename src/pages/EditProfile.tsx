@@ -117,6 +117,10 @@ const EditProfile = () => {
         phoneNumber: "",
         profileVisibility: "public",
         showSchoolOnProfile: true,
+        instagramVisibility: "public",
+        tiktokVisibility: "public",
+        linkedinVisibility: "public",
+        websiteVisibility: "public",
       });
       setProfilePhoto(profile.avatar_url || null);
     }
