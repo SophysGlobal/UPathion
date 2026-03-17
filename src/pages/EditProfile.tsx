@@ -436,7 +436,6 @@ const EditProfile = () => {
             options: [
               { label: "Public", value: "public" },
               { label: "School-Only", value: "school_only" },
-              { label: "Private", value: "private" },
             ],
           },
           {
