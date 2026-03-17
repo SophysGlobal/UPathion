@@ -4,6 +4,7 @@ import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
+import Logo from "@/components/Logo";
 import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 

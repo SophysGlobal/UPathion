@@ -42,7 +42,6 @@ const PrivacySettings = () => {
   const visibilityOptions: { key: ProfileVisibility; label: string; description: string }[] = [
     { key: 'public', label: 'Public', description: 'Anyone can see your profile' },
     { key: 'school-only', label: 'School Only', description: 'Only people at your school' },
-    { key: 'private', label: 'Private', description: 'Only you can see your profile' },
   ];
 
   const messageOptions: { key: MessagePermission; label: string }[] = [

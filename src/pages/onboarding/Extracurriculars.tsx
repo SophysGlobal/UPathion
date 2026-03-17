@@ -157,11 +157,13 @@ const Extracurriculars = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebouncedValue(searchQuery, 200);
 
+  const sortedExtracurriculars = [...ALL_EXTRACURRICULARS].sort((a, b) => a.localeCompare(b));
+
   const filtered = debouncedQuery
-    ? ALL_EXTRACURRICULARS.filter((e) =>
+    ? sortedExtracurriculars.filter((e) =>
         e.toLowerCase().includes(debouncedQuery.toLowerCase())
       )
-    : [...ALL_EXTRACURRICULARS];
+    : sortedExtracurriculars;
 
   const toggle = useCallback((item: string) => {
     setSelected((prev) =>
