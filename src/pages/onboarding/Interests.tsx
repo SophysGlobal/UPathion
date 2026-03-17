@@ -195,11 +195,13 @@ const Interests = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebouncedValue(searchQuery, 200);
 
+  const sortedMajors = [...ALL_MAJORS].sort((a, b) => a.localeCompare(b));
+
   const filteredMajors = debouncedQuery
-    ? ALL_MAJORS.filter((m) =>
+    ? sortedMajors.filter((m) =>
         m.toLowerCase().includes(debouncedQuery.toLowerCase())
       )
-    : [...ALL_MAJORS];
+    : sortedMajors;
 
   const toggleMajor = useCallback((major: string) => {
     setSelected((prev) =>

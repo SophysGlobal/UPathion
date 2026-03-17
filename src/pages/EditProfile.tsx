@@ -83,6 +83,10 @@ const EditProfile = () => {
     phoneNumber: "",
     profileVisibility: "public",
     showSchoolOnProfile: true,
+    instagramVisibility: "public" as string,
+    tiktokVisibility: "public" as string,
+    linkedinVisibility: "public" as string,
+    websiteVisibility: "public" as string,
   });
 
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -113,6 +117,10 @@ const EditProfile = () => {
         phoneNumber: "",
         profileVisibility: "public",
         showSchoolOnProfile: true,
+        instagramVisibility: "public",
+        tiktokVisibility: "public",
+        linkedinVisibility: "public",
+        websiteVisibility: "public",
       });
       setProfilePhoto(profile.avatar_url || null);
     }
@@ -389,38 +397,42 @@ const EditProfile = () => {
             placeholder: "+1 (555) 000-0000",
           },
           {
-            type: "text",
+            type: "social_handle",
             field: "instagram",
             label: "Instagram",
             description: "Your Instagram handle",
             value: formData.instagram,
             placeholder: "@username",
+            visibilityField: "instagramVisibility",
           },
           {
-            type: "text",
+            type: "social_handle",
             field: "tiktok",
             label: "TikTok",
             description: "Your TikTok handle",
             value: formData.tiktok,
             placeholder: "@username",
+            visibilityField: "tiktokVisibility",
           },
           {
-            type: "text",
+            type: "social_handle",
             field: "linkedin",
             label: "LinkedIn",
             description: "Your LinkedIn profile",
             value: formData.linkedin,
             placeholder: "linkedin.com/in/username",
             error: errors.linkedin,
+            visibilityField: "linkedinVisibility",
           },
           {
-            type: "text",
+            type: "social_handle",
             field: "website",
             label: "Website",
             description: "Your personal website or portfolio",
             value: formData.website,
             placeholder: "https://example.com",
             error: errors.website,
+            visibilityField: "websiteVisibility",
           },
         ],
       },
@@ -436,7 +448,6 @@ const EditProfile = () => {
             options: [
               { label: "Public", value: "public" },
               { label: "School-Only", value: "school_only" },
-              { label: "Private", value: "private" },
             ],
           },
           {
@@ -749,6 +760,55 @@ const EditProfile = () => {
                           />
                         </div>
                       </button>
+                    </div>
+                  );
+                }
+
+                if (item.type === "social_handle") {
+                  const visOptions = [
+                    { label: "Public", value: "public" },
+                    { label: "School", value: "school_only" },
+                    { label: "Private", value: "private" },
+                  ];
+                  const currentVis = (formData as any)[item.visibilityField] || "public";
+                  return (
+                    <div key={item.field} className="gradient-border">
+                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+                        <label className="block">
+                          <p className="font-medium text-foreground text-sm mb-1">{item.label}</p>
+                          <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
+                          <Input
+                            type="text"
+                            value={item.value}
+                            onChange={(e) => handleInputChange(item.field, e.target.value)}
+                            placeholder={item.placeholder || ""}
+                            className={`bg-secondary/50 border-border mb-2 ${item.error ? 'border-destructive' : ''}`}
+                          />
+                          {item.error && (
+                            <p className="text-xs text-destructive mt-1 mb-2 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              {item.error}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground mr-1">Visible to:</span>
+                            {visOptions.map((opt) => (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => handleInputChange(item.visibilityField, opt.value)}
+                                className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
+                                  currentVis === opt.value
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-secondary/50 text-muted-foreground hover:text-foreground'
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </label>
+                      </div>
                     </div>
                   );
                 }

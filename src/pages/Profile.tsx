@@ -72,6 +72,7 @@ const Profile = () => {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="flex items-center justify-between px-6 py-3">
+          <h1 className="text-lg font-semibold text-foreground">Profile</h1>
           <Logo showText={false} />
         </div>
       </header>
@@ -109,21 +110,39 @@ const Profile = () => {
                 ) : (
                   <p className="text-sm text-muted-foreground mt-1">No school set</p>
                 )}
+                {data.gradeOrYear && (
+                  <p className="text-xs text-muted-foreground mt-1">Grade: {data.gradeOrYear}</p>
+                )}
                 {data.major && (
                   <p className="text-xs text-muted-foreground">{data.major}</p>
                 )}
                 {data.interests && data.interests.length > 0 && (
-                  <div className="flex flex-wrap gap-1 justify-center mt-2">
-                    {data.interests.slice(0, 3).map((interest) => (
-                      <span key={interest} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-                        {interest}
-                      </span>
-                    ))}
-                    {data.interests.length > 3 && (
-                      <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
-                        +{data.interests.length - 3} more
-                      </span>
-                    )}
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-1.5">Intended Majors</p>
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {data.interests.map((interest) => (
+                        <span key={interest} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {data.extracurriculars && data.extracurriculars.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-1.5">Extracurriculars</p>
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {data.extracurriculars.slice(0, 5).map((ec) => (
+                        <span key={ec} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs">
+                          {ec}
+                        </span>
+                      ))}
+                      {data.extracurriculars.length > 5 && (
+                        <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
+                          +{data.extracurriculars.length - 5} more
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div className="h-6 mt-2">
