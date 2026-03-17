@@ -83,6 +83,10 @@ const EditProfile = () => {
     phoneNumber: "",
     profileVisibility: "public",
     showSchoolOnProfile: true,
+    instagramVisibility: "public" as string,
+    tiktokVisibility: "public" as string,
+    linkedinVisibility: "public" as string,
+    websiteVisibility: "public" as string,
   });
 
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
