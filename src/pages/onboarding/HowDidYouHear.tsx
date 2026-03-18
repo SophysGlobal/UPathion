@@ -139,8 +139,8 @@ const HowDidYouHear = () => {
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
         </div>
-      </div>
     </div>
+    </OnboardingLayout>
   );
 };
 
