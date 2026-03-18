@@ -100,10 +100,13 @@
 
   html {
     font-family: 'Inter', sans-serif;
+    background-color: hsl(var(--background));
+    overscroll-behavior: none;
   }
 
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior: none;
   }
 }
 
