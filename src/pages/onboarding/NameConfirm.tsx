@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import Logo from "@/components/Logo";
+import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { User, AtSign } from "lucide-react";
