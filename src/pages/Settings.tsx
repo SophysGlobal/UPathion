@@ -229,7 +229,7 @@ const Settings = () => {
       
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="flex items-center gap-4 px-6 py-3">
+        <div className="flex items-center gap-3 px-5 py-3">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors">
             <ChevronLeft className="w-5 h-5 text-foreground" />
           </button>
