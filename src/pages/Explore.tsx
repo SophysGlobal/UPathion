@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import Logo from "@/components/Logo";
+import PageHeader from "@/components/PageHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PersonCard from "@/components/PersonCard";
