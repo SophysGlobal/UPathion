@@ -257,11 +257,11 @@ main {
 
 @keyframes pulse-glow {
   0%, 100% {
-    opacity: 0.3;
+    opacity: 0.6;
     transform: scale(1);
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.8;
     transform: scale(1.15);
   }
 }
