@@ -188,8 +188,8 @@ const SchoolConfirm = () => {
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
         </div>
-      </div>
     </div>
+    </OnboardingLayout>
   );
 };
 
