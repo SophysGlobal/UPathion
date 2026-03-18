@@ -3,7 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import Logo from "@/components/Logo";
+import PageHeader from "@/components/PageHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { GradientButton } from "@/components/ui/GradientButton";
