@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import Logo from "@/components/Logo";
+import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { User, AtSign } from "lucide-react";
@@ -16,13 +16,9 @@ const NameConfirm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" onKeyDown={handleKeyDown} tabIndex={0}>
-      
-      <div className="w-full max-w-md space-y-8 relative z-10">
-        {/* Logo */}
-        <div className="flex justify-center animate-fade-in">
-          <Logo />
-        </div>
+    <OnboardingLayout>
+    <div className="w-full max-w-md space-y-8 relative z-10 p-4" onKeyDown={handleKeyDown} tabIndex={0}>
+      <div className="h-12" />
 
         {/* Title */}
         <div className="text-center space-y-2 animate-fade-in">
@@ -84,8 +80,8 @@ const NameConfirm = () => {
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
         </div>
-      </div>
     </div>
+    </OnboardingLayout>
   );
 };
 

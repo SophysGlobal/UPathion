@@ -3,7 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import Logo from "@/components/Logo";
+import PageHeader from "@/components/PageHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -69,13 +69,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
       
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="flex items-center justify-between px-6 py-3">
-          <h1 className="text-lg font-semibold text-foreground">Profile</h1>
-          <Logo showText={false} />
-        </div>
-      </header>
+      <PageHeader title="Profile" />
 
       <main className="relative z-10 px-6 py-6 space-y-6">
         {isReady ? (
