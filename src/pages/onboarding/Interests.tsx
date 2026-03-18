@@ -233,11 +233,9 @@ const Interests = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
-      <div className="w-full max-w-md space-y-5 relative z-10">
-        <div className="flex justify-center animate-fade-in">
-          <Logo />
-        </div>
+    <OnboardingLayout>
+    <div className="w-full max-w-md space-y-5 relative z-10 p-4">
+      <div className="h-12" />
 
         <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">
