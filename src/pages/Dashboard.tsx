@@ -7,7 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import PageHeader from "@/components/PageHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
-import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass, User, Activity } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass, User, Activity, School } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -61,7 +61,7 @@ const Dashboard = () => {
   const hasProfileData = grade || (majors && majors.length > 0) || (extracurriculars && extracurriculars.length > 0) || school;
 
   return (
-    <div className="min-h-screen bg-background/80 pb-20 relative">
+    <div className="min-h-screen bg-background/60 pb-20 relative">
       
       {showProfilePrompt && (
         <CompleteProfilePrompt onSkip={handleSkipPrompt} />
@@ -86,7 +86,7 @@ const Dashboard = () => {
             <button
               key={action.label}
               onClick={action.action}
-              className="gradient-border group"
+              className="gradient-border group transition-transform duration-200 hover:-translate-y-0.5"
             >
               <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center transition-colors group-hover:bg-secondary/50">
                 <action.icon className="w-6 h-6 text-primary mx-auto mb-2" />
@@ -132,13 +132,24 @@ const Dashboard = () => {
               </p>
 
               <div className="grid gap-3">
-                {/* School & Grade */}
-                {(school || grade) && (
+                {/* School */}
+                {school && (
+                  <div className="flex items-start gap-3">
+                    <School className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">School</p>
+                      <p className="text-sm font-medium text-foreground">{school}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Grade */}
+                {grade && (
                   <div className="flex items-start gap-3">
                     <GraduationCap className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                     <div>
-                      {school && <p className="text-sm font-medium text-foreground">{school}</p>}
-                      {grade && <p className="text-xs text-muted-foreground">{grade}</p>}
+                      <p className="text-xs text-muted-foreground">Grade / Year</p>
+                      <p className="text-sm font-medium text-foreground">{grade}</p>
                     </div>
                   </div>
                 )}
@@ -151,11 +162,11 @@ const Dashboard = () => {
                       Intended Majors
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {majors.slice(0, 5).map((m) => (
+                      {majors.slice(0, 6).map((m) => (
                         <span key={m} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{m}</span>
                       ))}
-                      {majors.length > 5 && (
-                        <span className="px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs">+{majors.length - 5}</span>
+                      {majors.length > 6 && (
+                        <span className="px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs">+{majors.length - 6}</span>
                       )}
                     </div>
                   </div>
@@ -169,11 +180,11 @@ const Dashboard = () => {
                       Extracurriculars
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {extracurriculars.slice(0, 5).map((e) => (
+                      {extracurriculars.slice(0, 6).map((e) => (
                         <span key={e} className="px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">{e}</span>
                       ))}
-                      {extracurriculars.length > 5 && (
-                        <span className="px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs">+{extracurriculars.length - 5}</span>
+                      {extracurriculars.length > 6 && (
+                        <span className="px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs">+{extracurriculars.length - 6}</span>
                       )}
                     </div>
                   </div>

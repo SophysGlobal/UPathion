@@ -20,7 +20,7 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCar
   const [saved, setSaved] = useState(false);
 
   return (
-    <div className="gradient-border">
+    <div className="gradient-border transition-transform duration-200 hover:-translate-y-0.5">
       <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
         {/* Author Header */}
         <div className="flex items-center gap-3 mb-3">
@@ -88,7 +88,7 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCar
             className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
           >
             <Heart 
-              className={`w-5 h-5 ${liked ? 'fill-primary text-primary' : ''}`} 
+              className={`w-5 h-5 transition-transform duration-200 ${liked ? 'fill-primary text-primary scale-110' : ''}`} 
             />
             <span className="text-sm">{liked ? post.likes + 1 : post.likes}</span>
           </button>
@@ -101,7 +101,7 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCar
             className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ml-auto"
           >
             <Bookmark 
-              className={`w-5 h-5 ${saved ? 'fill-primary text-primary' : ''}`} 
+              className={`w-5 h-5 transition-transform duration-200 ${saved ? 'fill-primary text-primary scale-110' : ''}`} 
             />
           </button>
         </div>
@@ -157,7 +157,7 @@ const Feed = () => {
   };
 
   const renderEmptyState = () => (
-    <div className="text-center py-12">
+    <div className="text-center py-12 col-span-2">
       <div className="w-20 h-20 rounded-full bg-secondary/50 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
         <MessageCircle className="w-10 h-10 text-muted-foreground" />
       </div>
@@ -187,7 +187,7 @@ const Feed = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background/80 pb-20 relative">
+    <div className="min-h-screen bg-background/60 pb-20 relative">
       <PageHeader title="Feed" subtitle="Tailored to you" />
       
       {/* Filter Pills below header */}
@@ -195,24 +195,26 @@ const Feed = () => {
         {filterPills}
       </div>
 
-      <main className="relative z-10 px-6 py-6 space-y-4">
+      <main className="relative z-10 px-6 py-6">
         {filteredPosts.length === 0 ? (
           renderEmptyState()
         ) : (
-          filteredPosts.map((post, index) => (
-            <div
-              key={post.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
-            >
-              <PostCard 
-                post={post} 
-                onSchoolClick={handleSchoolClick}
-                onUserClick={handleUserClick}
-                userSchool={userSchool}
-              />
-            </div>
-          ))
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredPosts.map((post, index) => (
+              <div
+                key={post.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
+              >
+                <PostCard 
+                  post={post} 
+                  onSchoolClick={handleSchoolClick}
+                  onUserClick={handleUserClick}
+                  userSchool={userSchool}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </main>
 

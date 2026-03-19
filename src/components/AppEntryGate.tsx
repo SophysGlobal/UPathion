@@ -11,6 +11,9 @@ interface AppEntryGateProps {
 /**
  * AppEntryGate — single SplashScreen component handles both splash + welcome
  * in one continuous animation. No unmount/remount = no flicker.
+ *
+ * The AnimatedBackground lives in App.tsx and is always behind this gate.
+ * The splash overlay is transparent so particles show through.
  */
 const AppEntryGate = ({ children }: AppEntryGateProps) => {
   const { user } = useAuth();
@@ -66,14 +69,21 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
         <SplashScreen
           includeWelcome={includeWelcome}
           onSplashPhaseComplete={() => {
-            // Mark splash shown so navigation knows
             onSplashComplete();
           }}
           onComplete={handleComplete}
         />
       )}
 
-      {isReady && <>{children}</>}
+      {/* Always render children so AnimatedBackground persists; 
+          hide with opacity during splash to prevent layout shifts */}
+      <div style={{ 
+        opacity: isReady ? 1 : 0, 
+        pointerEvents: isReady ? 'auto' : 'none',
+        transition: 'opacity 0.3s ease'
+      }}>
+        {children}
+      </div>
     </>
   );
 };
