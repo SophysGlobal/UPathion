@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import OnboardingLayout from "@/components/OnboardingLayout";
+import Logo from "@/components/Logo";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -233,9 +233,11 @@ const Interests = () => {
   };
 
   return (
-    <OnboardingLayout>
-    <div className="w-full max-w-md space-y-5 relative z-10 p-4">
-      <div className="h-12" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      <div className="w-full max-w-md space-y-5 relative z-10">
+        <div className="flex justify-center animate-fade-in">
+          <Logo />
+        </div>
 
         <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">
@@ -338,8 +340,8 @@ const Interests = () => {
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
         </div>
+      </div>
     </div>
-    </OnboardingLayout>
   );
 };
 

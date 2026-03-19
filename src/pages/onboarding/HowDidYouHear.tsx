@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import OnboardingLayout from "@/components/OnboardingLayout";
+import Logo from "@/components/Logo";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { useOnboarding } from "@/context/OnboardingContext";
@@ -50,9 +50,13 @@ const HowDidYouHear = () => {
   };
 
   return (
-    <OnboardingLayout>
-    <div className="w-full max-w-md space-y-8 relative z-10 p-4" onKeyDown={handleKeyDown}>
-      <div className="h-12" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative" onKeyDown={handleKeyDown}>
+      
+      <div className="w-full max-w-md space-y-8 relative z-10">
+        {/* Logo */}
+        <div className="flex justify-center animate-fade-in">
+          <Logo />
+        </div>
 
         {/* Title */}
         <div className="text-center space-y-2 animate-fade-in">
@@ -139,8 +143,8 @@ const HowDidYouHear = () => {
           <div className="w-8 h-1 rounded-full bg-muted" />
           <div className="w-8 h-1 rounded-full bg-muted" />
         </div>
+      </div>
     </div>
-    </OnboardingLayout>
   );
 };
 

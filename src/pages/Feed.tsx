@@ -1,10 +1,10 @@
 import { useState, useMemo, memo } from "react";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import BottomNav from "@/components/BottomNav";
-import PageHeader from "@/components/PageHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
+import Logo from "@/components/Logo";
 import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 
@@ -20,7 +20,7 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCar
   const [saved, setSaved] = useState(false);
 
   return (
-    <div className="gradient-border transition-transform duration-200 hover:-translate-y-0.5">
+    <div className="gradient-border">
       <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
         {/* Author Header */}
         <div className="flex items-center gap-3 mb-3">
@@ -88,7 +88,7 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCar
             className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
           >
             <Heart 
-              className={`w-5 h-5 transition-transform duration-200 ${liked ? 'fill-primary text-primary scale-110' : ''}`} 
+              className={`w-5 h-5 ${liked ? 'fill-primary text-primary' : ''}`} 
             />
             <span className="text-sm">{liked ? post.likes + 1 : post.likes}</span>
           </button>
@@ -101,7 +101,7 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCar
             className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ml-auto"
           >
             <Bookmark 
-              className={`w-5 h-5 transition-transform duration-200 ${saved ? 'fill-primary text-primary scale-110' : ''}`} 
+              className={`w-5 h-5 ${saved ? 'fill-primary text-primary' : ''}`} 
             />
           </button>
         </div>
@@ -119,6 +119,8 @@ const Feed = () => {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
   const [schoolSheetOpen, setSchoolSheetOpen] = useState(false);
+  
+  // User profile preview state
   const [selectedUser, setSelectedUser] = useState<{ name: string; role?: string; badge?: string; school?: string } | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
 
@@ -128,9 +130,19 @@ const Feed = () => {
   const posts = USE_SEED_DATA ? seedFeedPosts : [];
 
   const filteredPosts = useMemo(() => {
-    if (activeFilter === 'all') return posts;
-    if (activeFilter === 'current') return posts.filter(p => p.schoolScope === 'current' || p.schoolScope === 'general');
-    if (activeFilter === 'aspirational') return posts.filter(p => p.schoolScope === 'aspirational' || p.schoolScope === 'general');
+    if (activeFilter === 'all') {
+      return posts;
+    }
+    if (activeFilter === 'current') {
+      return posts.filter(
+        (post) => post.schoolScope === 'current' || post.schoolScope === 'general'
+      );
+    }
+    if (activeFilter === 'aspirational') {
+      return posts.filter(
+        (post) => post.schoolScope === 'aspirational' || post.schoolScope === 'general'
+      );
+    }
     return posts;
   }, [activeFilter, posts]);
 
@@ -146,6 +158,7 @@ const Feed = () => {
   };
 
   const handleUserClick = (authorName: string) => {
+    // Find post with this author to get more info
     const post = posts.find(p => p.authorName === authorName);
     setSelectedUser({
       name: authorName,
@@ -157,7 +170,7 @@ const Feed = () => {
   };
 
   const renderEmptyState = () => (
-    <div className="text-center py-12 col-span-2">
+    <div className="text-center py-12">
       <div className="w-20 h-20 rounded-full bg-secondary/50 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
         <MessageCircle className="w-10 h-10 text-muted-foreground" />
       </div>
@@ -168,56 +181,59 @@ const Feed = () => {
     </div>
   );
 
-  const filterPills = (
-    <div className="px-5 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
-      {filters.filter(f => f.show).map((filter) => (
-        <button
-          key={filter.key}
-          onClick={() => setActiveFilter(filter.key)}
-          className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-            activeFilter === filter.key
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
-          }`}
-        >
-          {filter.label}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-background/60 pb-20 relative">
-      <PageHeader title="Feed" subtitle="Tailored to you" />
+    <div className="min-h-screen bg-background/80 pb-20 relative">
       
-      {/* Filter Pills below header */}
-      <div className="sticky top-[57px] z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        {filterPills}
-      </div>
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-3">
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Feed</h1>
+            <p className="text-xs text-muted-foreground">Tailored to you</p>
+          </div>
+          <Logo showText={false} />
+        </div>
+        
+        {/* Filter Pills */}
+        <div className="px-6 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+          {filters.filter(f => f.show).map((filter) => (
+            <button
+              key={filter.key}
+              onClick={() => setActiveFilter(filter.key)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                activeFilter === filter.key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      </header>
 
-      <main className="relative z-10 px-6 py-6">
+      <main className="relative z-10 px-6 py-6 space-y-4">
         {filteredPosts.length === 0 ? (
           renderEmptyState()
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredPosts.map((post, index) => (
-              <div
-                key={post.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
-              >
-                <PostCard 
-                  post={post} 
-                  onSchoolClick={handleSchoolClick}
-                  onUserClick={handleUserClick}
-                  userSchool={userSchool}
-                />
-              </div>
-            ))}
-          </div>
+          filteredPosts.map((post, index) => (
+            <div
+              key={post.id}
+              className="animate-fade-in"
+              style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
+            >
+              <PostCard 
+                post={post} 
+                onSchoolClick={handleSchoolClick}
+                onUserClick={handleUserClick}
+                userSchool={userSchool}
+              />
+            </div>
+          ))
         )}
       </main>
 
+      {/* School Bottom Sheet */}
       <SchoolBottomSheet
         open={schoolSheetOpen}
         onOpenChange={setSchoolSheetOpen}
@@ -228,6 +244,7 @@ const Feed = () => {
         isOwnSchool={selectedSchool === userSchool}
       />
 
+      {/* User Profile Bottom Sheet */}
       <UserProfileBottomSheet
         open={userSheetOpen}
         onOpenChange={setUserSheetOpen}

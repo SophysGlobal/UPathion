@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { useOnboarding } from "@/context/OnboardingContext";
 import BottomNav from "@/components/BottomNav";
-import PageHeader from "@/components/PageHeader";
+import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
-import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass, User, Activity, School } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass } from "lucide-react";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -42,9 +42,21 @@ const Dashboard = () => {
   ];
 
   const steps = [
-    { label: "Complete your profile", completed: isProfileComplete, action: () => navigate("/edit-profile") },
-    { label: "Explore your school community", completed: false, action: () => navigate("/explore") },
-    { label: "Connect with classmates", completed: false, action: () => navigate("/explore") },
+    { 
+      label: "Complete your profile", 
+      completed: isProfileComplete,
+      action: () => navigate("/edit-profile"),
+    },
+    { 
+      label: "Explore your school community", 
+      completed: false,
+      action: () => navigate("/explore"),
+    },
+    { 
+      label: "Connect with classmates", 
+      completed: false,
+      action: () => navigate("/explore"),
+    },
   ];
 
   const quickActions = [
@@ -53,21 +65,20 @@ const Dashboard = () => {
     { icon: GraduationCap, label: "School", description: "Your school community", action: () => navigate("/school-info") },
   ];
 
-  // Profile overview data
-  const grade = data.gradeOrYear || profile?.grade_or_year;
-  const majors = data.interests?.length ? data.interests : profile?.interests;
-  const extracurriculars = data.extracurriculars?.length ? data.extracurriculars : profile?.extracurriculars;
-  const school = data.schoolName || profile?.school_name;
-  const hasProfileData = grade || (majors && majors.length > 0) || (extracurriculars && extracurriculars.length > 0) || school;
-
   return (
-    <div className="min-h-screen bg-background/60 pb-20 relative">
+    <div className="min-h-screen bg-background/80 pb-20 relative">
       
       {showProfilePrompt && (
         <CompleteProfilePrompt onSkip={handleSkipPrompt} />
       )}
 
-      <PageHeader title="Dashboard" />
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-3">
+          <h1 className="text-lg font-semibold text-foreground">Dashboard</h1>
+          <Logo showText={false} />
+        </div>
+      </header>
 
       <main className="relative z-10 px-6 py-6 space-y-8">
         {/* Welcome Section */}
@@ -86,7 +97,7 @@ const Dashboard = () => {
             <button
               key={action.label}
               onClick={action.action}
-              className="gradient-border group transition-transform duration-200 hover:-translate-y-0.5"
+              className="gradient-border group"
             >
               <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center transition-colors group-hover:bg-secondary/50">
                 <action.icon className="w-6 h-6 text-primary mx-auto mb-2" />
@@ -110,86 +121,40 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Your Profile Overview */}
-        {hasProfileData && (
+        {/* Your Interests Summary */}
+        {(data.interests?.length > 0 || data.extracurriculars?.length > 0) && (
           <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.15s', animationFillMode: 'both' }}>
-            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-foreground flex items-center gap-2">
-                  <User className="w-5 h-5 text-primary" />
-                  Your Profile Overview
-                </h3>
-                <button
-                  onClick={() => navigate("/edit-profile")}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Edit
-                </button>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                Here's what others see about you
-              </p>
-
-              <div className="grid gap-3">
-                {/* School */}
-                {school && (
-                  <div className="flex items-start gap-3">
-                    <School className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">School</p>
-                      <p className="text-sm font-medium text-foreground">{school}</p>
-                    </div>
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5 space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-primary" />
+                Your Interests
+              </h3>
+              {data.interests?.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5">Intended Majors</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.interests.slice(0, 4).map((i) => (
+                      <span key={i} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{i}</span>
+                    ))}
+                    {data.interests.length > 4 && (
+                      <span className="px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs">+{data.interests.length - 4}</span>
+                    )}
                   </div>
-                )}
-
-                {/* Grade */}
-                {grade && (
-                  <div className="flex items-start gap-3">
-                    <GraduationCap className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Grade / Year</p>
-                      <p className="text-sm font-medium text-foreground">{grade}</p>
-                    </div>
+                </div>
+              )}
+              {data.extracurriculars?.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5">Extracurriculars</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.extracurriculars.slice(0, 4).map((e) => (
+                      <span key={e} className="px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">{e}</span>
+                    ))}
+                    {data.extracurriculars.length > 4 && (
+                      <span className="px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs">+{data.extracurriculars.length - 4}</span>
+                    )}
                   </div>
-                )}
-
-                {/* Intended Majors */}
-                {majors && majors.length > 0 && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      Intended Majors
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {majors.slice(0, 6).map((m) => (
-                        <span key={m} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{m}</span>
-                      ))}
-                      {majors.length > 6 && (
-                        <span className="px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs">+{majors.length - 6}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Extracurriculars */}
-                {extracurriculars && extracurriculars.length > 0 && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5" />
-                      Extracurriculars
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {extracurriculars.slice(0, 6).map((e) => (
-                        <span key={e} className="px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">{e}</span>
-                      ))}
-                      {extracurriculars.length > 6 && (
-                        <span className="px-2.5 py-1 rounded-full bg-secondary text-muted-foreground text-xs">+{extracurriculars.length - 6}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         )}

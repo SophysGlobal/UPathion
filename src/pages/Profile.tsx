@@ -3,14 +3,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import PageHeader from "@/components/PageHeader";
+import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import UpgradeModal from "@/components/UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
-import { School, Settings, LogOut, ChevronRight, User, Crown, GraduationCap, BookOpen, Activity } from "lucide-react";
+import { School, Settings, LogOut, ChevronRight, User, Crown } from "lucide-react";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -22,21 +22,27 @@ const Profile = () => {
 
   const isReady = !profileLoading && !onboardingLoading;
 
+  // Look up school ID for navigation
   useEffect(() => {
     const findSchoolId = async () => {
       if (!data.schoolName) return;
+      
       try {
         const { data: schoolData } = await supabase
           .from('schools')
           .select('id')
           .ilike('name', data.schoolName)
           .maybeSingle();
+        
         setSchoolId(schoolData?.id || null);
       } catch (err) {
         console.error('Error finding school:', err);
       }
     };
-    if (isReady && data.schoolName) findSchoolId();
+    
+    if (isReady && data.schoolName) {
+      findSchoolId();
+    }
   }, [data.schoolName, isReady]);
 
   const handleSignOut = async () => {
@@ -44,28 +50,32 @@ const Profile = () => {
     navigate("/");
   };
 
-  const grade = data.gradeOrYear || profile?.grade_or_year;
-  const school = data.schoolName || profile?.school_name;
-  const majors = data.interests?.length ? data.interests : profile?.interests;
-  const extracurriculars = data.extracurriculars?.length ? data.extracurriculars : profile?.extracurriculars;
-
   const menuItems = useMemo(() => {
     const items = [
       { icon: User, label: "Edit Profile", action: () => navigate("/edit-profile"), hidden: false },
       { icon: School, label: "School Info", action: () => navigate("/school-info"), hidden: false },
       { icon: Settings, label: "Settings", action: () => navigate("/settings"), hidden: false },
     ];
+
     if (isReady && profile.is_premium) {
       items.push({ icon: Crown, label: "Manage Your Plan", action: () => navigate("/plan-management"), hidden: false });
     } else if (isReady) {
       items.push({ icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: false });
     }
+
     return items;
-  }, [profile.is_premium, isReady, navigate]);
+  }, [profile.is_premium, isReady, navigate])
 
   return (
-    <div className="min-h-screen bg-background/60 pb-20 relative">
-      <PageHeader title="Profile" />
+    <div className="min-h-screen bg-background/80 pb-20 relative">
+      
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-3">
+          <h1 className="text-lg font-semibold text-foreground">Profile</h1>
+          <Logo showText={false} />
+        </div>
+      </header>
 
       <main className="relative z-10 px-6 py-6 space-y-6">
         {isReady ? (
@@ -74,76 +84,76 @@ const Profile = () => {
             <div className="gradient-border animate-fade-in">
               <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
                 <div className="flex justify-center mb-4">
-                  <ProfileAvatar avatarUrl={profile.avatar_url} isPremium={profile.is_premium} size="lg" />
+                  <ProfileAvatar
+                    avatarUrl={profile.avatar_url}
+                    isPremium={profile.is_premium}
+                    size="lg"
+                  />
                 </div>
                 <h2 className="text-xl font-bold text-foreground">
                   {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
                 </h2>
-                {data.username && <p className="text-sm text-primary">@{data.username}</p>}
-
-                {school ? (
+                {data.username && (
+                  <p className="text-sm text-primary">@{data.username}</p>
+                )}
+                {data.schoolName ? (
                   <button
                     onClick={() => schoolId && navigate(`/school/${schoolId}`)}
-                    className={`text-sm mt-1 flex items-center gap-1 justify-center transition-colors ${
-                      schoolId ? 'text-primary hover:underline cursor-pointer' : 'text-muted-foreground cursor-default'
+                    className={`text-sm mt-1 transition-colors ${
+                      schoolId 
+                        ? 'text-primary hover:underline cursor-pointer' 
+                        : 'text-muted-foreground cursor-default'
                     }`}
                   >
-                    <School className="w-3.5 h-3.5" />
-                    {school}
+                    {data.schoolName}
                   </button>
                 ) : (
                   <p className="text-sm text-muted-foreground mt-1">No school set</p>
                 )}
-
-                {grade && (
-                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 justify-center">
-                    <GraduationCap className="w-3.5 h-3.5" />
-                    {grade}
-                  </p>
+                {data.gradeOrYear && (
+                  <p className="text-xs text-muted-foreground mt-1">Grade: {data.gradeOrYear}</p>
                 )}
-
-                {profile.is_premium && (
-                  <span className="inline-block mt-3 px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
-                    Premium Member
-                  </span>
+                {data.major && (
+                  <p className="text-xs text-muted-foreground">{data.major}</p>
                 )}
-              </div>
-            </div>
-
-            {/* About Section — Majors & Extracurriculars */}
-            {((majors && majors.length > 0) || (extracurriculars && extracurriculars.length > 0)) && (
-              <div className="gradient-border animate-fade-in" style={{ animationDelay: '0.05s', animationFillMode: 'both' }}>
-                <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5 space-y-4">
-                  <h3 className="text-sm font-semibold text-foreground">About</h3>
-
-                  {majors && majors.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5" /> Intended Majors
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {majors.map((m) => (
-                          <span key={m} className="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{m}</span>
-                        ))}
-                      </div>
+                {data.interests && data.interests.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-1.5">Intended Majors</p>
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {data.interests.map((interest) => (
+                        <span key={interest} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                          {interest}
+                        </span>
+                      ))}
                     </div>
-                  )}
-
-                  {extracurriculars && extracurriculars.length > 0 && (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1.5 flex items-center gap-1.5">
-                        <Activity className="w-3.5 h-3.5" /> Extracurriculars
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {extracurriculars.map((ec) => (
-                          <span key={ec} className="px-2.5 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium">{ec}</span>
-                        ))}
-                      </div>
+                  </div>
+                )}
+                {data.extracurriculars && data.extracurriculars.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground mb-1.5">Extracurriculars</p>
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {data.extracurriculars.slice(0, 5).map((ec) => (
+                        <span key={ec} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs">
+                          {ec}
+                        </span>
+                      ))}
+                      {data.extracurriculars.length > 5 && (
+                        <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
+                          +{data.extracurriculars.length - 5} more
+                        </span>
+                      )}
                     </div>
+                  </div>
+                )}
+                <div className="h-6 mt-2">
+                  {profile.is_premium && (
+                    <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
+                      Premium Member
+                    </span>
                   )}
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Menu Items */}
             <div className="space-y-3">
@@ -151,7 +161,7 @@ const Profile = () => {
                 <button
                   key={item.label}
                   onClick={item.action}
-                  className="w-full gradient-border group animate-fade-in transition-transform duration-200 hover:-translate-y-0.5"
+                  className="w-full gradient-border group animate-fade-in"
                 >
                   <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
                     <div className="flex items-center gap-3">
@@ -178,6 +188,7 @@ const Profile = () => {
           </>
         ) : (
           <div className="space-y-6">
+            {/* Loading Skeleton - Profile Card */}
             <div className="gradient-border">
               <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
                 <div className="flex justify-center mb-4">
@@ -186,8 +197,11 @@ const Profile = () => {
                 <div className="h-6 bg-muted rounded w-40 mx-auto mb-3 animate-pulse" />
                 <div className="h-4 bg-muted rounded w-32 mx-auto mb-3 animate-pulse" />
                 <div className="h-4 bg-muted rounded w-48 mx-auto mb-3 animate-pulse" />
+                <div className="h-6 bg-muted rounded-full w-32 mx-auto mt-4 animate-pulse" />
               </div>
             </div>
+
+            {/* Loading Skeleton - Menu Items */}
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="gradient-border">
@@ -200,6 +214,11 @@ const Profile = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Loading Skeleton - Sign Out */}
+            <div className="pt-4">
+              <div className="h-10 bg-muted rounded-lg animate-pulse" />
             </div>
           </div>
         )}

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import PageHeader from "@/components/PageHeader";
+import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PersonCard from "@/components/PersonCard";
@@ -28,6 +28,7 @@ const Explore = () => {
   const [activeTab, setActiveTab] = useState<ExploreTab>('people');
   const [searchQuery, setSearchQuery] = useState('');
   
+  // User profile preview state
   const [selectedPerson, setSelectedPerson] = useState<SeedPerson | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
 
@@ -97,7 +98,7 @@ const Explore = () => {
   };
 
   const renderEmptyState = (type: string) => (
-    <div className="text-center py-12 col-span-2">
+    <div className="text-center py-12">
       <div className="w-20 h-20 rounded-full bg-secondary/50 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
         <Search className="w-10 h-10 text-muted-foreground" />
       </div>
@@ -112,7 +113,7 @@ const Explore = () => {
     if (filteredPeople.length === 0) return renderEmptyState('People');
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-3">
         {filteredPeople.map((person, index) => (
           <PersonCard
             key={person.id}
@@ -129,11 +130,11 @@ const Explore = () => {
     if (filteredGroups.length === 0) return renderEmptyState('Groups');
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-3">
         {filteredGroups.map((group, index) => (
           <div 
             key={group.id}
-            className="gradient-border animate-fade-in transition-transform duration-200 hover:-translate-y-0.5"
+            className="gradient-border animate-fade-in"
             style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
           >
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
@@ -172,11 +173,11 @@ const Explore = () => {
     if (filteredEvents.length === 0) return renderEmptyState('Events');
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-3">
         {filteredEvents.map((event, index) => (
           <div 
             key={event.id}
-            className="gradient-border animate-fade-in transition-transform duration-200 hover:-translate-y-0.5"
+            className="gradient-border animate-fade-in"
             style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
           >
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
@@ -223,11 +224,11 @@ const Explore = () => {
     if (filteredPlaces.length === 0) return renderEmptyState('Places');
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-3">
         {filteredPlaces.map((place, index) => (
           <div 
             key={place.id}
-            className="gradient-border animate-fade-in transition-transform duration-200 hover:-translate-y-0.5"
+            className="gradient-border animate-fade-in"
             style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
           >
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
@@ -269,9 +270,18 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background/60 pb-20 relative">
+    <div className="min-h-screen bg-background/80 pb-20 relative">
       
-      <PageHeader title="Explore" subtitle="Discover your community" />
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-3">
+          <div>
+            <h1 className="text-lg font-semibold text-foreground">Explore</h1>
+            <p className="text-xs text-muted-foreground">Discover your community</p>
+          </div>
+          <Logo showText={false} />
+        </div>
+      </header>
 
       <main className="relative z-10 px-6 py-6 space-y-6">
         {/* Search */}
@@ -318,6 +328,7 @@ const Explore = () => {
         </div>
       </main>
 
+      {/* User Profile Bottom Sheet */}
       <UserProfileBottomSheet
         open={userSheetOpen}
         onOpenChange={setUserSheetOpen}
