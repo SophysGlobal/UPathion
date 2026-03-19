@@ -28,7 +28,6 @@ const Explore = () => {
   const [activeTab, setActiveTab] = useState<ExploreTab>('people');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // User profile preview state
   const [selectedPerson, setSelectedPerson] = useState<SeedPerson | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
 
@@ -98,7 +97,7 @@ const Explore = () => {
   };
 
   const renderEmptyState = (type: string) => (
-    <div className="text-center py-12">
+    <div className="text-center py-12 col-span-2">
       <div className="w-20 h-20 rounded-full bg-secondary/50 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
         <Search className="w-10 h-10 text-muted-foreground" />
       </div>
@@ -113,7 +112,7 @@ const Explore = () => {
     if (filteredPeople.length === 0) return renderEmptyState('People');
     
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredPeople.map((person, index) => (
           <PersonCard
             key={person.id}
@@ -130,11 +129,11 @@ const Explore = () => {
     if (filteredGroups.length === 0) return renderEmptyState('Groups');
     
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredGroups.map((group, index) => (
           <div 
             key={group.id}
-            className="gradient-border animate-fade-in"
+            className="gradient-border animate-fade-in transition-transform duration-200 hover:-translate-y-0.5"
             style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
           >
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
@@ -173,11 +172,11 @@ const Explore = () => {
     if (filteredEvents.length === 0) return renderEmptyState('Events');
     
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredEvents.map((event, index) => (
           <div 
             key={event.id}
-            className="gradient-border animate-fade-in"
+            className="gradient-border animate-fade-in transition-transform duration-200 hover:-translate-y-0.5"
             style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
           >
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
@@ -224,11 +223,11 @@ const Explore = () => {
     if (filteredPlaces.length === 0) return renderEmptyState('Places');
     
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredPlaces.map((place, index) => (
           <div 
             key={place.id}
-            className="gradient-border animate-fade-in"
+            className="gradient-border animate-fade-in transition-transform duration-200 hover:-translate-y-0.5"
             style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
           >
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
@@ -270,7 +269,7 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background/80 pb-20 relative">
+    <div className="min-h-screen bg-background/60 pb-20 relative">
       
       <PageHeader title="Explore" subtitle="Discover your community" />
 
@@ -319,7 +318,6 @@ const Explore = () => {
         </div>
       </main>
 
-      {/* User Profile Bottom Sheet */}
       <UserProfileBottomSheet
         open={userSheetOpen}
         onOpenChange={setUserSheetOpen}
