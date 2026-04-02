@@ -75,17 +75,12 @@ const SchoolConfirm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" onKeyDown={handleKeyDown} tabIndex={0}>
-      
-      <div className="w-full max-w-md space-y-8 relative z-10">
-        <div className="flex justify-center animate-fade-in">
-          <Logo />
-        </div>
-
-        <div className="text-center space-y-2 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Almost there!</h1>
-          <p className="text-muted-foreground">Confirm your details</p>
-        </div>
+    <OnboardingLayout>
+      <div onKeyDown={handleKeyDown} tabIndex={0}>
+      <div className="text-center space-y-2 animate-fade-in">
+        <h1 className="text-3xl font-bold text-foreground">Almost there!</h1>
+        <p className="text-muted-foreground">Confirm your details</p>
+      </div>
 
         <div className="gradient-border animate-fade-in">
           <div className="bg-card rounded-lg p-6 space-y-4">
