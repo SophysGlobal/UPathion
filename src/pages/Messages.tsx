@@ -95,16 +95,9 @@ const Messages = () => {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-          <div className="flex items-center justify-between px-6 py-3">
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">Messages</h1>
-              <p className="text-xs text-muted-foreground">{unreadTotal} unread</p>
-            </div>
-            <Button size="icon" variant="ghost" onClick={handleNewMessage}>
-              <PenSquare className="w-5 h-5" />
-            </Button>
-          </div>
+        <AppHeader title="Messages" subtitle={`${unreadTotal} unread`}
+          rightSlot={<Button size="icon" variant="ghost" onClick={handleNewMessage}><PenSquare className="w-5 h-5" /></Button>}
+        />
 
           {/* Filters */}
           <div className="px-6 pb-3 flex gap-2">
