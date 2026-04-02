@@ -99,24 +99,23 @@ const Messages = () => {
           rightSlot={<Button size="icon" variant="ghost" onClick={handleNewMessage}><PenSquare className="w-5 h-5" /></Button>}
         />
 
-          {/* Filters */}
-          <div className="px-6 pb-3 flex gap-2">
-            {filters.map(f => (
-              <button
-                key={f.key}
-                onClick={() => setActiveFilter(f.key)}
-                className={cn(
-                  "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all",
-                  activeFilter === f.key
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </header>
+        {/* Filters */}
+        <div className="px-6 pb-3 flex gap-2 border-b border-border/50">
+          {filters.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                activeFilter === f.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
 
         <main className="relative z-10 px-4 py-4 space-y-3">
           {/* Search */}
