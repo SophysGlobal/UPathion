@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "@/components/Logo";
+import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { useOnboarding } from "@/context/OnboardingContext";
@@ -25,128 +25,73 @@ const HowDidYouHear = () => {
 
   const handleContinue = () => {
     if (!selectedSource) return;
-    
-    // Store in onboarding context (will be saved to DB later)
-    updateData({ 
-      referralSource: selectedSource,
-      referralSourceOther: selectedSource === 'other' ? otherText.trim() : '',
-    });
-    
+    updateData({ referralSource: selectedSource, referralSourceOther: selectedSource === 'other' ? otherText.trim() : '' });
     navigate("/onboarding/school");
   };
 
   const handleSelect = (source: ReferralSource) => {
     setSelectedSource(source);
-    if (source !== 'other') {
-      setOtherText('');
-    }
+    if (source !== 'other') setOtherText('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && selectedSource) {
-      e.preventDefault();
-      handleContinue();
-    }
+    if (e.key === 'Enter' && selectedSource) { e.preventDefault(); handleContinue(); }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" onKeyDown={handleKeyDown}>
-      
-      <div className="w-full max-w-md space-y-8 relative z-10">
-        {/* Logo */}
-        <div className="flex justify-center animate-fade-in">
-          <Logo />
-        </div>
-
-        {/* Title */}
-        <div className="text-center space-y-2 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground">How did you hear about us?</h1>
-          <p className="text-muted-foreground">Help us understand how you found UPathion</p>
-        </div>
-
-        {/* Options Grid */}
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          {REFERRAL_OPTIONS.map((option) => {
-            const isSelected = selectedSource === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => handleSelect(option.id)}
-                className={`
-                  relative p-4 rounded-xl border-2 transition-all duration-200
-                  flex flex-col items-center gap-2 text-center
-                  ${isSelected 
-                    ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20' 
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-card/80'
-                  }
-                `}
-              >
-                {isSelected && (
-                  <div className="absolute top-2 right-2">
-                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-3 h-3 text-primary-foreground" />
-                    </div>
-                  </div>
-                )}
-                <span className="text-2xl">{option.icon}</span>
-                <span className={`text-sm font-medium ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
-                  {option.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Other text input */}
-        {selectedSource === 'other' && (
-          <div className="space-y-2 animate-fade-in">
-            <label className="text-sm font-medium text-foreground">
-              Please tell us more (optional)
-            </label>
-            <GradientInput
-              type="text"
-              placeholder="How did you find us?"
-              value={otherText}
-              onChange={(e) => setOtherText(e.target.value)}
-              maxLength={100}
-            />
-          </div>
-        )}
-
-        {/* Continue Button */}
-        <div className="space-y-3 animate-fade-in">
-          <GradientButton 
-            variant="filled" 
-            className="w-full"
-            onClick={handleContinue}
-            disabled={!selectedSource}
-          >
-            Continue
-          </GradientButton>
-
-          <button
-            onClick={() => { updateData({ referralSource: selectedSource, referralSourceOther: selectedSource === 'other' ? otherText.trim() : '' }); navigate("/onboarding/name-confirm"); }}
-            className="w-full flex items-center justify-center gap-1 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </button>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="flex justify-center gap-2 pt-4 animate-fade-in">
-          <div className="w-8 h-1 rounded-full gradient-bg" />
-          <div className="w-8 h-1 rounded-full gradient-bg" />
-          <div className="w-8 h-1 rounded-full bg-muted" />
-          <div className="w-8 h-1 rounded-full bg-muted" />
-          <div className="w-8 h-1 rounded-full bg-muted" />
-          <div className="w-8 h-1 rounded-full bg-muted" />
-        </div>
+    <OnboardingLayout>
+      <div className="text-center space-y-2 animate-fade-in" onKeyDown={handleKeyDown}>
+        <h1 className="text-3xl font-bold text-foreground">How did you hear about us?</h1>
+        <p className="text-muted-foreground">Help us understand how you found UPathion</p>
       </div>
-    </div>
+
+      <div className="grid grid-cols-2 gap-3 animate-fade-in">
+        {REFERRAL_OPTIONS.map((option) => {
+          const isSelected = selectedSource === option.id;
+          return (
+            <button key={option.id} type="button" onClick={() => handleSelect(option.id)}
+              className={`relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 text-center ${
+                isSelected ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20' : 'border-border bg-card hover:border-primary/50 hover:bg-card/80'
+              }`}>
+              {isSelected && (
+                <div className="absolute top-2 right-2">
+                  <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                </div>
+              )}
+              <span className="text-2xl">{option.icon}</span>
+              <span className={`text-sm font-medium ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {selectedSource === 'other' && (
+        <div className="space-y-2 animate-fade-in">
+          <label className="text-sm font-medium text-foreground">Please tell us more (optional)</label>
+          <GradientInput type="text" placeholder="How did you find us?" value={otherText} onChange={(e) => setOtherText(e.target.value)} maxLength={100} />
+        </div>
+      )}
+
+      <div className="space-y-3 animate-fade-in">
+        <GradientButton variant="filled" className="w-full" onClick={handleContinue} disabled={!selectedSource}>Continue</GradientButton>
+        <button onClick={() => { updateData({ referralSource: selectedSource, referralSourceOther: selectedSource === 'other' ? otherText.trim() : '' }); navigate("/onboarding/name-confirm"); }}
+          className="w-full flex items-center justify-center gap-1 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+      </div>
+
+      <div className="flex justify-center gap-2 pt-4 animate-fade-in">
+        <div className="w-8 h-1 rounded-full gradient-bg" />
+        <div className="w-8 h-1 rounded-full gradient-bg" />
+        <div className="w-8 h-1 rounded-full bg-muted" />
+        <div className="w-8 h-1 rounded-full bg-muted" />
+        <div className="w-8 h-1 rounded-full bg-muted" />
+        <div className="w-8 h-1 rounded-full bg-muted" />
+      </div>
+    </OnboardingLayout>
   );
 };
 
 export default HowDidYouHear;
-
