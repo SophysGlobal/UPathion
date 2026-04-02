@@ -1,24 +1,17 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import Logo from "@/components/Logo";
+import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PersonCard from "@/components/PersonCard";
-import { Search, Filter, Users, BookOpen, Calendar, MapPin, User, Clock, Bookmark } from "lucide-react";
+import { Search, Filter, Users, BookOpen, Calendar, MapPin, Clock, Bookmark } from "lucide-react";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { 
-  USE_SEED_DATA, 
-  seedPeople, 
-  seedGroups, 
-  seedEvents, 
-  seedPlaces,
-  type SeedPerson,
-  type SeedGroup,
-  type SeedEvent,
-  type SeedPlace
+  USE_SEED_DATA, seedPeople, seedGroups, seedEvents, seedPlaces,
+  type SeedPerson, type SeedGroup, type SeedEvent, type SeedPlace
 } from "@/data/seedData";
 
 type ExploreTab = 'people' | 'groups' | 'events' | 'places';
@@ -27,8 +20,6 @@ const Explore = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ExploreTab>('people');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // User profile preview state
   const [selectedPerson, setSelectedPerson] = useState<SeedPerson | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
 
@@ -44,83 +35,35 @@ const Explore = () => {
   const events = USE_SEED_DATA ? seedEvents : [];
   const places = USE_SEED_DATA ? seedPlaces : [];
 
-  const filteredPeople = useMemo(() => 
-    people.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.school.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [people, searchQuery]);
+  const filteredPeople = useMemo(() => people.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.school.toLowerCase().includes(searchQuery.toLowerCase())), [people, searchQuery]);
+  const filteredGroups = useMemo(() => groups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase())), [groups, searchQuery]);
+  const filteredEvents = useMemo(() => events.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase()) || e.location.toLowerCase().includes(searchQuery.toLowerCase())), [events, searchQuery]);
+  const filteredPlaces = useMemo(() => places.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.type.toLowerCase().includes(searchQuery.toLowerCase())), [places, searchQuery]);
 
-  const filteredGroups = useMemo(() => 
-    groups.filter(g => 
-      g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      g.category.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [groups, searchQuery]);
-
-  const filteredEvents = useMemo(() => 
-    events.filter(e => 
-      e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.location.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [events, searchQuery]);
-
-  const filteredPlaces = useMemo(() => 
-    places.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.type.toLowerCase().includes(searchQuery.toLowerCase())
-    ), [places, searchQuery]);
-
-  const handleUserClick = (person: SeedPerson) => {
-    setSelectedPerson(person);
-    setUserSheetOpen(true);
-  };
-
-  const handleJoinGroup = (group: SeedGroup) => {
-    toast.success(`Joined ${group.name}!`);
-  };
-
-  const handleViewGroup = (group: SeedGroup) => {
-    navigate(`/group/${group.id}`);
-  };
-
-  const handleRSVP = (event: SeedEvent) => {
-    toast.success(`RSVP'd to ${event.title}!`);
-  };
-
-  const handleViewEvent = (event: SeedEvent) => {
-    navigate(`/event/${event.id}`);
-  };
-
-  const handleSavePlace = (place: SeedPlace) => {
-    toast.success(`Saved ${place.name}!`);
-  };
-
-  const handleViewPlace = (place: SeedPlace) => {
-    navigate(`/place/${place.id}`);
-  };
+  const handleUserClick = (person: SeedPerson) => { setSelectedPerson(person); setUserSheetOpen(true); };
+  const handleJoinGroup = (group: SeedGroup) => { toast.success(`Joined ${group.name}!`); };
+  const handleViewGroup = (group: SeedGroup) => { navigate(`/group/${group.id}`); };
+  const handleRSVP = (event: SeedEvent) => { toast.success(`RSVP'd to ${event.title}!`); };
+  const handleViewEvent = (event: SeedEvent) => { navigate(`/event/${event.id}`); };
+  const handleSavePlace = (place: SeedPlace) => { toast.success(`Saved ${place.name}!`); };
+  const handleViewPlace = (place: SeedPlace) => { navigate(`/place/${place.id}`); };
 
   const renderEmptyState = (type: string) => (
-    <div className="text-center py-12">
+    <div className="text-center py-12 col-span-full">
       <div className="w-20 h-20 rounded-full bg-secondary/50 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
         <Search className="w-10 h-10 text-muted-foreground" />
       </div>
       <h3 className="font-medium text-foreground mb-2">No {type} Yet</h3>
-      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-        {type} will appear here when available
-      </p>
+      <p className="text-sm text-muted-foreground max-w-xs mx-auto">{type} will appear here when available</p>
     </div>
   );
 
   const renderPeople = () => {
     if (filteredPeople.length === 0) return renderEmptyState('People');
-    
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredPeople.map((person, index) => (
-          <PersonCard
-            key={person.id}
-            person={person}
-            index={index}
-            onClick={() => handleUserClick(person)}
-          />
+          <PersonCard key={person.id} person={person} index={index} onClick={() => handleUserClick(person)} />
         ))}
       </div>
     );
@@ -128,38 +71,24 @@ const Explore = () => {
 
   const renderGroups = () => {
     if (filteredGroups.length === 0) return renderEmptyState('Groups');
-    
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredGroups.map((group, index) => (
-          <div 
-            key={group.id}
-            className="gradient-border animate-fade-in"
-            style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
-          >
+          <div key={group.id} className="gradient-border animate-fade-in" style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}>
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-foreground">{group.name}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
-                      {group.category}
-                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">{group.category}</span>
                   </div>
                   <p className="text-xs text-primary truncate">{group.school}</p>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{group.description}</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    <Users className="w-3 h-3 inline mr-1" />
-                    {group.memberCount} members
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-2"><Users className="w-3 h-3 inline mr-1" />{group.memberCount} members</p>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <Button size="sm" onClick={() => handleJoinGroup(group)}>
-                    Join
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleViewGroup(group)}>
-                    View
-                  </Button>
+                  <Button size="sm" onClick={() => handleJoinGroup(group)}>Join</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleViewGroup(group)}>View</Button>
                 </div>
               </div>
             </div>
@@ -171,46 +100,25 @@ const Explore = () => {
 
   const renderEvents = () => {
     if (filteredEvents.length === 0) return renderEmptyState('Events');
-    
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredEvents.map((event, index) => (
-          <div 
-            key={event.id}
-            className="gradient-border animate-fade-in"
-            style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
-          >
+          <div key={event.id} className="gradient-border animate-fade-in" style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}>
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <span className="font-medium text-foreground">{event.title}</span>
                   <p className="text-xs text-primary truncate">{event.school}</p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {event.date}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {event.time}
-                    </span>
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{event.date}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{event.time}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    <MapPin className="w-3 h-3 inline mr-1" />
-                    {event.location}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    <Users className="w-3 h-3 inline mr-1" />
-                    {event.attendees} attending
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1"><MapPin className="w-3 h-3 inline mr-1" />{event.location}</p>
+                  <p className="text-xs text-muted-foreground mt-2"><Users className="w-3 h-3 inline mr-1" />{event.attendees} attending</p>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <Button size="sm" onClick={() => handleRSVP(event)}>
-                    RSVP
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleViewEvent(event)}>
-                    View
-                  </Button>
+                  <Button size="sm" onClick={() => handleRSVP(event)}>RSVP</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleViewEvent(event)}>View</Button>
                 </div>
               </div>
             </div>
@@ -222,35 +130,23 @@ const Explore = () => {
 
   const renderPlaces = () => {
     if (filteredPlaces.length === 0) return renderEmptyState('Places');
-    
     return (
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredPlaces.map((place, index) => (
-          <div 
-            key={place.id}
-            className="gradient-border animate-fade-in"
-            style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
-          >
+          <div key={place.id} className="gradient-border animate-fade-in" style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}>
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-foreground">{place.name}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
-                      {place.type}
-                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">{place.type}</span>
                   </div>
                   <p className="text-xs text-primary">{place.area}</p>
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{place.description}</p>
                 </div>
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  <Button size="sm" variant="outline" onClick={() => handleSavePlace(place)}>
-                    <Bookmark className="w-4 h-4 mr-1" />
-                    Save
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleViewPlace(place)}>
-                    View
-                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleSavePlace(place)}><Bookmark className="w-4 h-4 mr-1" />Save</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleViewPlace(place)}>View</Button>
                 </div>
               </div>
             </div>
@@ -271,77 +167,36 @@ const Explore = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="flex items-center justify-between px-6 py-3">
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Explore</h1>
-            <p className="text-xs text-muted-foreground">Discover your community</p>
-          </div>
-          <Logo showText={false} />
-        </div>
-      </header>
+      <AppHeader title="Explore" subtitle="Discover your community" />
 
-      <main className="relative z-10 px-6 py-6 space-y-6">
-        {/* Search */}
+      <main className="relative z-10 px-5 py-6 space-y-6">
         <div className="animate-fade-in">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <GradientInput 
-              placeholder="Search people, groups, events..." 
-              className="pl-10 pr-12"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <GradientInput placeholder="Search people, groups, events..." className="pl-10 pr-12" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-secondary transition-colors">
               <Filter className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
         </div>
 
-        {/* Category Tabs */}
         <div className="grid grid-cols-4 gap-3 animate-fade-in">
           {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`gradient-border group ${activeTab === tab.key ? 'ring-2 ring-primary/50' : ''}`}
-            >
-              <div className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center transition-colors ${
-                activeTab === tab.key ? 'bg-primary/10' : 'group-hover:bg-secondary/50'
-              }`}>
-                <tab.icon className={`w-6 h-6 mx-auto mb-2 ${
-                  activeTab === tab.key ? 'text-primary' : 'text-muted-foreground'
-                }`} />
-                <p className={`text-xs font-medium ${
-                  activeTab === tab.key ? 'text-primary' : 'text-foreground'
-                }`}>{tab.label}</p>
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={`gradient-border group ${activeTab === tab.key ? 'ring-2 ring-primary/50' : ''}`}>
+              <div className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center transition-colors ${activeTab === tab.key ? 'bg-primary/10' : 'group-hover:bg-secondary/50'}`}>
+                <tab.icon className={`w-6 h-6 mx-auto mb-2 ${activeTab === tab.key ? 'text-primary' : 'text-muted-foreground'}`} />
+                <p className={`text-xs font-medium ${activeTab === tab.key ? 'text-primary' : 'text-foreground'}`}>{tab.label}</p>
               </div>
             </button>
           ))}
         </div>
 
-        {/* Content */}
-        <div className="animate-fade-in">
-          {renderContent()}
-        </div>
+        <div className="animate-fade-in">{renderContent()}</div>
       </main>
 
-      {/* User Profile Bottom Sheet */}
-      <UserProfileBottomSheet
-        open={userSheetOpen}
-        onOpenChange={setUserSheetOpen}
-        userId={null}
-        seedUser={selectedPerson ? {
-          id: selectedPerson.id,
-          name: selectedPerson.name,
-          role: selectedPerson.role,
-          badge: selectedPerson.badge,
-          school: selectedPerson.school,
-          bio: selectedPerson.bio,
-        } : null}
-      />
+      <UserProfileBottomSheet open={userSheetOpen} onOpenChange={setUserSheetOpen} userId={null}
+        seedUser={selectedPerson ? { id: selectedPerson.id, name: selectedPerson.name, role: selectedPerson.role, badge: selectedPerson.badge, school: selectedPerson.school, bio: selectedPerson.bio } : null} />
 
       <PremiumChatFAB />
       <BottomNav />
