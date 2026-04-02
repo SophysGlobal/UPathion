@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "@/components/Logo";
+import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
@@ -75,17 +75,12 @@ const SchoolConfirm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" onKeyDown={handleKeyDown} tabIndex={0}>
-      
-      <div className="w-full max-w-md space-y-8 relative z-10">
-        <div className="flex justify-center animate-fade-in">
-          <Logo />
-        </div>
-
-        <div className="text-center space-y-2 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Almost there!</h1>
-          <p className="text-muted-foreground">Confirm your details</p>
-        </div>
+    <OnboardingLayout>
+      <div onKeyDown={handleKeyDown} tabIndex={0}>
+      <div className="text-center space-y-2 animate-fade-in">
+        <h1 className="text-3xl font-bold text-foreground">Almost there!</h1>
+        <p className="text-muted-foreground">Confirm your details</p>
+      </div>
 
         <div className="gradient-border animate-fade-in">
           <div className="bg-card rounded-lg p-6 space-y-4">
@@ -192,7 +187,7 @@ const SchoolConfirm = () => {
           <div className="w-8 h-1 rounded-full gradient-bg" />
         </div>
       </div>
-    </div>
+    </OnboardingLayout>
   );
 };
 

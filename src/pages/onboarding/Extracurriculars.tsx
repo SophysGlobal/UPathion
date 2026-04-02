@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "@/components/Logo";
+import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -191,12 +191,7 @@ const Extracurriculars = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
-      <div className="w-full max-w-md space-y-5 relative z-10">
-        <div className="flex justify-center animate-fade-in">
-          <Logo />
-        </div>
-
+    <OnboardingLayout>
         <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">
             Extracurriculars
@@ -300,8 +295,7 @@ const Extracurriculars = () => {
           <div className="w-8 h-1 rounded-full gradient-bg opacity-50" />
           <div className="w-8 h-1 rounded-full bg-muted" />
         </div>
-      </div>
-    </div>
+    </OnboardingLayout>
   );
 };
 

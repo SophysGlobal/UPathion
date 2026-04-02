@@ -151,7 +151,7 @@ const AuthGate = ({ children }: AuthGateProps) => {
 
     // RULE 2: Authenticated + signed in this session
     if (isAuthRoute || currentPath === '/') {
-      if (isAdmin && !adminQuestionnaireDone) {
+    if (isAdmin && !adminQuestionnaireDone) {
         // Admins always go through questionnaire
         navigate('/onboarding/name', { replace: true });
       } else if (isAdmin) {
@@ -160,7 +160,7 @@ const AuthGate = ({ children }: AuthGateProps) => {
         // Premium users go straight to dashboard
         navigate('/dashboard', { replace: true });
       } else if (!hasCompletedOnboarding) {
-        // Normal first-time users: go to subscription (skip questionnaire)
+        // Normal first-time users go to subscription (questionnaire navigates there)
         if (shouldShowSubscription()) {
           markSubscriptionShown();
           navigate('/subscription', { replace: true });
