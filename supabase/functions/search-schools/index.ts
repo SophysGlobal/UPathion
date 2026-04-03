@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,54 +6,63 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { searchQuery, schoolType, limit = 20 } = await req.json();
 
-    const { searchQuery, schoolType, country, limit = 50 } = await req.json();
-    
-    console.log('Search request:', { searchQuery, schoolType, country, limit });
-
-    // Validate input
-    if (searchQuery && typeof searchQuery !== 'string') {
+    if (!searchQuery || searchQuery.trim().length < 2) {
       return new Response(
-        JSON.stringify({ error: 'Invalid search query' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ schools: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (schoolType && !['high_school', 'university'].includes(schoolType)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid school type' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    const query = searchQuery.trim();
+    let schools = [];
+
+    if (schoolType === "university") {
+      // --- Hipolabs: free, no key ---
+      const res = await fetch(
+        `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}&country=United+States`
       );
+      const data = await res.json();
+      schools = data.slice(0, limit).map((u: any, i: number) => ({
+        id: `uni-${i}-${u.name}`,
+        name: u.name,
+        country: "US",
+        state: u["state-province"] ?? null,
+        city: null,
+        type: "university",
+        is_notable: true,
+      }));
+
+    } else if (schoolType === "high_school") {
+      // --- Urban Institute / NCES: free, no key ---
+      const res = await fetch(
+        `https://educationdata.urban.org/api/v1/schools/ccd/directory/2021/?school_name=${encodeURIComponent(query)}&level_of_school=3&per_page=${limit}`
+      );
+      const data = await res.json();
+      schools = (data.results ?? []).map((s: any) => ({
+        id: s.ncessch,
+        name: s.school_name,
+        country: "US",
+        state: s.state_location ?? null,
+        city: s.city_location ?? null,
+        type: "high_school",
+        is_notable: false,
+      }));
     }
 
-    // Use the database function for ranked search
-    const { data, error } = await supabase.rpc('search_schools', {
-      search_query: searchQuery?.trim() || '',
-      school_type: schoolType || null,
-      country_filter: country || null,
-      result_limit: Math.min(limit, 100),
-    });
-
-    if (error) {
-      console.error('Database error:', error);
-      throw error;
-    }
-
-    console.log(`Found ${data?.length || 0} schools`);
+    console.log(`Found ${schools.length} schools for query "${query}" (type: ${schoolType})`);
 
     return new Response(
-      JSON.stringify({ schools: data || [] }),
+      JSON.stringify({ schools }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error: unknown) {
     console.error('Error searching schools:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
