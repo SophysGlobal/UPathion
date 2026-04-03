@@ -1,10 +1,11 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
+import AppHeader from "@/components/AppHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,9 +18,11 @@ import {
   Camera,
   X,
   Trash2,
-  ChevronRight,
   GraduationCap,
   AlertCircle,
+  Eye,
+  EyeOff,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -29,20 +32,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Validation helpers
 const validateUsername = (username: string): string | null => {
-  if (!username) return null; // Optional field
+  if (!username) return null;
   if (username.length < 3) return "Username must be at least 3 characters";
   if (!/^[a-zA-Z0-9_]+$/.test(username)) return "Only letters, numbers, and underscores";
   return null;
 };
 
 const validateUrl = (url: string): string | null => {
-  if (!url) return null; // Optional
+  if (!url) return null;
   try {
-    // Allow URLs without protocol
     const urlToTest = url.startsWith('http') ? url : `https://${url}`;
     new URL(urlToTest);
     return null;
@@ -51,18 +69,222 @@ const validateUrl = (url: string): string | null => {
   }
 };
 
-// FormErrors interface remains
+type Visibility = "anyone" | "connections" | "none";
+
 interface FormErrors {
   username?: string;
   linkedin?: string;
   website?: string;
 }
 
+// Visibility selector component
+const VisibilityControl = ({
+  value,
+  onChange,
+}: {
+  value: Visibility;
+  onChange: (v: Visibility) => void;
+}) => {
+  const options: { label: string; value: Visibility }[] = [
+    { label: "Anyone", value: "anyone" },
+    { label: "Connections", value: "connections" },
+    { label: "No One", value: "none" },
+  ];
+  return (
+    <div className="flex gap-1">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`px-2 py-1 rounded-md text-[11px] font-medium transition-all whitespace-nowrap ${
+            value === opt.value
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-secondary/60 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// Bio section with AI generation
+const BioSection = ({
+  bio,
+  onChange,
+  isPremium,
+}: {
+  bio: string;
+  onChange: (v: string) => void;
+  isPremium: boolean;
+}) => {
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiResult, setAiResult] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error("Please enter some keywords or interests");
+      return;
+    }
+    setGenerating(true);
+    // Simulate AI generation (would call edge function in production)
+    setTimeout(() => {
+      const generated = `Passionate about ${aiPrompt.trim()}. Always looking for new opportunities to learn and grow in my academic journey. Excited to connect with like-minded peers and make the most of the college experience.`;
+      setAiResult(generated);
+      setGenerating(false);
+    }, 1500);
+  };
+
+  const handleApply = () => {
+    onChange(aiResult);
+    setAiModalOpen(false);
+    setAiPrompt("");
+    setAiResult("");
+  };
+
+  const handleCloseAttempt = () => {
+    if (aiPrompt || aiResult) {
+      setConfirmLeave(true);
+    } else {
+      setAiModalOpen(false);
+    }
+  };
+
+  return (
+    <div className="gradient-border animate-fade-in">
+      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">About Me</h2>
+            <p className="text-xs text-muted-foreground">Write a short bio about yourself</p>
+          </div>
+          {isPremium && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setAiModalOpen(true)}
+              className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Generate with AI
+            </Button>
+          )}
+        </div>
+        <textarea
+          value={bio}
+          onChange={(e) => onChange(e.target.value)}
+          maxLength={300}
+          placeholder="Tell others about yourself, your goals, and interests..."
+          className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+          rows={4}
+        />
+        <p className="text-xs text-muted-foreground mt-1 text-right">{bio.length}/300</p>
+
+        {/* AI Generation Modal */}
+        <Dialog open={aiModalOpen} onOpenChange={handleCloseAttempt}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                Generate Bio with AI
+              </DialogTitle>
+              <DialogDescription>
+                Enter keywords about your interests, goals, and personality
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g., computer science, robotics, leadership, traveling, creative writing"
+                className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                rows={3}
+              />
+              <Button
+                onClick={handleGenerate}
+                disabled={generating || !aiPrompt.trim()}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                {generating ? "Generating..." : "Generate Bio"}
+              </Button>
+              {aiResult && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">Preview:</p>
+                  <div className="bg-secondary/50 border border-border rounded-lg p-3 text-sm text-foreground">
+                    {aiResult}
+                  </div>
+                  <Button onClick={handleApply} className="w-full" variant="outline">
+                    Use This Bio
+                  </Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Confirm leave dialog */}
+        <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard progress?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will discard your progress. Are you sure?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setAiModalOpen(false);
+                  setAiPrompt("");
+                  setAiResult("");
+                  setConfirmLeave(false);
+                }}
+              >
+                Leave
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+};
+
+// 3-column profile field row
+const ProfileFieldRow = ({
+  label,
+  visibility,
+  onVisibilityChange,
+  children,
+}: {
+  label: string;
+  visibility: Visibility;
+  onVisibilityChange: (v: Visibility) => void;
+  children: React.ReactNode;
+}) => (
+  <div className="grid grid-cols-[120px_1fr_1fr] md:grid-cols-[140px_auto_1fr] gap-3 items-start py-3 border-b border-border/30 last:border-b-0">
+    <div className="flex items-center min-h-[36px]">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+    </div>
+    <div className="flex items-center min-h-[36px]">
+      <VisibilityControl value={visibility} onChange={onVisibilityChange} />
+    </div>
+    <div className="min-h-[36px]">{children}</div>
+  </div>
+);
+
 const EditProfile = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { profile, isLoading: profileLoading, refetch } = useProfileCompletion();
   const initializedRef = useRef(false);
+  const [viewMode, setViewMode] = useState<"edit" | "public">("edit");
 
   const [formData, setFormData] = useState({
     displayName: "",
@@ -80,13 +302,18 @@ const EditProfile = () => {
     tiktok: "",
     linkedin: "",
     website: "",
-    phoneNumber: "",
-    profileVisibility: "public",
-    showSchoolOnProfile: true,
-    instagramVisibility: "public" as string,
-    tiktokVisibility: "public" as string,
-    linkedinVisibility: "public" as string,
-    websiteVisibility: "public" as string,
+  });
+
+  const [visibility, setVisibility] = useState<Record<string, Visibility>>({
+    school: "anyone",
+    grade: "anyone",
+    major: "anyone",
+    interests: "anyone",
+    extracurriculars: "anyone",
+    instagram: "anyone",
+    tiktok: "anyone",
+    linkedin: "anyone",
+    website: "anyone",
   });
 
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -94,7 +321,6 @@ const EditProfile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Initialize form data from profile - only once when profile loads
   useEffect(() => {
     if (profile && !initializedRef.current) {
       initializedRef.current = true;
@@ -103,7 +329,7 @@ const EditProfile = () => {
         username: profile.username || "",
         bio: profile.bio || "",
         pronouns: "",
-        schoolType: (profile.school_type as 'high_school' | 'college' | 'other' | '') || "",
+        schoolType: (profile.school_type as any) || "",
         schoolName: profile.school_name || "",
         gradeOrYear: profile.grade_or_year || "",
         major: profile.major || "",
@@ -114,81 +340,53 @@ const EditProfile = () => {
         tiktok: "",
         linkedin: "",
         website: "",
-        phoneNumber: "",
-        profileVisibility: "public",
-        showSchoolOnProfile: true,
-        instagramVisibility: "public",
-        tiktokVisibility: "public",
-        linkedinVisibility: "public",
-        websiteVisibility: "public",
       });
       setProfilePhoto(profile.avatar_url || null);
     }
   }, [profile]);
 
-  // Compute isHighSchool based on EXPLICIT schoolType selection
   const isHighSchool = formData.schoolType === 'high_school';
 
-  // Validate on change
   const validateField = (field: string, value: string) => {
     const newErrors = { ...errors };
-    
     if (field === 'username') {
       const error = validateUsername(value);
-      if (error) newErrors.username = error;
-      else delete newErrors.username;
+      if (error) newErrors.username = error; else delete newErrors.username;
     }
     if (field === 'linkedin') {
       const error = validateUrl(value);
-      if (error) newErrors.linkedin = error;
-      else delete newErrors.linkedin;
+      if (error) newErrors.linkedin = error; else delete newErrors.linkedin;
     }
     if (field === 'website') {
       const error = validateUrl(value);
-      if (error) newErrors.website = error;
-      else delete newErrors.website;
+      if (error) newErrors.website = error; else delete newErrors.website;
     }
-    
     setErrors(newErrors);
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
-    
-    if (typeof value === 'string') {
-      validateField(field, value);
-    }
+    if (typeof value === 'string') validateField(field, value);
+  };
+
+  const handleVisChange = (field: string, v: Visibility) => {
+    setVisibility((prev) => ({ ...prev, [field]: v }));
+    setHasChanges(true);
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePhoto(reader.result as string);
-        setHasChanges(true);
-      };
+      reader.onloadend = () => { setProfilePhoto(reader.result as string); setHasChanges(true); };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleRemovePhoto = () => {
-    setProfilePhoto(null);
-    setHasChanges(true);
-  };
-
   const handleSaveProfile = async () => {
     if (!hasChanges || !user?.id) return;
-
-    // Check for validation errors
-    if (Object.keys(errors).length > 0) {
-      toast.error("Please fix the errors before saving");
-      return;
-    }
+    if (Object.keys(errors).length > 0) { toast.error("Please fix errors before saving"); return; }
 
     setIsSaving(true);
     try {
@@ -208,11 +406,7 @@ const EditProfile = () => {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id);
-
+      const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
       if (error) throw error;
 
       await refetch();
@@ -232,291 +426,88 @@ const EditProfile = () => {
     }
   };
 
-  const handleChangePassword = () => {
-    toast.info("Password change flow coming soon");
-  };
+  const isPremium = profile?.is_premium ?? false;
 
-  const handleDeleteAccount = () => {
-    toast.error("This action cannot be undone. Please contact support to delete your account.");
-  };
+  // Public view preview
+  const PublicPreview = () => (
+    <div className="space-y-6 animate-fade-in">
+      <div className="gradient-border">
+        <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
+          <div className="flex justify-center mb-4">
+            {profilePhoto ? (
+              <img src={profilePhoto} alt="Profile" className="w-20 h-20 rounded-full object-cover" />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center">
+                <Camera className="w-8 h-8 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          <h2 className="text-xl font-bold text-foreground">{formData.displayName || "Your Name"}</h2>
+          {formData.username && <p className="text-sm text-primary">@{formData.username}</p>}
+          {formData.bio && <p className="text-sm text-muted-foreground mt-2">{formData.bio}</p>}
 
-  const handleLogOut = async () => {
-    await signOut();
-    navigate("/");
-  };
-
-  const editSections = useMemo(
-    () => [
-      {
-        title: "Profile Photo",
-        items: [
-          {
-            type: "photo",
-            label: "Profile Picture",
-            description: "Upload a photo, change it, or remove it",
-            value: profilePhoto,
-          },
-        ],
-      },
-      {
-        title: "Basic Information",
-        items: [
-          {
-            type: "text",
-            field: "displayName",
-            label: "Display Name",
-            description: "How your name appears to others",
-            value: formData.displayName,
-          },
-          {
-            type: "text",
-            field: "username",
-            label: "Username",
-            description: "Your unique handle (letters, numbers, underscores only)",
-            value: formData.username,
-            placeholder: "@username",
-            error: errors.username,
-          },
-          {
-            type: "textarea",
-            field: "bio",
-            label: "Bio",
-            description: "Tell others about yourself",
-            value: formData.bio,
-            maxLength: 150,
-          },
-          {
-            type: "select",
-            field: "pronouns",
-            label: "Pronouns",
-            description: "How you identify (optional)",
-            value: formData.pronouns,
-            options: [
-              { label: "Not specified", value: "not_specified" },
-              { label: "He/Him", value: "he/him" },
-              { label: "She/Her", value: "she/her" },
-              { label: "They/Them", value: "they/them" },
-              { label: "He/They", value: "he/they" },
-              { label: "She/They", value: "she/they" },
-            ],
-          },
-        ],
-      },
-      {
-        title: "School & Education",
-        items: [
-          {
-            type: "select",
-            field: "schoolType",
-            label: "School Type",
-            description: "Are you in high school or college?",
-            value: formData.schoolType,
-            options: [
-              { label: "Not specified", value: "" },
-              { label: "High School", value: "high_school" },
-              { label: "College / University", value: "college" },
-              { label: "Other", value: "other" },
-            ],
-          },
-          {
-            type: "school_search",
-            field: "schoolName",
-            label: "Current School",
-            description: "Your current school or university",
-            value: formData.schoolName,
-            schoolType: formData.schoolType === 'high_school' ? 'high_school' : 'university',
-          },
-          ...(isHighSchool
-            ? [
-                {
-                  type: "dream_schools",
-                  field: "aspirationalSchool",
-                  label: "Dream Schools",
-                  description: "Where do you want to go after high school? (Select up to 5)",
-                  value: formData.aspirationalSchool,
-                },
-              ]
-            : []),
-          {
-            type: "select",
-            field: "gradeOrYear",
-            label: isHighSchool ? "Grade" : "Year",
-            description: isHighSchool ? "Your current grade level" : "Your current year",
-            value: formData.gradeOrYear,
-            options: isHighSchool
-              ? [
-                  { label: "Not specified", value: "not_specified" },
-                  { label: "9th Grade (Freshman)", value: "9" },
-                  { label: "10th Grade (Sophomore)", value: "10" },
-                  { label: "11th Grade (Junior)", value: "11" },
-                  { label: "12th Grade (Senior)", value: "12" },
-                ]
-              : [
-                  { label: "Not specified", value: "not_specified" },
-                  { label: "Freshman", value: "freshman" },
-                  { label: "Sophomore", value: "sophomore" },
-                  { label: "Junior", value: "junior" },
-                  { label: "Senior", value: "senior" },
-                  { label: "Graduate Student", value: "graduate" },
-                ],
-          },
-          {
-            type: "text",
-            field: "major",
-            label: isHighSchool ? "Intended Major / Interests" : "Major / Interests",
-            description: isHighSchool ? "What you're interested in studying" : "Your field of study or interests",
-            value: formData.major,
-          },
-          {
-            type: "text",
-            field: "interestsDisplay",
-            label: "Intended Majors (from questionnaire)",
-            description: "Selected during onboarding",
-            value: formData.interests.join(', ') || "None selected",
-            readOnly: true,
-          },
-          {
-            type: "text",
-            field: "extracurricularsDisplay",
-            label: "Extracurricular Interests",
-            description: "Activities you're interested in",
-            value: formData.extracurriculars.join(', ') || "None selected",
-            readOnly: true,
-          },
-        ],
-      },
-      {
-        title: "Contact & Social",
-        items: [
-          {
-            type: "text",
-            field: "phoneNumber",
-            label: "Phone Number",
-            description: "Optional contact number",
-            value: formData.phoneNumber,
-            placeholder: "+1 (555) 000-0000",
-          },
-          {
-            type: "social_handle",
-            field: "instagram",
-            label: "Instagram",
-            description: "Your Instagram handle",
-            value: formData.instagram,
-            placeholder: "@username",
-            visibilityField: "instagramVisibility",
-          },
-          {
-            type: "social_handle",
-            field: "tiktok",
-            label: "TikTok",
-            description: "Your TikTok handle",
-            value: formData.tiktok,
-            placeholder: "@username",
-            visibilityField: "tiktokVisibility",
-          },
-          {
-            type: "social_handle",
-            field: "linkedin",
-            label: "LinkedIn",
-            description: "Your LinkedIn profile",
-            value: formData.linkedin,
-            placeholder: "linkedin.com/in/username",
-            error: errors.linkedin,
-            visibilityField: "linkedinVisibility",
-          },
-          {
-            type: "social_handle",
-            field: "website",
-            label: "Website",
-            description: "Your personal website or portfolio",
-            value: formData.website,
-            placeholder: "https://example.com",
-            error: errors.website,
-            visibilityField: "websiteVisibility",
-          },
-        ],
-      },
-      {
-        title: "Preferences",
-        items: [
-          {
-            type: "select",
-            field: "profileVisibility",
-            label: "Profile Visibility",
-            description: "Who can see your profile",
-            value: formData.profileVisibility,
-            options: [
-              { label: "Public", value: "public" },
-              { label: "School-Only", value: "school_only" },
-            ],
-          },
-          {
-            type: "toggle",
-            field: "showSchoolOnProfile",
-            label: "Show School on Profile",
-            description: "Display your school publicly",
-            value: formData.showSchoolOnProfile,
-          },
-        ],
-      },
-      {
-        title: "Account & Security",
-        items: [
-          {
-            type: "action",
-            icon: Lock,
-            label: "Change Password",
-            description: "Update your account password",
-            action: handleChangePassword,
-          },
-          {
-            type: "action",
-            icon: Mail,
-            label: "Email Address",
-            description: `${user?.email || "No email set"}`,
-            readOnly: true,
-          },
-          {
-            type: "action",
-            icon: Trash2,
-            label: "Delete Account",
-            description: "Permanently delete your account and data",
-            action: handleDeleteAccount,
-            destructive: true,
-          },
-        ],
-      },
-    ],
-    [formData, profilePhoto, isHighSchool, user?.email, errors]
+          <div className="mt-4 space-y-2 text-left">
+            {visibility.school !== "none" && formData.schoolName && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">School:</span>
+                <span className="text-foreground">{formData.schoolName}</span>
+              </div>
+            )}
+            {visibility.grade !== "none" && formData.gradeOrYear && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Grade:</span>
+                <span className="text-foreground">{formData.gradeOrYear}</span>
+              </div>
+            )}
+            {visibility.interests !== "none" && formData.interests.length > 0 && (
+              <div>
+                <span className="text-xs text-muted-foreground">Intended Majors</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {formData.interests.map((i) => (
+                    <span key={i} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">{i}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {visibility.extracurriculars !== "none" && formData.extracurriculars.length > 0 && (
+              <div>
+                <span className="text-xs text-muted-foreground">Extracurriculars</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {formData.extracurriculars.map((e) => (
+                    <span key={e} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs">{e}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {visibility.instagram !== "none" && formData.instagram && (
+              <div className="text-sm"><span className="text-muted-foreground">Instagram:</span> <span className="text-foreground">{formData.instagram}</span></div>
+            )}
+            {visibility.linkedin !== "none" && formData.linkedin && (
+              <div className="text-sm"><span className="text-muted-foreground">LinkedIn:</span> <span className="text-foreground">{formData.linkedin}</span></div>
+            )}
+          </div>
+        </div>
+      </div>
+      <p className="text-xs text-center text-muted-foreground">
+        Fields set to "No One" are hidden. "Connections" fields are shown only to your connections.
+      </p>
+    </div>
   );
 
-  // Loading skeleton
   if (profileLoading) {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative">
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-          <div className="flex items-center justify-between px-6 py-3">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5 text-foreground" />
-              </button>
-              <h1 className="text-lg font-semibold text-foreground">Edit Profile</h1>
-            </div>
+          <div className="flex items-center gap-4 px-6 py-3">
+            <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors">
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <h1 className="text-lg font-semibold text-foreground">Edit Profile</h1>
           </div>
         </header>
-        <main className="relative z-10 px-6 py-6 space-y-6">
+        <main className="relative z-10 px-6 py-6 space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="h-4 w-24" />
-              <div className="gradient-border">
-                <div className="bg-card/90 rounded-lg p-4">
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              </div>
-            </div>
+            <Skeleton key={i} className="h-20 w-full rounded-lg" />
           ))}
         </main>
         <BottomNav />
@@ -526,361 +517,227 @@ const EditProfile = () => {
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors"
-            >
+        <div className="flex items-center justify-between px-5 py-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors">
               <ChevronLeft className="w-5 h-5 text-foreground" />
             </button>
             <h1 className="text-lg font-semibold text-foreground">Edit Profile</h1>
           </div>
-          {hasChanges && (
-            <Button
-              size="sm"
-              onClick={handleSaveProfile}
-              disabled={isSaving || Object.keys(errors).length > 0}
-              className="bg-primary hover:bg-primary/90"
+          <div className="flex items-center gap-2">
+            {/* View mode toggle */}
+            <button
+              onClick={() => setViewMode(viewMode === "edit" ? "public" : "edit")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary/60 text-muted-foreground hover:text-foreground transition-colors"
             >
-              {isSaving ? "Saving..." : "Save"}
-            </Button>
-          )}
+              {viewMode === "edit" ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              {viewMode === "edit" ? "Preview" : "Edit"}
+            </button>
+            {hasChanges && viewMode === "edit" && (
+              <Button size="sm" onClick={handleSaveProfile} disabled={isSaving || Object.keys(errors).length > 0} className="bg-primary hover:bg-primary/90">
+                {isSaving ? "Saving..." : "Save"}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="relative z-10 px-6 py-6 space-y-6">
-        {editSections.map((section, sectionIndex) => (
-          <div
-            key={section.title}
-            className="animate-fade-in"
-            style={{ animationDelay: `${sectionIndex * 0.04}s`, animationFillMode: "both" }}
-          >
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
-              {section.title}
-            </h2>
-            <div className="space-y-2">
-              {section.items.map((item: any) => {
-                if (item.type === "photo") {
-                  return (
-                    <div key={item.label} className="gradient-border">
-                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <p className="font-medium text-foreground">{item.label}</p>
-                            <p className="text-xs text-muted-foreground">{item.description}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-end gap-4">
-                          {profilePhoto ? (
-                            <div className="relative">
-                              <img
-                                src={profilePhoto}
-                                alt="Profile"
-                                className="w-24 h-24 rounded-xl object-cover"
-                              />
-                              <button
-                                onClick={handleRemovePhoto}
-                                className="absolute -top-2 -right-2 bg-destructive rounded-full p-1 text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="w-24 h-24 rounded-xl bg-secondary flex items-center justify-center">
-                              <Camera className="w-8 h-8 text-muted-foreground" />
-                            </div>
-                          )}
-                          <label className="flex-1">
-                            <Button asChild variant="outline" className="w-full">
-                              <span>Change Photo</span>
-                            </Button>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handlePhotoChange}
-                              className="hidden"
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item.type === "text") {
-                  return (
-                    <div key={item.field} className="gradient-border">
-                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-                        <label className="block">
-                          <p className="font-medium text-foreground text-sm mb-1">{item.label}</p>
-                          <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                          {item.maxLength ? (
-                            <textarea
-                              value={item.value}
-                              onChange={(e) => handleInputChange(item.field, e.target.value)}
-                              maxLength={item.maxLength}
-                              placeholder={item.placeholder || ""}
-                              className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                              rows={3}
-                            />
-                          ) : (
-                            <Input
-                              type="text"
-                              value={item.value}
-                              onChange={(e) => handleInputChange(item.field, e.target.value)}
-                              placeholder={item.placeholder || ""}
-                              className={`bg-secondary/50 border-border ${item.error ? 'border-destructive' : ''}`}
-                            />
-                          )}
-                          {item.error && (
-                            <p className="text-xs text-destructive mt-1 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3" />
-                              {item.error}
-                            </p>
-                          )}
-                          {item.maxLength && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {item.value.length}/{item.maxLength}
-                            </p>
-                          )}
-                        </label>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item.type === "school_search") {
-                  return (
-                    <div key={item.field} className="gradient-border">
-                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-                        <div className="block">
-                          <p className="font-medium text-foreground text-sm mb-1">{item.label}</p>
-                          <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                          {formData.schoolType && formData.schoolType !== 'other' && (
-                            <SchoolSearchDropdown
-                              value={item.value}
-                              onChange={(value) => handleInputChange(item.field, value)}
-                              schoolType={item.schoolType}
-                              placeholder={item.schoolType === 'high_school' ? 'Search for your high school...' : 'Search for your college...'}
-                            />
-                          )}
-                          {(!formData.schoolType || formData.schoolType === 'other') && (
-                            <Input
-                              type="text"
-                              value={item.value}
-                              onChange={(e) => handleInputChange(item.field, e.target.value)}
-                              placeholder="Enter your school name"
-                              className="bg-secondary/50 border-border"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item.type === "dream_schools") {
-                  // Parse the comma-separated string into an array
-                  const selectedSchools = item.value
-                    ? item.value.split(',').map((s: string) => s.trim()).filter(Boolean)
-                    : [];
-
-                  return (
-                    <div key={item.field} className="gradient-border">
-                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-                        <div className="block">
-                          <div className="flex items-center gap-2 mb-1">
-                            <GraduationCap className="w-4 h-4 text-primary" />
-                            <p className="font-medium text-foreground text-sm">{item.label}</p>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                          <MultiSelectSchools
-                            selectedSchools={selectedSchools}
-                            onChange={(schools) => handleInputChange(item.field, schools.join(', '))}
-                            maxSelections={5}
-                            placeholder="Search for your dream colleges..."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item.type === "select") {
-                  return (
-                    <div key={item.field} className="gradient-border">
-                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-                        <label className="block">
-                          <p className="font-medium text-foreground text-sm mb-1">{item.label}</p>
-                          <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                          <Select
-                            value={item.value || ""}
-                            onValueChange={(value) => handleInputChange(item.field, value)}
-                          >
-                            <SelectTrigger className="bg-secondary/50 border-border">
-                              <SelectValue placeholder="Select..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {item.options.map((option: any) => (
-                                <SelectItem key={option.value || "empty"} value={option.value || "not_specified"}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </label>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (item.type === "toggle") {
-                  return (
-                    <div key={item.field} className="gradient-border">
-                      <button
-                        onClick={() => handleInputChange(item.field, !item.value)}
-                        className="w-full bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
-                      >
-                        <div className="text-left">
-                          <p className="font-medium text-foreground">{item.label}</p>
-                          <p className="text-xs text-muted-foreground">{item.description}</p>
-                        </div>
-                        <div
-                          className={`w-12 h-7 rounded-full transition-colors flex items-center ${
-                            item.value ? "bg-primary" : "bg-secondary"
-                          }`}
-                        >
-                          <div
-                            className={`w-6 h-6 rounded-full bg-white transition-transform ${
-                              item.value ? "translate-x-5" : "translate-x-0.5"
-                            }`}
-                          />
-                        </div>
+      <main className="relative z-10 px-4 md:px-6 py-5 space-y-5 max-w-3xl mx-auto">
+        {viewMode === "public" ? (
+          <PublicPreview />
+        ) : (
+          <>
+            {/* Photo section */}
+            <div className="gradient-border animate-fade-in">
+              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5">
+                <div className="flex items-center gap-4">
+                  {profilePhoto ? (
+                    <div className="relative">
+                      <img src={profilePhoto} alt="Profile" className="w-20 h-20 rounded-xl object-cover" />
+                      <button onClick={() => { setProfilePhoto(null); setHasChanges(true); }} className="absolute -top-2 -right-2 bg-destructive rounded-full p-1 text-destructive-foreground">
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
-                  );
-                }
-
-                if (item.type === "social_handle") {
-                  const visOptions = [
-                    { label: "Public", value: "public" },
-                    { label: "School", value: "school_only" },
-                    { label: "Private", value: "private" },
-                  ];
-                  const currentVis = (formData as any)[item.visibilityField] || "public";
-                  return (
-                    <div key={item.field} className="gradient-border">
-                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
-                        <label className="block">
-                          <p className="font-medium text-foreground text-sm mb-1">{item.label}</p>
-                          <p className="text-xs text-muted-foreground mb-2">{item.description}</p>
-                          <Input
-                            type="text"
-                            value={item.value}
-                            onChange={(e) => handleInputChange(item.field, e.target.value)}
-                            placeholder={item.placeholder || ""}
-                            className={`bg-secondary/50 border-border mb-2 ${item.error ? 'border-destructive' : ''}`}
-                          />
-                          {item.error && (
-                            <p className="text-xs text-destructive mt-1 mb-2 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3" />
-                              {item.error}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-muted-foreground mr-1">Visible to:</span>
-                            {visOptions.map((opt) => (
-                              <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => handleInputChange(item.visibilityField, opt.value)}
-                                className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all ${
-                                  currentVis === opt.value
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-secondary/50 text-muted-foreground hover:text-foreground'
-                                }`}
-                              >
-                                {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                        </label>
-                      </div>
+                  ) : (
+                    <div className="w-20 h-20 rounded-xl bg-secondary flex items-center justify-center">
+                      <Camera className="w-7 h-7 text-muted-foreground" />
                     </div>
-                  );
-                }
-
-                if (item.type === "action") {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      onClick={item.action}
-                      disabled={item.readOnly}
-                      className="w-full gradient-border group"
-                    >
-                      <div
-                        className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-all ${
-                          item.readOnly
-                            ? "opacity-70"
-                            : item.destructive
-                            ? "hover:bg-destructive/10"
-                            : "hover:bg-secondary/50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              item.destructive ? "bg-destructive/20" : "bg-secondary"
-                            }`}
-                          >
-                            <Icon
-                              className={`w-5 h-5 ${
-                                item.destructive ? "text-destructive" : "text-primary"
-                              }`}
-                            />
-                          </div>
-                          <div className="text-left">
-                            <p
-                              className={`font-medium ${
-                                item.destructive ? "text-destructive" : "text-foreground"
-                              }`}
-                            >
-                              {item.label}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{item.description}</p>
-                          </div>
-                        </div>
-                        {!item.readOnly && (
-                          <ChevronRight
-                            className={`w-5 h-5 transition-transform group-hover:translate-x-1 ${
-                              item.destructive ? "text-destructive" : "text-muted-foreground"
-                            }`}
-                          />
-                        )}
-                      </div>
-                    </button>
-                  );
-                }
-
-                return null;
-              })}
+                  )}
+                  <label className="flex-1">
+                    <Button asChild variant="outline" size="sm"><span>Change Photo</span></Button>
+                    <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
 
-        {/* Log Out Button */}
-        <div className="pt-4">
-          <button
-            onClick={handleLogOut}
-            className="w-full py-3 text-center text-destructive font-medium hover:bg-destructive/10 rounded-lg transition-colors"
-          >
-            Log Out
-          </button>
-        </div>
+            {/* Bio Section */}
+            <BioSection bio={formData.bio} onChange={(v) => handleInputChange("bio", v)} isPremium={isPremium} />
+
+            {/* 3-Column Profile Fields */}
+            <div className="gradient-border animate-fade-in" style={{ animationDelay: "0.04s", animationFillMode: "both" }}>
+              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5">
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Profile Information</h2>
+
+                {/* Column headers */}
+                <div className="grid grid-cols-[120px_1fr_1fr] md:grid-cols-[140px_auto_1fr] gap-3 pb-2 border-b border-border/50 mb-1">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Field</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Visibility</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Value</span>
+                </div>
+
+                <ProfileFieldRow label="Display Name" visibility="anyone" onVisibilityChange={() => {}}>
+                  <Input value={formData.displayName} onChange={(e) => handleInputChange("displayName", e.target.value)} placeholder="Your name" className="bg-secondary/50 border-border h-9 text-sm" />
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="Username" visibility="anyone" onVisibilityChange={() => {}}>
+                  <div>
+                    <Input value={formData.username} onChange={(e) => handleInputChange("username", e.target.value)} placeholder="@username" className={`bg-secondary/50 border-border h-9 text-sm ${errors.username ? 'border-destructive' : ''}`} />
+                    {errors.username && <p className="text-xs text-destructive mt-0.5 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.username}</p>}
+                  </div>
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="School Type" visibility={visibility.school} onVisibilityChange={(v) => handleVisChange("school", v)}>
+                  <Select value={formData.schoolType || "not_specified"} onValueChange={(v) => handleInputChange("schoolType", v === "not_specified" ? "" : v)}>
+                    <SelectTrigger className="bg-secondary/50 border-border h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_specified">Not specified</SelectItem>
+                      <SelectItem value="high_school">High School</SelectItem>
+                      <SelectItem value="college">College / University</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="School" visibility={visibility.school} onVisibilityChange={(v) => handleVisChange("school", v)}>
+                  {formData.schoolType && formData.schoolType !== 'other' ? (
+                    <SchoolSearchDropdown
+                      value={formData.schoolName}
+                      onChange={(v) => handleInputChange("schoolName", v)}
+                      schoolType={formData.schoolType === 'high_school' ? 'high_school' : 'university'}
+                      placeholder="Search school..."
+                    />
+                  ) : (
+                    <Input value={formData.schoolName} onChange={(e) => handleInputChange("schoolName", e.target.value)} placeholder="School name" className="bg-secondary/50 border-border h-9 text-sm" />
+                  )}
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="Grade / Year" visibility={visibility.grade} onVisibilityChange={(v) => handleVisChange("grade", v)}>
+                  <Select value={formData.gradeOrYear || "not_specified"} onValueChange={(v) => handleInputChange("gradeOrYear", v === "not_specified" ? "" : v)}>
+                    <SelectTrigger className="bg-secondary/50 border-border h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not_specified">Not specified</SelectItem>
+                      {isHighSchool ? (
+                        <>
+                          <SelectItem value="9">9th Grade (Freshman)</SelectItem>
+                          <SelectItem value="10">10th Grade (Sophomore)</SelectItem>
+                          <SelectItem value="11">11th Grade (Junior)</SelectItem>
+                          <SelectItem value="12">12th Grade (Senior)</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="freshman">Freshman</SelectItem>
+                          <SelectItem value="sophomore">Sophomore</SelectItem>
+                          <SelectItem value="junior">Junior</SelectItem>
+                          <SelectItem value="senior">Senior</SelectItem>
+                          <SelectItem value="graduate">Graduate Student</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="Intended Majors" visibility={visibility.interests} onVisibilityChange={(v) => handleVisChange("interests", v)}>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.interests.length > 0 ? formData.interests.map((i) => (
+                      <span key={i} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">{i}</span>
+                    )) : <span className="text-xs text-muted-foreground">Set during onboarding</span>}
+                  </div>
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="Extracurriculars" visibility={visibility.extracurriculars} onVisibilityChange={(v) => handleVisChange("extracurriculars", v)}>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.extracurriculars.length > 0 ? formData.extracurriculars.map((e) => (
+                      <span key={e} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs">{e}</span>
+                    )) : <span className="text-xs text-muted-foreground">Set during onboarding</span>}
+                  </div>
+                </ProfileFieldRow>
+
+                {isHighSchool && (
+                  <ProfileFieldRow label="Dream Schools" visibility={visibility.school} onVisibilityChange={(v) => handleVisChange("school", v)}>
+                    <MultiSelectSchools
+                      selectedSchools={formData.aspirationalSchool ? formData.aspirationalSchool.split(',').map(s => s.trim()).filter(Boolean) : []}
+                      onChange={(schools) => handleInputChange("aspirationalSchool", schools.join(', '))}
+                      maxSelections={5}
+                      placeholder="Search dream colleges..."
+                    />
+                  </ProfileFieldRow>
+                )}
+              </div>
+            </div>
+
+            {/* Social handles - 3 column */}
+            <div className="gradient-border animate-fade-in" style={{ animationDelay: "0.08s", animationFillMode: "both" }}>
+              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5">
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Social & Contact</h2>
+                <div className="grid grid-cols-[120px_1fr_1fr] md:grid-cols-[140px_auto_1fr] gap-3 pb-2 border-b border-border/50 mb-1">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Field</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Visibility</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Value</span>
+                </div>
+
+                <ProfileFieldRow label="Instagram" visibility={visibility.instagram} onVisibilityChange={(v) => handleVisChange("instagram", v)}>
+                  <Input value={formData.instagram} onChange={(e) => handleInputChange("instagram", e.target.value)} placeholder="@username" className="bg-secondary/50 border-border h-9 text-sm" />
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="TikTok" visibility={visibility.tiktok} onVisibilityChange={(v) => handleVisChange("tiktok", v)}>
+                  <Input value={formData.tiktok} onChange={(e) => handleInputChange("tiktok", e.target.value)} placeholder="@username" className="bg-secondary/50 border-border h-9 text-sm" />
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="LinkedIn" visibility={visibility.linkedin} onVisibilityChange={(v) => handleVisChange("linkedin", v)}>
+                  <div>
+                    <Input value={formData.linkedin} onChange={(e) => handleInputChange("linkedin", e.target.value)} placeholder="linkedin.com/in/..." className={`bg-secondary/50 border-border h-9 text-sm ${errors.linkedin ? 'border-destructive' : ''}`} />
+                    {errors.linkedin && <p className="text-xs text-destructive mt-0.5">{errors.linkedin}</p>}
+                  </div>
+                </ProfileFieldRow>
+
+                <ProfileFieldRow label="Website" visibility={visibility.website} onVisibilityChange={(v) => handleVisChange("website", v)}>
+                  <div>
+                    <Input value={formData.website} onChange={(e) => handleInputChange("website", e.target.value)} placeholder="https://..." className={`bg-secondary/50 border-border h-9 text-sm ${errors.website ? 'border-destructive' : ''}`} />
+                    {errors.website && <p className="text-xs text-destructive mt-0.5">{errors.website}</p>}
+                  </div>
+                </ProfileFieldRow>
+              </div>
+            </div>
+
+            {/* Account actions */}
+            <div className="gradient-border animate-fade-in" style={{ animationDelay: "0.12s", animationFillMode: "both" }}>
+              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5 space-y-2">
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Account</h2>
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{user?.email || "No email"}</span>
+                  </div>
+                </div>
+                <button onClick={() => toast.info("Password change coming soon")} className="w-full flex items-center gap-3 py-2.5 text-sm text-foreground hover:text-primary transition-colors">
+                  <Lock className="w-4 h-4" />
+                  Change Password
+                </button>
+                <button onClick={() => toast.error("Contact support to delete your account.")} className="w-full flex items-center gap-3 py-2.5 text-sm text-destructive hover:text-destructive/80 transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                  Delete Account
+                </button>
+              </div>
+            </div>
+
+            {/* Log out */}
+            <button onClick={async () => { await signOut(); navigate("/"); }} className="w-full py-3 text-center text-destructive font-medium hover:bg-destructive/10 rounded-lg transition-colors">
+              Log Out
+            </button>
+          </>
+        )}
       </main>
 
       <PremiumChatFAB />
