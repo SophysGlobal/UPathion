@@ -43,6 +43,23 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing required fields: email and confirmationUrl");
     }
 
+    // Verify the email matches the authenticated user's email
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user && user.email !== email) {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: email does not match authenticated user" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+    }
+
     // Validate email format
     if (!isValidEmail(email)) {
       return new Response(
