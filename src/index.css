@@ -100,11 +100,15 @@
 
   html {
     font-family: 'Inter', sans-serif;
+    overscroll-behavior: none;
+    background: hsl(var(--background));
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background/95 text-foreground;
     overscroll-behavior: none;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
 
