@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,40 +22,31 @@ serve(async (req) => {
     }
 
     const query = searchQuery.trim();
-    let schools = [];
 
-    if (schoolType === "university") {
-      // --- Hipolabs: free, no key ---
-      const res = await fetch(
-        `https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}&country=United+States`
-      );
-      const data = await res.json();
-      schools = data.slice(0, limit).map((u: any, i: number) => ({
-        id: `uni-${i}-${u.name}`,
-        name: u.name,
-        country: "US",
-        state: u["state-province"] ?? null,
-        city: null,
-        type: "university",
-        is_notable: true,
-      }));
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
-    } else if (schoolType === "high_school") {
-      // --- Urban Institute / NCES: free, no key ---
-      const res = await fetch(
-        `https://educationdata.urban.org/api/v1/schools/ccd/directory/2021/?school_name=${encodeURIComponent(query)}&level_of_school=3&per_page=${limit}`
-      );
-      const data = await res.json();
-      schools = (data.results ?? []).map((s: any) => ({
-        id: s.ncessch,
-        name: s.school_name,
-        country: "US",
-        state: s.state_location ?? null,
-        city: s.city_location ?? null,
-        type: "high_school",
-        is_notable: false,
-      }));
-    }
+    // Use the database RPC function for ranked search
+    const { data, error } = await supabase.rpc('search_schools', {
+      search_query: query,
+      school_type: schoolType || null,
+      result_limit: limit,
+    });
+
+    if (error) throw error;
+
+    const schools = (data ?? []).map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      country: s.country,
+      state: s.state,
+      city: s.city,
+      type: s.type,
+      is_notable: s.is_notable,
+      match_rank: s.match_rank,
+    }));
 
     console.log(`Found ${schools.length} schools for query "${query}" (type: ${schoolType})`);
 
