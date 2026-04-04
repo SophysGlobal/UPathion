@@ -105,7 +105,8 @@
   }
 
   body {
-    @apply bg-background/95 text-foreground;
+    @apply text-foreground;
+    background: transparent;
     overscroll-behavior: none;
     min-height: 100vh;
     min-height: 100dvh;
