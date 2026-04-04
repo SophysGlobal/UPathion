@@ -101,12 +101,18 @@
   html {
     font-family: 'Inter', sans-serif;
     overscroll-behavior: none;
-    background: hsl(var(--background));
   }
 
   body {
-    @apply bg-background/95 text-foreground;
+    @apply text-foreground;
+    background: transparent;
     overscroll-behavior: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  #root {
+    background: hsl(var(--background) / 0.92);
     min-height: 100vh;
     min-height: 100dvh;
   }
