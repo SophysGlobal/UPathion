@@ -236,9 +236,11 @@ const Interests = () => {
     <OnboardingLayout>
         <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">
-            What do you want to study?
+            {data.schoolType === 'college' ? 'What are you studying?' : 'What do you want to study?'}
           </h1>
-          <p className="text-muted-foreground">Select your intended majors</p>
+          <p className="text-muted-foreground">
+            {data.schoolType === 'college' ? 'Select your current major(s)' : 'Select your intended majors'}
+          </p>
         </div>
 
         {selected.length > 0 && (

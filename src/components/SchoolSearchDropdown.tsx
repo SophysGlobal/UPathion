@@ -202,7 +202,7 @@ const SchoolSearchDropdown = ({
             <input
               ref={inputRef}
               type="text"
-              placeholder={value || placeholder}
+              placeholder={placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsOpen(true)}

@@ -197,7 +197,9 @@ const Extracurriculars = () => {
             Extracurriculars
           </h1>
           <p className="text-muted-foreground">
-            What activities interest you in college?
+            {data.schoolType === 'college'
+              ? 'What activities are you currently involved in?'
+              : 'What extracurriculars interest you?'}
           </p>
         </div>
 
