@@ -83,44 +83,46 @@ const SchoolConfirm = () => {
       </div>
 
         <div className="gradient-border animate-fade-in">
-          <div className="bg-card rounded-lg p-6 space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full gradient-bg flex items-center justify-center">
+          <div className="bg-card rounded-lg p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center flex-shrink-0">
                 {data.schoolType === 'college' ? (
-                  <GraduationCap className="w-6 h-6 text-primary-foreground" />
+                  <GraduationCap className="w-5 h-5 text-primary-foreground" />
                 ) : (
-                  <School className="w-6 h-6 text-primary-foreground" />
+                  <School className="w-5 h-5 text-primary-foreground" />
                 )}
               </div>
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">School</p>
-                <p className="text-lg font-semibold text-foreground">{data.schoolName}</p>
+                <p className="text-sm font-semibold text-foreground">{data.schoolName}</p>
               </div>
             </div>
             
             <div className="h-px bg-border" />
             
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">
                   {data.schoolType === 'college' ? 'Year' : 'Grade'}
                 </p>
-                <p className="text-lg font-semibold text-foreground">{data.gradeOrYear}</p>
+                <p className="text-sm font-semibold text-foreground">{data.gradeOrYear}</p>
               </div>
             </div>
 
             {data.interests && data.interests.length > 0 && (
               <>
                 <div className="h-px bg-border" />
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
-                    <BookOpen className="w-6 h-6 text-accent" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-5 h-5 text-accent" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Intended Major(s)</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                      {data.schoolType === 'college' ? 'Major(s)' : 'Intended Major(s)'}
+                    </p>
                     <p className="text-sm font-semibold text-foreground">{data.interests.join(', ')}</p>
                   </div>
                 </div>
@@ -130,9 +132,9 @@ const SchoolConfirm = () => {
             {data.extracurriculars && data.extracurriculars.length > 0 && (
               <>
                 <div className="h-px bg-border" />
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-primary" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                    <Activity className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Extracurriculars</p>
@@ -145,13 +147,13 @@ const SchoolConfirm = () => {
             {data.aspirationalSchool && (
               <>
                 <div className="h-px bg-border" />
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-primary" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Dream School</p>
-                    <p className="text-lg font-semibold text-foreground">{data.aspirationalSchool}</p>
+                    <p className="text-sm font-semibold text-foreground">{data.aspirationalSchool}</p>
                   </div>
                 </div>
               </>
@@ -159,7 +161,7 @@ const SchoolConfirm = () => {
           </div>
         </div>
 
-        <div className="flex gap-4 animate-fade-in">
+        <div className="flex gap-4 animate-fade-in mt-6">
           <GradientButton 
             variant="default"
             className="flex-1"

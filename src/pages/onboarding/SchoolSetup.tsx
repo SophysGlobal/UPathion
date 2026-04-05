@@ -62,7 +62,7 @@ const SchoolSetup = () => {
             <label className="text-sm font-medium text-foreground">{schoolType === 'high_school' ? 'High School' : 'College / University'}</label>
             <SchoolSearchDropdown value={schoolName} onChange={setSchoolName}
               schoolType={schoolType === 'high_school' ? 'high_school' : 'university'}
-              placeholder={schoolType === 'high_school' ? 'Search for your high school...' : 'Search for your college...'} />
+              placeholder={schoolType === 'high_school' ? 'e.g: Lincoln High School' : 'e.g: University of Michigan'} />
           </div>
         )}
         {schoolType && (
