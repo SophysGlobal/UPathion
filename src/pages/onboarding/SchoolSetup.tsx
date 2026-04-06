@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientInput } from "@/components/ui/GradientInput";
@@ -11,13 +11,34 @@ import SchoolSearchDropdown from "@/components/SchoolSearchDropdown";
 const SchoolSetup = () => {
   const navigate = useNavigate();
   const { data, updateData } = useOnboarding();
-  const [schoolType, setSchoolType] = useState<'high_school' | 'college' | ''>(data.schoolType === 'other' ? '' : data.schoolType);
-  const [schoolName, setSchoolName] = useState(data.schoolName);
+  const [schoolType, setSchoolType] = useState<'high_school' | 'college' | ''>(
+    data.schoolType === 'other' ? '' : data.schoolType
+  );
+
+  // Separate state per school type to prevent cross-contamination
+  const [highSchoolName, setHighSchoolName] = useState(
+    data.schoolType === 'high_school' ? data.schoolName : ''
+  );
+  const [collegeName, setCollegeName] = useState(
+    data.schoolType === 'college' ? data.schoolName : ''
+  );
+
   const [gradeOrYear, setGradeOrYear] = useState(data.gradeOrYear);
   const [major, setMajor] = useState(data.major);
 
+  // Derived active school name
+  const schoolName = schoolType === 'high_school' ? highSchoolName : schoolType === 'college' ? collegeName : '';
+
   const highSchoolGrades = ["Freshman (9th)", "Sophomore (10th)", "Junior (11th)", "Senior (12th)"];
   const collegeYears = ["Freshman", "Sophomore", "Junior", "Senior", "Graduate Student"];
+
+  // Reset grade when switching types since grade options differ
+  const handleSchoolTypeChange = (type: 'high_school' | 'college') => {
+    if (type !== schoolType) {
+      setGradeOrYear('');
+    }
+    setSchoolType(type);
+  };
 
   const handleContinue = () => {
     if (!schoolType) { toast.error("Please select your school type"); return; }
@@ -40,14 +61,14 @@ const SchoolSetup = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-4 animate-fade-in">
-        <button onClick={() => setSchoolType('high_school')}
+        <button onClick={() => handleSchoolTypeChange('high_school')}
           className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center gap-2 ${
             schoolType === 'high_school' ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-muted-foreground'
           }`}>
           <School className={`w-8 h-8 ${schoolType === 'high_school' ? 'text-primary' : 'text-muted-foreground'}`} />
           <span className={`font-medium ${schoolType === 'high_school' ? 'text-primary' : 'text-foreground'}`}>High School</span>
         </button>
-        <button onClick={() => setSchoolType('college')}
+        <button onClick={() => handleSchoolTypeChange('college')}
           className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center gap-2 ${
             schoolType === 'college' ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-muted-foreground'
           }`}>
@@ -57,12 +78,26 @@ const SchoolSetup = () => {
       </div>
 
       <div className="space-y-4" onKeyDown={handleKeyDown}>
-        {schoolType && (
-          <div className="space-y-2 animate-fade-in">
-            <label className="text-sm font-medium text-foreground">{schoolType === 'high_school' ? 'High School' : 'College / University'}</label>
-            <SchoolSearchDropdown value={schoolName} onChange={setSchoolName}
-              schoolType={schoolType === 'high_school' ? 'high_school' : 'university'}
-              placeholder={schoolType === 'high_school' ? 'e.g: Lincoln High School' : 'e.g: University of Michigan'} />
+        {schoolType === 'high_school' && (
+          <div className="space-y-2 animate-fade-in" key="hs-search">
+            <label className="text-sm font-medium text-foreground">High School</label>
+            <SchoolSearchDropdown
+              value={highSchoolName}
+              onChange={setHighSchoolName}
+              schoolType="high_school"
+              placeholder="e.g: Lincoln High School"
+            />
+          </div>
+        )}
+        {schoolType === 'college' && (
+          <div className="space-y-2 animate-fade-in" key="college-search">
+            <label className="text-sm font-medium text-foreground">College / University</label>
+            <SchoolSearchDropdown
+              value={collegeName}
+              onChange={setCollegeName}
+              schoolType="university"
+              placeholder="e.g: University of Michigan"
+            />
           </div>
         )}
         {schoolType && (

@@ -1,17 +1,23 @@
 import { memo } from "react";
-import { useNavigate } from "react-router-dom";
 import upathionLogo from "@/assets/upathion-logo.png";
 
 interface LogoProps {
   showText?: boolean;
 }
 
+/**
+ * Logo component — uses <a> instead of useNavigate to avoid
+ * re-rendering on every route change (which caused flicker).
+ */
 const Logo = memo(({ showText = true }: LogoProps) => {
-  const navigate = useNavigate();
-  
   return (
-    <button 
-      onClick={() => navigate("/")} 
+    <a
+      href="/"
+      onClick={(e) => {
+        e.preventDefault();
+        window.history.pushState({}, "", "/");
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }}
       className="flex items-center gap-3 hover:opacity-80 transition-opacity"
     >
       <img 
@@ -22,7 +28,7 @@ const Logo = memo(({ showText = true }: LogoProps) => {
         decoding="sync"
       />
       {showText && <span className="text-2xl font-bold gradient-text">UPathion</span>}
-    </button>
+    </a>
   );
 });
 

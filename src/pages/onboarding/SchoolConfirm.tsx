@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
+import EditFieldModal from "@/components/EditFieldModal";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,7 @@ const SchoolConfirm = () => {
   const { data } = useOnboarding();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const handleConfirm = async () => {
     if (!user?.id) {
@@ -77,19 +79,19 @@ const SchoolConfirm = () => {
   return (
     <OnboardingLayout>
       <div onKeyDown={handleKeyDown} tabIndex={0}>
-      <div className="text-center space-y-2 animate-fade-in">
-        <h1 className="text-3xl font-bold text-foreground">Almost there!</h1>
-        <p className="text-muted-foreground">Confirm your details</p>
-      </div>
+        <div className="text-center space-y-2 mb-4 animate-fade-in">
+          <h1 className="text-3xl font-bold text-foreground">Almost there!</h1>
+          <p className="text-muted-foreground">Confirm your details</p>
+        </div>
 
         <div className="gradient-border animate-fade-in">
-          <div className="bg-card rounded-lg p-5 space-y-3">
+          <div className="bg-card rounded-lg p-4 space-y-2.5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center flex-shrink-0">
+              <div className="w-9 h-9 rounded-full gradient-bg flex items-center justify-center flex-shrink-0">
                 {data.schoolType === 'college' ? (
-                  <GraduationCap className="w-5 h-5 text-primary-foreground" />
+                  <GraduationCap className="w-4 h-4 text-primary-foreground" />
                 ) : (
-                  <School className="w-5 h-5 text-primary-foreground" />
+                  <School className="w-4 h-4 text-primary-foreground" />
                 )}
               </div>
               <div>
@@ -101,8 +103,8 @@ const SchoolConfirm = () => {
             <div className="h-px bg-border" />
             
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-primary" />
+              <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-4 h-4 text-primary" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -116,8 +118,8 @@ const SchoolConfirm = () => {
               <>
                 <div className="h-px bg-border" />
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="w-5 h-5 text-accent" />
+                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-4 h-4 text-accent" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">
@@ -133,8 +135,8 @@ const SchoolConfirm = () => {
               <>
                 <div className="h-px bg-border" />
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <Activity className="w-5 h-5 text-primary" />
+                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                    <Activity className="w-4 h-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Extracurriculars</p>
@@ -148,8 +150,8 @@ const SchoolConfirm = () => {
               <>
                 <div className="h-px bg-border" />
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-5 h-5 text-primary" />
+                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">Dream School</p>
@@ -161,11 +163,11 @@ const SchoolConfirm = () => {
           </div>
         </div>
 
-        <div className="flex gap-4 animate-fade-in mt-6">
+        <div className="flex gap-4 animate-fade-in mt-4">
           <GradientButton 
             variant="default"
             className="flex-1"
-            onClick={() => navigate("/onboarding/school")}
+            onClick={() => setEditModalOpen(true)}
             disabled={isLoading}
           >
             Edit
@@ -189,6 +191,8 @@ const SchoolConfirm = () => {
           <div className="w-8 h-1 rounded-full gradient-bg" />
         </div>
       </div>
+
+      <EditFieldModal open={editModalOpen} onOpenChange={setEditModalOpen} />
     </OnboardingLayout>
   );
 };
