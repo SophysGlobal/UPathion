@@ -13,13 +13,11 @@ interface ConfirmationRequest {
   type: "signup" | "resend";
 }
 
-// Validate email format to prevent abuse
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email) && email.length <= 254;
 }
 
-// Validate URL is from our domain
 function isValidConfirmationUrl(url: string, allowedOrigins: string[]): boolean {
   try {
     const parsedUrl = new URL(url);
@@ -30,7 +28,6 @@ function isValidConfirmationUrl(url: string, allowedOrigins: string[]): boolean 
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -38,29 +35,40 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, confirmationUrl, type }: ConfirmationRequest = await req.json();
 
-    // Validate required fields
     if (!email || !confirmationUrl) {
       throw new Error("Missing required fields: email and confirmationUrl");
     }
 
-    // Verify the email matches the authenticated user's email
+    // SECURITY: Require authentication and verify email matches the caller
     const authHeader = req.headers.get('Authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-      const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user && user.email !== email) {
-        return new Response(
-          JSON.stringify({ error: "Forbidden: email does not match authenticated user" }),
-          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
-        );
-      }
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    // Validate email format
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (user.email !== email) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: email does not match authenticated user" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     if (!isValidEmail(email)) {
       return new Response(
         JSON.stringify({ error: "Invalid email format" }),
@@ -68,15 +76,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get allowed origins from environment or use defaults
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const allowedOrigins = [
       'https://id-preview--0e7f78ff-83fb-4088-a02e-6ebaceea8103.lovable.app',
       'http://localhost:8080',
       'http://localhost:5173',
     ];
 
-    // Validate confirmation URL is from allowed origins
     if (!isValidConfirmationUrl(confirmationUrl, allowedOrigins)) {
       console.error(`Invalid confirmation URL origin: ${confirmationUrl}`);
       return new Response(
@@ -99,7 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Campfire <noreply@campfire.app>", // Replace with your verified Resend domain
+        from: "Campfire <noreply@campfire.app>",
         to: [email],
         subject: type === "signup" ? "Confirm your Campfire account" : "Confirm your email address",
         html: `
