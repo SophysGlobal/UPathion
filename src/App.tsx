@@ -7,6 +7,7 @@ import { OnboardingProvider } from "@/context/OnboardingContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import PersistentLogoLayer from "@/components/PersistentLogoLayer";
 import AppEntryGate from "@/components/AppEntryGate";
 import AuthGate from "@/components/AuthGate";
 import Index from "./pages/Index";
@@ -57,8 +58,8 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              {/* Single persistent background — never remounts */}
               <AnimatedBackground />
+              <PersistentLogoLayer />
               <AppEntryGate>
                 <AuthGate>
                   <Routes>
