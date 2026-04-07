@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "@/components/Logo";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { X, Search, Award, Building2, Sparkles, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
