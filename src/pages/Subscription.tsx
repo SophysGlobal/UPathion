@@ -74,7 +74,7 @@ const Subscription = () => {
       </button>
 
       <div className="w-full max-w-md space-y-6 relative z-10">
-        <div className="flex justify-center animate-fade-in"><Logo /></div>
+        <div className="h-16" />
 
         <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">
