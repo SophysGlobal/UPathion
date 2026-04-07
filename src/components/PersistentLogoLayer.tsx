@@ -3,7 +3,7 @@ import { matchPath, useLocation } from "react-router-dom";
 import Logo from "@/components/Logo";
 import { cn } from "@/lib/utils";
 
-const onboardingPatterns = ["/onboarding/*"];
+const onboardingPatterns = ["/onboarding/*", "/subscription"];
 const appHeaderPatterns = ["/dashboard", "/feed", "/explore", "/profile", "/messages"];
 
 const matchesAny = (pathname: string, patterns: string[]) =>
