@@ -59,7 +59,6 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <AnimatedBackground />
-              <PersistentLogoLayer />
               <AppEntryGate>
                 <AuthGate>
                   <Routes>
