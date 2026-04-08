@@ -3,6 +3,7 @@ import SplashScreen from './SplashScreen';
 import { useAppEntry } from '@/hooks/useAppEntry';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
+import PersistentLogoLayer from './PersistentLogoLayer';
 
 interface AppEntryGateProps {
   children: ReactNode;
@@ -73,7 +74,12 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
         />
       )}
 
-      {isReady && <>{children}</>}
+      {isReady && (
+        <>
+          <PersistentLogoLayer />
+          {children}
+        </>
+      )}
     </>
   );
 };
