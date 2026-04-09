@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "@/components/Logo";
 import Divider from "@/components/Divider";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -131,11 +130,7 @@ const SignIn = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       
-      <div className="w-full max-w-md space-y-8 relative z-10">
-        {/* Logo */}
-        <div className="flex justify-center animate-fade-in">
-          <Logo />
-        </div>
+      <div className="w-full max-w-md space-y-8 relative z-10 pt-20">
 
         {/* Welcome text */}
         <div className="text-center space-y-2 animate-fade-in">

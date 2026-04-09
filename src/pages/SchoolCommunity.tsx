@@ -157,11 +157,9 @@ const SchoolCommunity = () => {
         {members.length === 0 ? (
           renderEmptyState()
         ) : (
-          members.map((member, index) => (
+          members.map((member) => (
             <div
               key={member.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}
             >
               <MemberCard 
                 member={member} 
