@@ -217,9 +217,16 @@ const SchoolProfilePage = () => {
     .filter(Boolean)
     .join(", ");
 
+  type StatItem = {
+    icon: React.ElementType;
+    label: string;
+    value: string | number | null;
+    subValue?: string | null;
+  };
+
   // Define stats based on school type — only include cards that actually have a value,
   // so partially-enriched schools don't show a wall of "N/A".
-  const allStats = isUniversity
+  const allStats: StatItem[] = isUniversity
     ? [
         { icon: Users, label: "Enrollment", value: formatNumber(profile?.enrollment ?? null) },
         { icon: TrendingUp, label: "Acceptance Rate", value: formatPercentage(profile?.acceptance_rate ?? null) },
