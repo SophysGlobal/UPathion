@@ -20,6 +20,7 @@ import {
   DollarSign,
   Percent,
   Info,
+  ChevronDown,
 } from "lucide-react";
 
 interface SchoolData {
@@ -160,6 +161,19 @@ const ProfileSkeleton = () => (
   </div>
 );
 
+// Generate a school acronym (e.g. "Acton-Boxborough Regional High School" -> "ABRHS")
+const getAcronym = (name: string | undefined | null): string => {
+  if (!name) return "?";
+  const stop = new Set(["of", "the", "and", "for", "at", "in", "on", "a", "an"]);
+  const letters = name
+    .replace(/[^A-Za-z\s-]/g, " ")
+    .split(/[\s-]+/)
+    .filter((w) => w && !stop.has(w.toLowerCase()))
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
+  return (letters || name[0]!.toUpperCase()).slice(0, 5);
+};
+
 const SchoolProfilePage = () => {
   const { schoolId } = useParams<{ schoolId: string }>();
   const navigate = useNavigate();
@@ -168,12 +182,21 @@ const SchoolProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [logoFailed, setLogoFailed] = useState(false);
+  const [aboutExpanded, setAboutExpanded] = useState(false);
 
   useEffect(() => {
     setLogoFailed(false);
   }, [profile?.logo_url]);
 
   useEffect(() => {
+    // CRITICAL: clear previous school's data immediately so we never show
+    // stale logos / descriptions while the new school is loading.
+    setSchool(null);
+    setProfile(null);
+    setError(null);
+    setLogoFailed(false);
+    setAboutExpanded(false);
+
     const fetchProfile = async () => {
       if (!schoolId) {
         setError("School ID is required");
@@ -195,8 +218,13 @@ const SchoolProfilePage = () => {
         if (fetchError) throw fetchError;
 
         if (data?.school && data?.profile) {
-          setSchool(data.school);
-          setProfile(data.profile);
+          // Defensive: only adopt the response if it matches the schoolId
+          // we're currently viewing (prevents late responses from a previous
+          // school from overwriting fresh state).
+          if (data.school.id === schoolId) {
+            setSchool(data.school);
+            setProfile(data.profile);
+          }
         } else if (data?.error) {
           setError(data.error);
         }
@@ -301,6 +329,14 @@ const SchoolProfilePage = () => {
                         loading="lazy"
                         onError={() => setLogoFailed(true)}
                       />
+                    ) : school?.name ? (
+                      <span
+                        className={`text-base font-bold tracking-tight ${
+                          school.is_notable ? "text-primary" : "text-foreground/80"
+                        }`}
+                      >
+                        {getAcronym(school.name)}
+                      </span>
                     ) : (
                       <SchoolIcon
                         className={`w-8 h-8 ${
@@ -419,15 +455,43 @@ const SchoolProfilePage = () => {
                   About
                 </h3>
                 <div className="gradient-border">
-                  <div className="bg-card/90 backdrop-blur-sm rounded-xl p-4">
-                    <div className="prose prose-sm max-w-none">
-                      {profile.about_text.split("\n\n").map((paragraph, i) => (
-                        <p key={i} className="text-foreground/90 mb-3 last:mb-0 leading-relaxed">
-                          {paragraph}
-                        </p>
-                      ))}
+                  <button
+                    type="button"
+                    onClick={() => setAboutExpanded((v) => !v)}
+                    aria-expanded={aboutExpanded}
+                    className="w-full text-left bg-card/90 backdrop-blur-sm rounded-xl p-4 hover:bg-card transition-colors"
+                  >
+                    <div
+                      className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                        aboutExpanded ? "grid-rows-[1fr]" : "grid-rows-[5.5rem]"
+                      }`}
+                    >
+                      <div
+                        className={`min-h-0 overflow-hidden ${
+                          aboutExpanded ? "" : "[mask-image:linear-gradient(to_bottom,black_60%,transparent)]"
+                        }`}
+                      >
+                        <div className="prose prose-sm max-w-none">
+                          {profile.about_text.split("\n\n").map((paragraph, i) => (
+                            <p
+                              key={i}
+                              className="text-foreground/90 mb-3 last:mb-0 leading-relaxed"
+                            >
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                    <div className="flex items-center gap-1 mt-2 text-xs font-medium text-primary">
+                      <span>{aboutExpanded ? "Show less" : "Read more"}</span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-transform duration-300 ${
+                          aboutExpanded ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
+                  </button>
                 </div>
               </div>
             )}

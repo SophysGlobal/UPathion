@@ -54,16 +54,24 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
   useEffect(() => {
     const findSchoolAndProfile = async () => {
       if (!school?.name || !open) return;
-      
+
+      // CRITICAL: reset stale data from previously-viewed school before fetching
+      setSchoolId(null);
+      setEnrichedData(null);
+      setLogoFailed(false);
       setIsLoadingId(true);
       setIsLoadingProfile(true);
+      const requestedName = school.name;
       try {
         // First find the school ID
         const { data: schoolData } = await supabase
           .from('schools')
           .select('id')
-          .ilike('name', school.name)
+          .ilike('name', requestedName)
           .maybeSingle();
+
+        // Defensive: bail if the user has switched to another school mid-flight
+        if (school?.name !== requestedName) return;
 
         const foundId = schoolData?.id || null;
         setSchoolId(foundId);
@@ -75,6 +83,7 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
           const { data: result } = await supabase.functions.invoke('get-school-profile', {
             body: { schoolId: foundId },
           });
+          if (school?.name !== requestedName) return;
           const p = result?.profile;
           if (p) {
             setEnrichedData({
