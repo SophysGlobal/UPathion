@@ -114,10 +114,10 @@ function chipsFromNces(d: Record<string, unknown>): string[] {
   return Array.from(new Set(chips)).slice(0, 8);
 }
 
-/* ─────────────────────── AI description (OpenAI) ─────────────────────── */
+/* ─────────────────────── AI description (Lovable AI primary, OpenAI fallback) ─────────────────────── */
 
 async function generateAiDescription(
-  apiKey: string,
+  keys: { lovable?: string | null; openai?: string | null },
   schoolName: string,
   type: "university" | "high_school",
   facts: Record<string, unknown>,
@@ -136,34 +136,56 @@ Each paragraph should be 2–3 sentences. No headers, no bullet points, no quote
 Facts:
 ${factLines || "(no specific facts available — write a brief, accurate, generic description based only on the school name and type)"}`;
 
-  try {
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.4,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a careful editor writing factual school profile descriptions. Never fabricate statistics, rankings, founding years, or historical claims. Use only the facts provided.",
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-    if (!resp.ok) {
-      console.error("OpenAI error:", resp.status, await resp.text());
-      return null;
+  const messages = [
+    {
+      role: "system",
+      content:
+        "You are a careful editor writing factual school profile descriptions. Never fabricate statistics, rankings, founding years, or historical claims. Use only the facts provided.",
+    },
+    { role: "user", content: prompt },
+  ];
+
+  // Try Lovable AI first
+  if (keys.lovable) {
+    try {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.lovable}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "google/gemini-3-flash-preview", messages }),
+      });
+      if (resp.ok) {
+        const json = await resp.json();
+        const content: string | undefined = json?.choices?.[0]?.message?.content;
+        if (content?.trim()) return content.trim();
+      } else {
+        console.error("Lovable AI error:", resp.status, await resp.text());
+      }
+    } catch (e) {
+      console.error("Lovable AI call failed:", e);
     }
-    const json = await resp.json();
-    const content: string | undefined = json?.choices?.[0]?.message?.content;
-    return content?.trim() || null;
-  } catch (e) {
-    console.error("AI generation failed:", e);
-    return null;
   }
+
+  // Fallback: OpenAI
+  if (keys.openai) {
+    try {
+      const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${keys.openai}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "gpt-4o-mini", temperature: 0.4, messages }),
+      });
+      if (!resp.ok) {
+        console.error("OpenAI error:", resp.status, await resp.text());
+        return null;
+      }
+      const json = await resp.json();
+      const content: string | undefined = json?.choices?.[0]?.message?.content;
+      return content?.trim() || null;
+    } catch (e) {
+      console.error("OpenAI call failed:", e);
+    }
+  }
+
+  return null;
 }
 
 /* ─────────────────────── Handler ─────────────────────── */
@@ -176,6 +198,7 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const scorecardKey = Deno.env.get("COLLEGE_SCORECARD_API_KEY");
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const { schoolId, forceRefresh = false } = await req.json();
@@ -444,10 +467,10 @@ serve(async (req) => {
           : "Building futures together";
     }
 
-    // AI-polished description (OpenAI)
-    if (openaiKey) {
+    // AI-polished description (Lovable AI primary, OpenAI fallback)
+    if (lovableKey || openaiKey) {
       const aiText = await generateAiDescription(
-        openaiKey,
+        { lovable: lovableKey, openai: openaiKey },
         school.name,
         school.type as "university" | "high_school",
         aiFacts,

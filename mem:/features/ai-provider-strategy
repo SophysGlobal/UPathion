@@ -1,0 +1,6 @@
+---
+name: AI Provider Strategy
+description: All AI features use Lovable AI (LOVABLE_API_KEY) as the primary provider with OpenAI (OPENAI_API_KEY) as a fallback when Lovable returns an error.
+type: feature
+---
+All AI features (premium-chat, enrich-school-profile descriptions, and any future AI usage) MUST try Lovable AI Gateway first using LOVABLE_API_KEY (default model: google/gemini-3-flash-preview), and fall back to OpenAI gpt-4o-mini using OPENAI_API_KEY only if Lovable AI fails or is unavailable. Both keys live as Supabase secrets. Never call providers from the client.

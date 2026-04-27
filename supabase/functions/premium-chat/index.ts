@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.95.0';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -173,33 +174,78 @@ serve(async (req) => {
     
     console.log('Processing chat request for premium user:', userId, 'messages:', sanitizedMessages.length, 'total chars:', totalPayloadSize);
 
-    if (!openAIApiKey) {
-      throw new Error('OPENAI_API_KEY is not configured');
+    if (!lovableApiKey && !openAIApiKey) {
+      throw new Error('No AI provider configured (need LOVABLE_API_KEY or OPENAI_API_KEY)');
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a helpful, friendly AI assistant for Upathion premium users. Be concise and helpful.' 
-          },
-          ...sanitizedMessages
-        ],
-        stream: true,
-      }),
-    });
+    const systemMessage = {
+      role: 'system',
+      content: 'You are a helpful, friendly AI assistant for Upathion premium users. Be concise and helpful.',
+    };
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${response.status}`);
+    // Try Lovable AI first, fall back to OpenAI on failure
+    async function callLovable() {
+      return await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [systemMessage, ...sanitizedMessages],
+          stream: true,
+        }),
+      });
+    }
+
+    async function callOpenAI() {
+      return await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [systemMessage, ...sanitizedMessages],
+          stream: true,
+        }),
+      });
+    }
+
+    let response: Response | null = null;
+    if (lovableApiKey) {
+      response = await callLovable();
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('Lovable AI error:', response.status, errText);
+        if (openAIApiKey) {
+          console.log('Falling back to OpenAI');
+          response = await callOpenAI();
+        }
+      }
+    } else if (openAIApiKey) {
+      response = await callOpenAI();
+    }
+
+    if (!response || !response.ok) {
+      const status = response?.status ?? 500;
+      const errText = response ? await response.text() : 'No response';
+      console.error('AI provider error:', status, errText);
+      if (status === 429) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again shortly.' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (status === 402) {
+        return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add funds to your Lovable AI workspace.' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`AI provider error: ${status}`);
     }
 
     return new Response(response.body, {
