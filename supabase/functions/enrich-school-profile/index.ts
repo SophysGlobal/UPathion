@@ -114,7 +114,7 @@ function chipsFromNces(d: Record<string, unknown>): string[] {
   return Array.from(new Set(chips)).slice(0, 8);
 }
 
-/* ─────────────────────── AI description (Lovable AI) ─────────────────────── */
+/* ─────────────────────── AI description (OpenAI) ─────────────────────── */
 
 async function generateAiDescription(
   apiKey: string,
@@ -137,11 +137,12 @@ Facts:
 ${factLines || "(no specific facts available — write a brief, accurate, generic description based only on the school name and type)"}`;
 
   try {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gpt-4o-mini",
+        temperature: 0.4,
         messages: [
           {
             role: "system",
@@ -153,7 +154,7 @@ ${factLines || "(no specific facts available — write a brief, accurate, generi
       }),
     });
     if (!resp.ok) {
-      console.error("AI gateway error:", resp.status, await resp.text());
+      console.error("OpenAI error:", resp.status, await resp.text());
       return null;
     }
     const json = await resp.json();
@@ -174,7 +175,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const scorecardKey = Deno.env.get("COLLEGE_SCORECARD_API_KEY");
-    const lovableAiKey = Deno.env.get("LOVABLE_API_KEY");
+    const openaiKey = Deno.env.get("OPENAI_API_KEY");
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const { schoolId, forceRefresh = false } = await req.json();
@@ -443,10 +444,10 @@ serve(async (req) => {
           : "Building futures together";
     }
 
-    // AI-polished description
-    if (lovableAiKey) {
+    // AI-polished description (OpenAI)
+    if (openaiKey) {
       const aiText = await generateAiDescription(
-        lovableAiKey,
+        openaiKey,
         school.name,
         school.type as "university" | "high_school",
         aiFacts,
