@@ -4,7 +4,8 @@ import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { Check, Search, X, ChevronLeft } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
+import BackSkipRow from "@/components/onboarding/BackSkipRow";
 
 const ALL_MAJORS = [
   // STEM
