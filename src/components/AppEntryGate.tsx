@@ -1,5 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
-import SplashScreen from './SplashScreen';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { useAppEntry } from '@/hooks/useAppEntry';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
@@ -13,19 +12,37 @@ interface AppEntryGateProps {
  * AppEntryGate — single SplashScreen component handles both splash + welcome
  * in one continuous animation. No unmount/remount = no flicker.
  */
+/**
+ * Splash timing — the UPathion logo is rendered ONLY by PersistentLogoLayer
+ * (mounted continuously). We just dim the rest of the UI behind a scrim while
+ * the logo plays its intro, then flip phase to "docked" so the logo migrates
+ * to its final position alongside the sign-in screen rendering underneath.
+ *
+ * Total: SPLASH_INTRO_MS (centered hold) + MIGRATE_MS (animate to dock).
+ */
+const SPLASH_INTRO_MS = 1900; // logo fade-in + wordmark reveal + brief hold
+const MIGRATE_MS = 900;       // center → docked
+const SCRIM_FADE_MS = 350;
+
 const AppEntryGate = ({ children }: AppEntryGateProps) => {
   const { user } = useAuth();
   const { isAdmin } = useAdminStatus();
   const {
     showSplash,
-    showWelcome,
     isReady,
     onSplashComplete,
     markDeviceSignedIn,
     markAdminSession,
   } = useAppEntry();
 
-  const [fadeOut, setFadeOut] = useState(false);
+  // Phase the persistent logo should be in.
+  // - If splash is active: start "splash" (centered), then flip to "docked".
+  // - If splash already shown this session: jump straight to "docked".
+  const [phase, setPhase] = useState<'splash' | 'docked'>(
+    showSplash ? 'splash' : 'docked',
+  );
+  const [scrimVisible, setScrimVisible] = useState(showSplash);
+  const childrenMountedRef = useRef(false);
 
   useEffect(() => {
     if (user) markDeviceSignedIn();
@@ -35,47 +52,59 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
     if (user && isAdmin !== undefined) markAdminSession(isAdmin);
   }, [user, isAdmin, markAdminSession]);
 
-  // Splash sequence complete — fade out, then mark ready so the persistent
-  // top logo and routed children become visible in one frame.
-  const handleComplete = () => {
-    setFadeOut(true);
-    setTimeout(() => {
+  // Splash timeline: centered hold → flip phase to "docked" so the logo
+  // animates to its final position. The sign-in screen (children) is
+  // pre-mounted underneath the scrim so its layout is fully ready before the
+  // logo arrives — no late-render flicker.
+  useEffect(() => {
+    if (!showSplash) return;
+    const flip = window.setTimeout(() => setPhase('docked'), SPLASH_INTRO_MS);
+    return () => window.clearTimeout(flip);
+  }, [showSplash]);
+
+  // Called by PersistentLogoLayer once the docked position is reached.
+  const handleDocked = () => {
+    if (!showSplash) return;
+    // Fade scrim out; mark ready slightly after so children are revealed
+    // exactly as the scrim disappears — the logo is already in place.
+    setScrimVisible(false);
+    window.setTimeout(() => {
       onSplashComplete();
-      setFadeOut(false);
-    }, 300);
+    }, SCRIM_FADE_MS);
   };
 
-  const showOverlay = showSplash || showWelcome || fadeOut;
-
-  // Persistent logo is always mounted to avoid remount-flicker. We just fade
-  // its opacity in once the splash finishes — at exactly the same instant the
-  // splash overlay fades out — so the handoff is invisible.
-  const persistentVisible = isReady && !fadeOut;
+  // Children must mount during splash too (under the scrim) so the sign-in
+  // page is fully laid out before the logo finishes migrating.
+  const renderChildren = isReady || showSplash;
+  if (renderChildren) childrenMountedRef.current = true;
 
   return (
     <>
-      {showOverlay && (
+      {/* Scrim — dims everything except the persistent logo. The logo lives
+          OUTSIDE this element (it's a sibling at root) so it is never hidden
+          when the scrim fades. */}
+      {(showSplash || scrimVisible) && (
         <div
-          className={`fixed inset-0 z-[99] transition-opacity duration-300 ${
-            fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
-          }`}
+          className="fixed inset-0 z-[40] bg-background transition-opacity pointer-events-none"
+          style={{
+            opacity: scrimVisible ? 1 : 0,
+            transitionDuration: `${SCRIM_FADE_MS}ms`,
+          }}
+          aria-hidden
         />
       )}
 
-      {(showSplash || showWelcome) && !fadeOut && (
-        <SplashScreen onComplete={handleComplete} />
-      )}
+      {/* Single, continuously-mounted logo. Drives its own animation. */}
+      <PersistentLogoLayer
+        phase={phase}
+        introMs={SPLASH_INTRO_MS - 200}
+        migrateMs={MIGRATE_MS}
+        onDocked={handleDocked}
+      />
 
-      <div
-        className={`transition-opacity duration-300 ${
-          persistentVisible ? 'opacity-100' : 'opacity-0'
-        }`}
-        aria-hidden={!persistentVisible}
-      >
-        <PersistentLogoLayer />
-      </div>
-
-      {isReady && children}
+      {/* Sign-in / routed children render under the scrim during splash so
+          their layout is fully ready BEFORE the logo finishes docking. */}
+      {renderChildren && children}
     </>
   );
 };
