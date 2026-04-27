@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { X, MapPin, Users, Award, Building2, GraduationCap, BookOpen, ArrowRight } from "lucide-react";
+import { X, MapPin, Users, Award, Building2, GraduationCap, BookOpen, ArrowRight, School as SchoolIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,7 @@ interface EnrichedSchoolData {
   tagline: string | null;
   about_text: string | null;
   chips: string[] | null;
+  logo_url: string | null;
 }
 
 interface SchoolBottomSheetProps {
@@ -45,6 +46,9 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
   const [enrichedData, setEnrichedData] = useState<EnrichedSchoolData | null>(null);
   const [isLoadingId, setIsLoadingId] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  useEffect(() => { setLogoFailed(false); }, [enrichedData?.logo_url]);
   
   // Look up the school ID and enriched profile data when the sheet opens
   useEffect(() => {
@@ -60,28 +64,28 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
           .select('id')
           .ilike('name', school.name)
           .maybeSingle();
-        
+
         const foundId = schoolData?.id || null;
         setSchoolId(foundId);
         setIsLoadingId(false);
-        
-        // Then fetch enriched profile data if school exists
+
+        // Use the get-school-profile edge function — it returns the enriched profile
+        // (and triggers async enrichment on first view, so logos/rankings populate).
         if (foundId) {
-          const { data: profileData } = await supabase
-            .from('school_profiles')
-            .select('id, enrollment, ranking, ranking_source, tagline, about_text, chips')
-            .eq('school_id', foundId)
-            .maybeSingle();
-          
-          if (profileData) {
+          const { data: result } = await supabase.functions.invoke('get-school-profile', {
+            body: { schoolId: foundId },
+          });
+          const p = result?.profile;
+          if (p) {
             setEnrichedData({
-              id: profileData.id,
-              enrollment: profileData.enrollment,
-              ranking: profileData.ranking,
-              ranking_source: profileData.ranking_source,
-              tagline: profileData.tagline,
-              about_text: profileData.about_text,
-              chips: profileData.chips,
+              id: p.id,
+              enrollment: p.enrollment,
+              ranking: p.ranking,
+              ranking_source: p.ranking_source,
+              tagline: p.tagline,
+              about_text: p.about_text,
+              chips: p.chips,
+              logo_url: p.logo_url ?? null,
             });
           } else {
             setEnrichedData(null);
@@ -136,7 +140,7 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
     : school.studentCount || "—";
 
   // Get ranking display with source
-  const rankingDisplay = enrichedData?.ranking || school.ranking || "N/A";
+  const rankingDisplay = enrichedData?.ranking || school.ranking || "Ranking not available";
 
   // Get tags - prefer enriched chips, then prop tags, then defaults
   const tags = enrichedData?.chips?.length 
@@ -164,8 +168,20 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
         <div className="px-6 py-4 space-y-5 overflow-y-auto max-h-[60vh]">
           {/* School Type & Location */}
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <Building2 className="w-7 h-7 text-primary" />
+            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden border border-primary/20">
+              {enrichedData?.logo_url && !logoFailed ? (
+                <img
+                  src={enrichedData.logo_url}
+                  alt={`${school.name} logo`}
+                  className="w-full h-full object-contain p-1"
+                  loading="lazy"
+                  onError={() => setLogoFailed(true)}
+                />
+              ) : isHighSchool ? (
+                <SchoolIcon className="w-7 h-7 text-primary" />
+              ) : (
+                <Building2 className="w-7 h-7 text-primary" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-primary">{typeLabel}</p>

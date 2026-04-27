@@ -1,490 +1,483 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { lookupNationalRank, computeSelectivityTier } from "../_shared/rankings.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// College Scorecard API base URL
-const SCORECARD_BASE_URL = 'https://api.data.gov/ed/collegescorecard/v1/schools';
+const SCORECARD_BASE = "https://api.data.gov/ed/collegescorecard/v1/schools";
+const URBAN_HS_BASE =
+  "https://educationdata.urban.org/api/v1/schools/ccd/directory";
 
-// Derive a public logo URL from a school's website using Logo.dev
-// (free CDN, no auth required, falls back gracefully on the client if missing).
-function deriveLogoUrl(websiteUrl: string | null | undefined): string | null {
+// US state/territory → 2-digit FIPS code (Urban Institute API requires numeric fips)
+const STATE_TO_FIPS: Record<string, number> = {
+  AL: 1, AK: 2, AZ: 4, AR: 5, CA: 6, CO: 8, CT: 9, DE: 10, DC: 11, FL: 12,
+  GA: 13, HI: 15, ID: 16, IL: 17, IN: 18, IA: 19, KS: 20, KY: 21, LA: 22,
+  ME: 23, MD: 24, MA: 25, MI: 26, MN: 27, MS: 28, MO: 29, MT: 30, NE: 31,
+  NV: 32, NH: 33, NJ: 34, NM: 35, NY: 36, NC: 37, ND: 38, OH: 39, OK: 40,
+  OR: 41, PA: 42, RI: 44, SC: 45, SD: 46, TN: 47, TX: 48, UT: 49, VT: 50,
+  VA: 51, WA: 53, WV: 54, WI: 55, WY: 56, AS: 60, GU: 66, MP: 69, PR: 72, VI: 78,
+};
+
+const SCHOOL_LEVEL_LABEL: Record<number, string> = {
+  1: "Elementary",
+  2: "Middle",
+  3: "High",
+  4: "Other",
+  5: "Combined / K-12",
+};
+/* ─────────────────────── Logo helpers ─────────────────────── */
+
+function deriveLogoFromWebsite(websiteUrl: string | null | undefined): string | null {
   if (!websiteUrl) return null;
   try {
-    const url = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`;
-    const host = new URL(url).hostname.replace(/^www\./, '');
-    if (!host || !host.includes('.')) return null;
-    // img.logo.dev returns a 200x200 PNG with a transparent background fallback
+    const url = websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`;
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    if (!host || !host.includes(".")) return null;
     return `https://img.logo.dev/${host}?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&size=200&format=png&fallback=monogram`;
   } catch {
     return null;
   }
 }
 
-// Helper to verify admin authorization
-async function verifyAdminAuth(req: Request): Promise<{ userId: string } | { error: string; status: number }> {
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return { error: 'Unauthorized: Missing or invalid authorization header', status: 401 };
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-  
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } }
-  });
-
-  const token = authHeader.replace('Bearer ', '');
-  const { data, error } = await supabase.auth.getClaims(token);
-  
-  if (error || !data?.claims) {
-    return { error: 'Unauthorized: Invalid token', status: 401 };
-  }
-
-  const userId = data.claims.sub as string;
-  
-  // Check if user has admin role
-  const { data: isAdmin, error: roleError } = await supabase.rpc('has_role', { 
-    _user_id: userId, 
-    _role: 'admin' 
-  });
-
-  if (roleError || !isAdmin) {
-    return { error: 'Forbidden: Admin access required', status: 403 };
-  }
-
-  return { userId };
+// Logo.dev supports school-name lookups too; this gives a reasonable monogram fallback
+// when we have no website URL (common for high schools).
+function deriveLogoFromName(name: string): string {
+  const slug = encodeURIComponent(name);
+  return `https://ui-avatars.com/api/?name=${slug}&background=random&color=fff&size=200&bold=true&format=png`;
 }
 
-interface ScorecardSchool {
-  id: number;
-  'school.name': string;
-  'school.school_url': string;
-  'school.city': string;
-  'school.state': string;
-  'school.carnegie_size_setting': number | null;
-  'school.carnegie_basic': string | null;
-  'school.religious_affiliation': string | null;
-  'school.ownership': number;
-  'school.locale': number | null;
-  'latest.student.size': number | null;
-  'latest.admissions.admission_rate.overall': number | null;
-  'latest.student.grad_students': number | null;
-  'latest.academics.program_available.assoc': number | null;
-  'latest.academics.program_available.bachelors': number | null;
-  'latest.academics.program_available.masters': number | null;
-  'latest.academics.program_available.doctoral': number | null;
-  'latest.student.demographics.student_faculty_ratio': number | null;
-  'latest.cost.tuition.in_state': number | null;
-  'latest.cost.tuition.out_of_state': number | null;
-  'latest.completion.rate_suppressed.overall': number | null;
+/* ─────────────────────── Scorecard mapping ─────────────────────── */
+
+function ownership(code: number): string {
+  return ({ 1: "Public", 2: "Private Nonprofit", 3: "Private For-Profit" } as Record<
+    number,
+    string
+  >)[code] || "Unknown";
 }
 
-// Map ownership codes to readable strings
-function getOwnershipType(code: number): string {
-  const types: Record<number, string> = {
-    1: 'Public',
-    2: 'Private Nonprofit',
-    3: 'Private For-Profit',
-  };
-  return types[code] || 'Unknown';
-}
-
-// Map locale codes to readable strings  
-function getLocale(code: number | null): string | null {
+function localeLabel(code: number | null): string | null {
   if (!code) return null;
-  const locales: Record<number, string> = {
-    11: 'City: Large',
-    12: 'City: Midsize', 
-    13: 'City: Small',
-    21: 'Suburb: Large',
-    22: 'Suburb: Midsize',
-    23: 'Suburb: Small',
-    31: 'Town: Fringe',
-    32: 'Town: Distant',
-    33: 'Town: Remote',
-    41: 'Rural: Fringe',
-    42: 'Rural: Distant',
-    43: 'Rural: Remote',
-  };
-  return locales[code] || null;
+  return ({
+    11: "City: Large",
+    12: "City: Midsize",
+    13: "City: Small",
+    21: "Suburb: Large",
+    22: "Suburb: Midsize",
+    23: "Suburb: Small",
+    31: "Town: Fringe",
+    32: "Town: Distant",
+    33: "Town: Remote",
+    41: "Rural: Fringe",
+    42: "Rural: Distant",
+    43: "Rural: Remote",
+  } as Record<number, string>)[code] || null;
 }
 
-// Generate department chips based on available programs
-function generateChipsFromPrograms(scorecardData: ScorecardSchool): string[] {
+function chipsFromScorecard(d: Record<string, unknown>): string[] {
+  const chips = new Set<string>();
+  const carnegie = d["school.carnegie_basic"];
+  const carnegieStr = carnegie != null ? String(carnegie) : "";
+  if (carnegieStr.includes("Research")) chips.add("Research University");
+  if (carnegieStr.includes("Doctoral")) chips.add("Doctoral Programs");
+  if (carnegieStr.includes("Master")) chips.add("Master's Programs");
+  if (carnegieStr.includes("Arts")) chips.add("Liberal Arts");
+  if (d["latest.academics.program_available.doctoral"]) chips.add("Doctoral Programs");
+  if (d["latest.academics.program_available.masters"]) chips.add("Master's Programs");
+  if (d["latest.academics.program_available.bachelors"]) chips.add("Undergraduate Studies");
+  const own = ownership(d["school.ownership"] as number);
+  if (own !== "Unknown") chips.add(own);
+  if (d["school.religious_affiliation"]) chips.add("Religious Affiliation");
+  if (chips.size === 0) {
+    chips.add("Higher Education");
+    chips.add("Academic Programs");
+  }
+  return Array.from(chips).slice(0, 8);
+}
+
+function chipsFromNces(d: Record<string, unknown>): string[] {
   const chips: string[] = [];
-  
-  // Add based on program availability and carnegie classification
-  const carnegieRaw = scorecardData['school.carnegie_basic'];
-  // Ensure carnegie is a string (API may return number)
-  const carnegie = carnegieRaw != null ? String(carnegieRaw) : null;
-  
-  if (carnegie) {
-    if (carnegie.includes('Research')) chips.push('Research University');
-    if (carnegie.includes('Doctoral')) chips.push('Doctoral Programs');
-    if (carnegie.includes('Masters')) chips.push("Master's Programs");
-    if (carnegie.includes('Arts')) chips.push('Liberal Arts');
-    if (carnegie.includes('Engineering')) chips.push('Engineering');
-    if (carnegie.includes('Health')) chips.push('Health Sciences');
-    if (carnegie.includes('Business')) chips.push('Business');
-  }
-  
-  // Add based on program counts
-  if (scorecardData['latest.academics.program_available.doctoral']) {
-    if (!chips.includes('Doctoral Programs')) chips.push('Doctoral Programs');
-  }
-  if (scorecardData['latest.academics.program_available.masters']) {
-    if (!chips.includes("Master's Programs")) chips.push("Master's Programs");
-  }
-  if (scorecardData['latest.academics.program_available.bachelors']) {
-    chips.push('Undergraduate Studies');
-  }
-  
-  // Add ownership type
-  const ownershipType = getOwnershipType(scorecardData['school.ownership']);
-  if (ownershipType !== 'Unknown') chips.push(ownershipType);
-  
-  // Religious affiliation
-  if (scorecardData['school.religious_affiliation']) {
-    chips.push('Religious Affiliation');
-  }
-  
-  // Default chips if none found
-  if (chips.length === 0) {
-    chips.push('Higher Education', 'Academic Programs');
-  }
-  
-  return chips.slice(0, 8); // Limit to 8 chips
+  const levelInt = typeof d["school_level"] === "number" ? (d["school_level"] as number) : null;
+  const levelLabel = levelInt != null ? SCHOOL_LEVEL_LABEL[levelInt] : null;
+  if (levelLabel) chips.push(`${levelLabel} School`);
+  if (d["charter"] === 1) chips.push("Charter School");
+  if (d["magnet"] === 1) chips.push("Magnet School");
+  if (d["title_i_eligible"] === 1) chips.push("Title I");
+  if (d["virtual"] === 1) chips.push("Virtual");
+  chips.push("Public School");
+  chips.push("College Prep");
+  chips.push("Athletics");
+  chips.push("Clubs & Activities");
+  return Array.from(new Set(chips)).slice(0, 8);
 }
 
-// Calculate total programs count
-function calculateProgramsCount(scorecardData: ScorecardSchool): number | null {
-  const assoc = scorecardData['latest.academics.program_available.assoc'] || 0;
-  const bachelors = scorecardData['latest.academics.program_available.bachelors'] || 0;
-  const masters = scorecardData['latest.academics.program_available.masters'] || 0;
-  const doctoral = scorecardData['latest.academics.program_available.doctoral'] || 0;
-  
-  const total = assoc + bachelors + masters + doctoral;
-  return total > 0 ? total : null;
-}
+/* ─────────────────────── AI description (Lovable AI) ─────────────────────── */
 
-// Generate about text from real data
-function generateAboutText(school: { name: string; city?: string; state?: string }, scorecardData: ScorecardSchool): string {
-  const location = [school.city || scorecardData['school.city'], school.state || scorecardData['school.state']]
-    .filter(Boolean)
-    .join(', ');
-  
-  const enrollment = scorecardData['latest.student.size'];
-  const acceptanceRate = scorecardData['latest.admissions.admission_rate.overall'];
-  const ownershipType = getOwnershipType(scorecardData['school.ownership']);
-  const carnegie = scorecardData['school.carnegie_basic'];
-  const graduationRate = scorecardData['latest.completion.rate_suppressed.overall'];
-  const studentFacultyRatio = scorecardData['latest.student.demographics.student_faculty_ratio'];
-  
-  const paragraphs: string[] = [];
-  
-  // First paragraph - basic info
-  let intro = `${school.name} is a ${ownershipType.toLowerCase()} institution`;
-  if (location) intro += ` located in ${location}`;
-  intro += '.';
-  
-  if (carnegie) {
-    intro += ` Classified as a ${carnegie}, the institution `;
-    if (enrollment) {
-      intro += `serves approximately ${enrollment.toLocaleString()} students.`;
-    } else {
-      intro += `offers a range of academic programs.`;
-    }
-  } else if (enrollment) {
-    intro += ` The institution serves approximately ${enrollment.toLocaleString()} students.`;
-  }
-  paragraphs.push(intro);
-  
-  // Second paragraph - admissions and academics
-  const academicDetails: string[] = [];
-  if (acceptanceRate !== null) {
-    academicDetails.push(`an acceptance rate of ${(acceptanceRate * 100).toFixed(1)}%`);
-  }
-  if (studentFacultyRatio) {
-    academicDetails.push(`a student-to-faculty ratio of ${studentFacultyRatio}:1`);
-  }
-  if (graduationRate !== null) {
-    academicDetails.push(`a graduation rate of ${(graduationRate * 100).toFixed(1)}%`);
-  }
-  
-  if (academicDetails.length > 0) {
-    let academicParagraph = `The university features ${academicDetails.join(', ')}.`;
-    paragraphs.push(academicParagraph);
-  }
-  
-  // Third paragraph - programs
-  const programsCount = calculateProgramsCount(scorecardData);
-  if (programsCount) {
-    paragraphs.push(`Students can choose from ${programsCount} academic programs across various fields of study, preparing them for successful careers in their chosen disciplines.`);
-  }
-  
-  return paragraphs.join('\n\n');
-}
+async function generateAiDescription(
+  apiKey: string,
+  schoolName: string,
+  type: "university" | "high_school",
+  facts: Record<string, unknown>,
+): Promise<string | null> {
+  const factLines = Object.entries(facts)
+    .filter(([, v]) => v != null && v !== "")
+    .map(([k, v]) => `- ${k}: ${v}`)
+    .join("\n");
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const prompt = `Write a concise, professional 2-paragraph description of ${schoolName} (a ${type === "university" ? "U.S. university" : "U.S. high school"}).
+
+ONLY use the facts below — do not fabricate rankings, history, or statistics that are not listed.
+If a fact is missing, omit it rather than inventing one. Keep tone informative and student-friendly.
+Each paragraph should be 2–3 sentences. No headers, no bullet points, no quotes, plain prose only.
+
+Facts:
+${factLines || "(no specific facts available — write a brief, accurate, generic description based only on the school name and type)"}`;
 
   try {
-    // Verify admin authorization
-    const authResult = await verifyAdminAuth(req);
-    if ('error' in authResult) {
-      return new Response(
-        JSON.stringify({ error: authResult.error }),
-        { status: authResult.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a careful editor writing factual school profile descriptions. Never fabricate statistics, rankings, founding years, or historical claims. Use only the facts provided.",
+          },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+    if (!resp.ok) {
+      console.error("AI gateway error:", resp.status, await resp.text());
+      return null;
     }
+    const json = await resp.json();
+    const content: string | undefined = json?.choices?.[0]?.message?.content;
+    return content?.trim() || null;
+  } catch (e) {
+    console.error("AI generation failed:", e);
+    return null;
+  }
+}
 
-    console.log(`Admin ${authResult.userId} triggered school enrichment`);
+/* ─────────────────────── Handler ─────────────────────── */
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const scorecardApiKey = Deno.env.get('COLLEGE_SCORECARD_API_KEY');
-    
-    if (!scorecardApiKey) {
-      console.error('COLLEGE_SCORECARD_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'Enrichment service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const scorecardKey = Deno.env.get("COLLEGE_SCORECARD_API_KEY");
+    const lovableAiKey = Deno.env.get("LOVABLE_API_KEY");
+    const supabase = createClient(supabaseUrl, serviceKey);
+
     const { schoolId, forceRefresh = false } = await req.json();
-
     if (!schoolId) {
-      return new Response(
-        JSON.stringify({ error: 'schoolId is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "schoolId required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    console.log(`Enriching school: ${schoolId}, forceRefresh: ${forceRefresh}`);
-
-    // Fetch school data
-    const { data: school, error: schoolError } = await supabase
-      .from('schools')
-      .select('*')
-      .eq('id', schoolId)
-      .single();
-
-    if (schoolError || !school) {
-      console.error('School not found:', schoolError);
-      return new Response(
-        JSON.stringify({ error: 'School not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const { data: school, error: schoolErr } = await supabase
+      .from("schools").select("*").eq("id", schoolId).single();
+    if (schoolErr || !school) {
+      return new Response(JSON.stringify({ error: "School not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Check if we already have a recent profile (skip if forceRefresh)
+    const currentYear = new Date().getFullYear();
+
+    // Skip if recently enriched and description is from this year
     if (!forceRefresh) {
-      const { data: existingProfile } = await supabase
-        .from('school_profiles')
-        .select('*')
-        .eq('school_id', schoolId)
-        .maybeSingle();
-
-      if (existingProfile?.enrichment_status === 'enriched') {
-        const lastEnrichment = existingProfile.source_retrieved_at 
-          ? new Date(existingProfile.source_retrieved_at) 
-          : null;
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        
-        if (lastEnrichment && lastEnrichment > thirtyDaysAgo) {
-          console.log('Profile recently enriched, skipping');
-          return new Response(
-            JSON.stringify({ profile: existingProfile, school, skipped: true }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-      }
-    }
-
-    // Update status to in_progress
-    await supabase
-      .from('school_profiles')
-      .upsert({
-        school_id: schoolId,
-        enrichment_status: 'in_progress',
-        last_enrichment_attempt: new Date().toISOString(),
-      }, { onConflict: 'school_id' });
-
-    // Only enrich US universities from College Scorecard
-    if (school.type === 'university' && school.country === 'US') {
-      try {
-        // Search for school in College Scorecard
-        const searchName = school.name.replace(/[^\w\s]/g, '').trim();
-        const searchUrl = `${SCORECARD_BASE_URL}?api_key=${scorecardApiKey}&school.name=${encodeURIComponent(searchName)}&fields=id,school.name,school.school_url,school.city,school.state,school.carnegie_size_setting,school.carnegie_basic,school.religious_affiliation,school.ownership,school.locale,latest.student.size,latest.admissions.admission_rate.overall,latest.student.grad_students,latest.academics.program_available.assoc,latest.academics.program_available.bachelors,latest.academics.program_available.masters,latest.academics.program_available.doctoral,latest.student.demographics.student_faculty_ratio,latest.cost.tuition.in_state,latest.cost.tuition.out_of_state,latest.completion.rate_suppressed.overall&per_page=5`;
-        
-        console.log(`Searching College Scorecard for: ${searchName}`);
-        
-        const response = await fetch(searchUrl);
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(`Scorecard API error: ${response.status}`);
-        }
-        
-        const results = data.results as ScorecardSchool[];
-        
-        if (results && results.length > 0) {
-          // Find best match (exact or closest name match)
-          let bestMatch = results[0];
-          for (const result of results) {
-            if (result['school.name'].toLowerCase() === school.name.toLowerCase()) {
-              bestMatch = result;
-              break;
-            }
-          }
-          
-          console.log(`Found match: ${bestMatch['school.name']} (ID: ${bestMatch.id})`);
-          
-          // Extract data
-          const enrollment = bestMatch['latest.student.size'];
-          const acceptanceRate = bestMatch['latest.admissions.admission_rate.overall'];
-          const studentFacultyRatio = bestMatch['latest.student.demographics.student_faculty_ratio'];
-          const tuitionInState = bestMatch['latest.cost.tuition.in_state'];
-          const tuitionOutOfState = bestMatch['latest.cost.tuition.out_of_state'];
-          const graduationRate = bestMatch['latest.completion.rate_suppressed.overall'];
-          const programsCount = calculateProgramsCount(bestMatch);
-          const chips = generateChipsFromPrograms(bestMatch);
-          const aboutText = generateAboutText(school, bestMatch);
-          
-          // Prepare website URL
-          let websiteUrl = bestMatch['school.school_url'];
-          if (websiteUrl && !websiteUrl.startsWith('http')) {
-            websiteUrl = 'https://' + websiteUrl;
-          }
-          
-          // Update profile with enriched data
-          const enrichedProfile = {
-            school_id: schoolId,
-            enrollment,
-            acceptance_rate: acceptanceRate !== null ? Math.round(acceptanceRate * 1000) / 10 : null, // Convert to percentage
-            student_faculty_ratio: studentFacultyRatio ? `${studentFacultyRatio}:1` : null,
-            tuition_in_state: tuitionInState,
-            tuition_out_of_state: tuitionOutOfState,
-            graduation_rate: graduationRate !== null ? Math.round(graduationRate * 1000) / 10 : null,
-            programs_count: programsCount,
-            chips,
-            website_url: websiteUrl,
-            logo_url: deriveLogoUrl(websiteUrl),
-            about_text: aboutText,
-            tagline: `Empowering students in ${school.city || 'their community'}`,
-            carnegie_classification: bestMatch['school.carnegie_basic'],
-            ownership_type: getOwnershipType(bestMatch['school.ownership']),
-            locale: getLocale(bestMatch['school.locale']),
-            religious_affiliation: bestMatch['school.religious_affiliation'],
-            scorecard_id: bestMatch.id,
-            source_name: 'College Scorecard',
-            source_url: 'https://collegescorecard.ed.gov/',
-            source_retrieved_at: new Date().toISOString(),
-            data_source: 'college_scorecard',
-            enrichment_status: 'enriched',
-            enrichment_error: null,
-            about_source: 'Generated from College Scorecard data',
-            about_source_url: `https://collegescorecard.ed.gov/school/?${bestMatch.id}`,
-            updated_at: new Date().toISOString(),
-          };
-          
-          const { data: updatedProfile, error: updateError } = await supabase
-            .from('school_profiles')
-            .upsert(enrichedProfile, { onConflict: 'school_id' })
-            .select()
-            .single();
-          
-          if (updateError) {
-            throw updateError;
-          }
-          
-          console.log('Profile enriched successfully');
-          
-          return new Response(
-            JSON.stringify({ profile: updatedProfile, school, enriched: true }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        } else {
-          console.log('No match found in College Scorecard');
-          // No match found - generate basic profile
-          throw new Error('No match found in College Scorecard');
-        }
-      } catch (enrichError) {
-        console.error('Enrichment error:', enrichError);
-        
-        // Update with error status but provide generated fallback
-        const fallbackProfile = {
-          school_id: schoolId,
-          enrichment_status: 'failed',
-          enrichment_error: enrichError instanceof Error ? enrichError.message : 'Unknown error',
-          last_enrichment_attempt: new Date().toISOString(),
-          // Provide generated content as fallback
-          tagline: `${school.type === 'university' ? 'Empowering minds' : 'Preparing students'} in ${school.city || 'their community'}`,
-          about_text: `${school.name} is an educational institution located in ${[school.city, school.state].filter(Boolean).join(', ') || 'the United States'}. The institution is dedicated to providing quality education and preparing students for success in their chosen fields.`,
-          chips: school.type === 'university' 
-            ? ['Higher Education', 'Academic Programs', 'Student Life']
-            : ['Academics', 'Athletics', 'Arts', 'Clubs'],
-          data_source: 'generated',
-          updated_at: new Date().toISOString(),
-        };
-        
-        const { data: fallback } = await supabase
-          .from('school_profiles')
-          .upsert(fallbackProfile, { onConflict: 'school_id' })
-          .select()
-          .single();
-        
+      const { data: existing } = await supabase
+        .from("school_profiles").select("*").eq("school_id", schoolId).maybeSingle();
+      if (
+        existing?.enrichment_status === "enriched" &&
+        existing.description_year === currentYear
+      ) {
         return new Response(
-          JSON.stringify({ profile: fallback, school, enriched: false, error: 'Enrichment failed, using generated content' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ profile: existing, school, skipped: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-    } else {
-      // For high schools or non-US schools, generate basic profile
-      console.log('School type/country not supported for College Scorecard enrichment');
-      
-      const generatedProfile = {
-        school_id: schoolId,
-        tagline: school.type === 'high_school' 
-          ? `Preparing students for success in ${school.city || 'their community'}`
-          : `Excellence in education in ${school.city || 'their community'}`,
-        about_text: school.type === 'high_school'
-          ? `${school.name} is a high school located in ${[school.city, school.state].filter(Boolean).join(', ') || 'the United States'}. The school is committed to providing a comprehensive education that prepares students for college, career, and life success. Students have opportunities to participate in academics, athletics, arts, and various extracurricular activities.`
-          : `${school.name} is an institution of higher education${school.city ? ` located in ${[school.city, school.state, school.country !== 'US' ? school.country : null].filter(Boolean).join(', ')}` : ''}. The institution offers academic programs designed to prepare students for successful careers in their chosen fields.`,
-        chips: school.type === 'high_school'
-          ? ['Academics', 'Athletics', 'Arts', 'College Prep', 'Clubs & Activities']
-          : ['Academic Programs', 'Research', 'Student Life', 'Global Community'],
-        data_source: 'generated',
-        enrichment_status: 'generated',
-        updated_at: new Date().toISOString(),
-      };
-      
-      const { data: generatedResult } = await supabase
-        .from('school_profiles')
-        .upsert(generatedProfile, { onConflict: 'school_id' })
-        .select()
-        .single();
-      
-      return new Response(
-        JSON.stringify({ profile: generatedResult, school, enriched: false }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
-  } catch (error: unknown) {
-    console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+
+    await supabase.from("school_profiles").upsert(
+      {
+        school_id: schoolId,
+        enrichment_status: "in_progress",
+        last_enrichment_attempt: new Date().toISOString(),
+      },
+      { onConflict: "school_id" },
+    );
+
+    let enriched: Record<string, unknown> = {
+      school_id: schoolId,
+      updated_at: new Date().toISOString(),
+      enrichment_status: "enriched",
+      enrichment_error: null,
+      description_year: currentYear,
+    };
+    let aiFacts: Record<string, unknown> = { location: [school.city, school.state].filter(Boolean).join(", ") };
+
+    /* ── Universities (US): College Scorecard + curated rank ── */
+    if (school.type === "university" && school.country === "US" && scorecardKey) {
+      try {
+        const searchName = school.name.replace(/[^\w\s&]/g, "").trim();
+        const fields = [
+          "id", "school.name", "school.school_url", "school.city", "school.state",
+          "school.carnegie_basic", "school.religious_affiliation", "school.ownership",
+          "school.locale", "latest.student.size",
+          "latest.admissions.admission_rate.overall",
+          "latest.academics.program_available.assoc",
+          "latest.academics.program_available.bachelors",
+          "latest.academics.program_available.masters",
+          "latest.academics.program_available.doctoral",
+          "latest.student.demographics.student_faculty_ratio",
+          "latest.cost.tuition.in_state", "latest.cost.tuition.out_of_state",
+          "latest.completion.rate_suppressed.overall",
+        ].join(",");
+        const url = `${SCORECARD_BASE}?api_key=${scorecardKey}&school.name=${encodeURIComponent(searchName)}&fields=${fields}&per_page=5`;
+        const r = await fetch(url);
+        const j = await r.json();
+        const results: Array<Record<string, unknown>> = j.results || [];
+        let match = results[0];
+        for (const x of results) {
+          if (String(x["school.name"]).toLowerCase() === school.name.toLowerCase()) {
+            match = x;
+            break;
+          }
+        }
+
+        if (match) {
+          const ar = match["latest.admissions.admission_rate.overall"] as number | null;
+          const gr = match["latest.completion.rate_suppressed.overall"] as number | null;
+          const sfr = match["latest.student.demographics.student_faculty_ratio"];
+          const programs =
+            ((match["latest.academics.program_available.assoc"] as number) || 0) +
+            ((match["latest.academics.program_available.bachelors"] as number) || 0) +
+            ((match["latest.academics.program_available.masters"] as number) || 0) +
+            ((match["latest.academics.program_available.doctoral"] as number) || 0);
+          let website = match["school.school_url"] as string | null;
+          if (website && !website.startsWith("http")) website = "https://" + website;
+
+          const nationalRank = lookupNationalRank(school.name);
+          const tier = computeSelectivityTier(ar, gr);
+
+          enriched = {
+            ...enriched,
+            enrollment: match["latest.student.size"],
+            acceptance_rate: ar != null ? Math.round(ar * 1000) / 10 : null,
+            graduation_rate: gr != null ? Math.round(gr * 1000) / 10 : null,
+            student_faculty_ratio: sfr ? `${sfr}:1` : null,
+            tuition_in_state: match["latest.cost.tuition.in_state"],
+            tuition_out_of_state: match["latest.cost.tuition.out_of_state"],
+            // Scorecard returns degree-level *availability* flags (0/1), not program counts.
+            // Sum of flags is at most 4 — meaningless to display as "programs offered".
+            programs_count: null,
+            chips: chipsFromScorecard(match),
+            website_url: website,
+            logo_url: deriveLogoFromWebsite(website) || deriveLogoFromName(school.name),
+            carnegie_classification:
+              typeof match["school.carnegie_basic"] === "string"
+                ? (match["school.carnegie_basic"] as string)
+                : null,
+            ownership_type: ownership(match["school.ownership"] as number),
+            locale: localeLabel(match["school.locale"] as number | null),
+            religious_affiliation: match["school.religious_affiliation"],
+            scorecard_id: match.id,
+            national_ranking: nationalRank,
+            selectivity_tier: tier,
+            ranking: nationalRank ? `#${nationalRank} National` : tier,
+            ranking_source: nationalRank ? "US News (curated)" : tier ? "Computed from acceptance & graduation rate" : null,
+            tagline: nationalRank ? `Ranked among the nation's top universities` : `A center for learning in ${school.city || "the community"}`,
+            source_name: "College Scorecard",
+            source_url: "https://collegescorecard.ed.gov/",
+            source_retrieved_at: new Date().toISOString(),
+            data_source: "college_scorecard",
+            about_source: "Generated by AI from College Scorecard data",
+            about_source_url: `https://collegescorecard.ed.gov/school/?${match.id}`,
+          };
+
+          aiFacts = {
+            location: [school.city, school.state, "USA"].filter(Boolean).join(", "),
+            ownership: enriched.ownership_type,
+            // Only include Carnegie if it's a human-readable string
+            carnegie_classification:
+              typeof enriched.carnegie_classification === "string" &&
+              isNaN(Number(enriched.carnegie_classification))
+                ? enriched.carnegie_classification
+                : null,
+            enrollment: enriched.enrollment,
+            acceptance_rate_percent: enriched.acceptance_rate,
+            graduation_rate_percent: enriched.graduation_rate,
+            student_faculty_ratio: enriched.student_faculty_ratio,
+            national_ranking: nationalRank,
+            selectivity: tier,
+          };
+        }
+      } catch (e) {
+        console.error("Scorecard error:", e);
+      }
+    }
+
+    /* ── High Schools (US): Urban Institute / NCES CCD directory ── */
+    if (school.type === "high_school" && school.country === "US") {
+      try {
+        const year = 2022; // Most recent year reliably available across all states
+        const fips = school.state ? STATE_TO_FIPS[school.state] : null;
+        const stateParam = fips ? `&fips=${fips}` : "";
+        const url = `${URBAN_HS_BASE}/${year}/?school_name=${encodeURIComponent(school.name)}${stateParam}&page_size=25`;
+        const r = await fetch(url);
+        if (r.ok) {
+          const j = await r.json();
+          const results: Array<Record<string, unknown>> = j.results || [];
+          // Filter to high schools only (school_level 3 = High, 5 = Combined K-12)
+          const highSchools = results.filter(
+            (x) => x.school_level === 3 || x.school_level === 5,
+          );
+          const candidates = highSchools.length > 0 ? highSchools : results;
+          const lower = school.name.toLowerCase();
+          const cityLower = (school.city || "").toLowerCase();
+          // Prefer exact name match in same city
+          const match =
+            candidates.find(
+              (x) =>
+                String(x.school_name || "").toLowerCase() === lower &&
+                String(x.city_location || "").toLowerCase() === cityLower,
+            ) ||
+            candidates.find(
+              (x) => String(x.school_name || "").toLowerCase() === lower,
+            ) ||
+            candidates[0];
+
+          if (match) {
+            const enrollment = match.enrollment as number | null;
+            const teachers = match.teachers_fte as number | null;
+            const ratio =
+              teachers && enrollment && teachers > 0
+                ? `${Math.round(enrollment / teachers)}:1`
+                : null;
+            const levelInt = typeof match.school_level === "number"
+              ? (match.school_level as number)
+              : null;
+            const demographics = {
+              free_or_reduced_lunch: match.free_or_reduced_price_lunch ?? null,
+              total_teachers: teachers,
+              lowest_grade: match.lowest_grade_offered ?? null,
+              highest_grade: match.highest_grade_offered ?? null,
+            };
+
+            enriched = {
+              ...enriched,
+              enrollment: enrollment && enrollment > 0 ? enrollment : null,
+              student_faculty_ratio: ratio,
+              chips: chipsFromNces(match),
+              demographics,
+              school_subtype: levelInt != null ? (SCHOOL_LEVEL_LABEL[levelInt] || null) : null,
+              locale: localeLabel(match.urban_centric_locale as number | null) || null,
+              nces_id: String(match.ncessch || ""),
+              ownership_type:
+                match.charter === 1
+                  ? "Public Charter"
+                  : match.magnet === 1
+                    ? "Public Magnet"
+                    : "Public",
+              logo_url: deriveLogoFromName(school.name),
+              source_name: "NCES Common Core of Data (via Urban Institute)",
+              source_url: "https://educationdata.urban.org/",
+              source_retrieved_at: new Date().toISOString(),
+              data_source: "nces_ccd",
+              about_source: "Generated by AI from NCES data",
+              about_source_url: "https://nces.ed.gov/ccd/",
+              tagline: `Serving students in ${school.city || school.state || "the community"}`,
+            };
+
+            aiFacts = {
+              location: [school.city, school.state, "USA"].filter(Boolean).join(", "),
+              type: "Public high school",
+              subtype: enriched.school_subtype
+                ? `${enriched.school_subtype} school`
+                : null,
+              ownership: enriched.ownership_type,
+              enrollment: enriched.enrollment,
+              student_teacher_ratio: enriched.student_faculty_ratio,
+              locale: enriched.locale,
+              grade_range:
+                demographics.lowest_grade != null && demographics.highest_grade != null
+                  ? `Grades ${demographics.lowest_grade}-${demographics.highest_grade}`
+                  : null,
+            };
+          }
+        } else {
+          console.warn("NCES API non-OK:", r.status);
+        }
+      } catch (e) {
+        console.error("NCES error:", e);
+      }
+    }
+
+    // International / unmatched: minimal but still gets a logo + AI description
+    if (!enriched.logo_url) {
+      enriched.logo_url = deriveLogoFromName(school.name);
+    }
+    if (!enriched.chips) {
+      enriched.chips =
+        school.type === "university"
+          ? ["Higher Education", "Academic Programs"]
+          : ["Academics", "Athletics", "Clubs & Activities"];
+    }
+    if (!enriched.tagline) {
+      enriched.tagline =
+        school.type === "university"
+          ? "An institution of higher learning"
+          : "Building futures together";
+    }
+
+    // AI-polished description
+    if (lovableAiKey) {
+      const aiText = await generateAiDescription(
+        lovableAiKey,
+        school.name,
+        school.type as "university" | "high_school",
+        aiFacts,
+      );
+      if (aiText) enriched.about_text = aiText;
+    }
+    // Fallback if AI failed
+    if (!enriched.about_text) {
+      const loc = [school.city, school.state].filter(Boolean).join(", ");
+      enriched.about_text =
+        school.type === "university"
+          ? `${school.name} is an institution of higher education${loc ? ` in ${loc}` : ""}. Detailed profile information is currently being compiled.`
+          : `${school.name} is a school${loc ? ` in ${loc}` : ""}. Detailed profile information is currently being compiled.`;
+    }
+
+    const { data: saved, error: saveErr } = await supabase
+      .from("school_profiles")
+      .upsert(enriched, { onConflict: "school_id" })
+      .select()
+      .single();
+    if (saveErr) throw saveErr;
+
     return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ profile: saved, school, enriched: true }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (e) {
+    console.error("enrich error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
