@@ -314,20 +314,7 @@ const Interests = () => {
             Continue{selected.length > 0 ? ` (${selected.length})` : ""}
           </GradientButton>
 
-          <button
-            onClick={handleSkip}
-            className="w-full py-3 text-muted-foreground hover:text-foreground transition-colors text-sm"
-          >
-            Skip for now
-          </button>
-
-          <button
-            onClick={handleBack}
-            className="w-full flex items-center justify-center gap-1 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </button>
+          <BackSkipRow onBack={handleBack} onSkip={handleSkip} />
         </div>
 
         <div className="flex justify-center gap-2 pt-4 animate-fade-in">
