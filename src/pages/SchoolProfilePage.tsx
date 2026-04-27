@@ -38,6 +38,7 @@ interface SchoolProfile {
   tagline: string | null;
   about_text: string | null;
   website_url: string | null;
+  logo_url: string | null;
   stats: Record<string, number | string | null>;
   chips: string[];
   founded_year: number | null;
@@ -166,6 +167,11 @@ const SchoolProfilePage = () => {
   const [profile, setProfile] = useState<SchoolProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [profile?.logo_url]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -211,8 +217,9 @@ const SchoolProfilePage = () => {
     .filter(Boolean)
     .join(", ");
 
-  // Define stats based on school type - using real enriched fields
-  const statsConfig = isUniversity
+  // Define stats based on school type — only include cards that actually have a value,
+  // so partially-enriched schools don't show a wall of "N/A".
+  const allStats = isUniversity
     ? [
         { icon: Users, label: "Enrollment", value: formatNumber(profile?.enrollment ?? null) },
         { icon: TrendingUp, label: "Acceptance Rate", value: formatPercentage(profile?.acceptance_rate ?? null) },
@@ -229,6 +236,9 @@ const SchoolProfilePage = () => {
         { icon: Percent, label: "Graduation Rate", value: formatPercentage(profile?.graduation_rate ?? null) },
         { icon: Building2, label: "Student:Teacher", value: profile?.student_faculty_ratio ?? null },
       ];
+  const statsConfig = allStats.filter(
+    (s) => s.value !== null && s.value !== undefined && s.value !== "",
+  );
 
   return (
     <div className="min-h-screen bg-background/80 pb-24 relative">
@@ -269,12 +279,28 @@ const SchoolProfilePage = () => {
             <div className="gradient-border">
               <div className="bg-card/90 backdrop-blur-sm rounded-xl p-6">
                 <div className="flex items-start gap-4 mb-4">
-                  <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
-                    school?.is_notable 
-                      ? "bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30" 
-                      : "bg-secondary"
-                  }`}>
-                    <SchoolIcon className={`w-8 h-8 ${school?.is_notable ? "text-primary" : "text-muted-foreground"}`} />
+                  <div
+                    className={`w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0 ${
+                      school?.is_notable
+                        ? "bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30"
+                        : "bg-secondary"
+                    }`}
+                  >
+                    {profile?.logo_url && !logoFailed ? (
+                      <img
+                        src={profile.logo_url}
+                        alt={`${school?.name ?? "School"} logo`}
+                        className="w-full h-full object-contain p-1.5"
+                        loading="lazy"
+                        onError={() => setLogoFailed(true)}
+                      />
+                    ) : (
+                      <SchoolIcon
+                        className={`w-8 h-8 ${
+                          school?.is_notable ? "text-primary" : "text-muted-foreground"
+                        }`}
+                      />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h2 className="text-xl font-bold text-foreground mb-1 leading-tight">
@@ -314,17 +340,19 @@ const SchoolProfilePage = () => {
               </div>
             </div>
 
-            {/* Key Statistics */}
-            <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
-                Key Statistics
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {statsConfig.map(({ icon, label, value, subValue }) => (
-                  <StatCard key={label} icon={icon} label={label} value={value ?? null} subValue={subValue} />
-                ))}
+            {/* Key Statistics — hidden entirely when no values are available */}
+            {statsConfig.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+                  Key Statistics
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {statsConfig.map(({ icon, label, value, subValue }) => (
+                    <StatCard key={label} icon={icon} label={label} value={value ?? null} subValue={subValue} />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Schools & Departments / Programs */}
             {profile?.chips && profile.chips.length > 0 && (
