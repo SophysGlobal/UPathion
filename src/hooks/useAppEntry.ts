@@ -49,23 +49,19 @@ export const useAppEntry = () => {
   }, []);
 
   const shouldShowWelcome = useCallback((): boolean => {
-    return !hasSignedInOnDevice() || wasLastSessionAdmin();
-  }, [hasSignedInOnDevice, wasLastSessionAdmin]);
+    // Welcome phase has been removed from the entry flow per product spec —
+    // the splash now transitions directly into the sign-in screen.
+    return false;
+  }, []);
 
   // Called when splash phase ends (even if welcome follows)
   const onSplashComplete = useCallback(() => {
     markSplashShownThisSession();
-    // If welcome is handled by the unified component, just mark splash done
-    // The unified SplashScreen handles both phases
     setState(prev => {
-      if (prev.showWelcome || prev.isReady) return prev; // already transitioned
-      const needsWelcome = shouldShowWelcome();
-      if (needsWelcome) {
-        return { ...prev, showSplash: false, showWelcome: true, isReady: false };
-      }
-      return { ...prev, showSplash: false, showWelcome: false, isReady: true };
+      if (prev.isReady) return prev;
+      return { showSplash: false, showWelcome: false, isReady: true };
     });
-  }, [shouldShowWelcome]);
+  }, []);
 
   const onWelcomeComplete = useCallback(() => {
     markSplashShownThisSession();
