@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import AppHeader from "@/components/AppHeader";
@@ -21,7 +21,35 @@ const Messages = () => {
   const [activeFilter, setActiveFilter] = useState<ChatFilter>('all');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
-  const conversations: SeedConversation[] = USE_SEED_DATA ? seedConversations : [];
+  // Local copy so context-menu actions (pin / mute / read / delete) reflect
+  // immediately without a backend round-trip.
+  const [conversations, setConversations] = useState<SeedConversation[]>(
+    () => (USE_SEED_DATA ? seedConversations.map((c) => ({ ...c })) : []),
+  );
+
+  const togglePin = useCallback((id: string) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, isPinned: !c.isPinned } : c)),
+    );
+  }, []);
+  const toggleMute = useCallback((id: string) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, isMuted: !c.isMuted } : c)),
+    );
+  }, []);
+  const toggleRead = useCallback((id: string) => {
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, unreadCount: c.unreadCount > 0 ? 0 : 1 }
+          : c,
+      ),
+    );
+  }, []);
+  const deleteConversation = useCallback((id: string) => {
+    setConversations((prev) => prev.filter((c) => c.id !== id));
+    setSelectedConversationId((sel) => (sel === id ? null : sel));
+  }, []);
 
   const filteredConversations = useMemo(() => {
     let filtered = conversations;
@@ -33,7 +61,16 @@ const Messages = () => {
         c.participantName.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q)
       );
     }
-    return filtered;
+    // Sort: pinned > unread > read. Stable within each tier.
+    return [...filtered].sort((a, b) => {
+      const aP = a.isPinned ? 1 : 0;
+      const bP = b.isPinned ? 1 : 0;
+      if (aP !== bP) return bP - aP;
+      const aU = a.unreadCount > 0 ? 1 : 0;
+      const bU = b.unreadCount > 0 ? 1 : 0;
+      if (aU !== bU) return bU - aU;
+      return 0;
+    });
   }, [conversations, activeFilter, searchQuery]);
 
   const filters: { key: ChatFilter; label: string }[] = [
@@ -102,7 +139,15 @@ const Messages = () => {
               <Button onClick={handleNewMessage} size="sm"><PenSquare className="w-4 h-4 mr-2" />New Message</Button>
             </div>
           ) : (
-            <ChatList conversations={filteredConversations} selectedId={selectedConversationId} onSelect={handleSelectConversation} />
+            <ChatList
+              conversations={filteredConversations}
+              selectedId={selectedConversationId}
+              onSelect={handleSelectConversation}
+              onTogglePin={togglePin}
+              onToggleMute={toggleMute}
+              onToggleRead={toggleRead}
+              onDelete={deleteConversation}
+            />
           )}
         </main>
         <PremiumChatFAB />
@@ -148,7 +193,15 @@ const Messages = () => {
                 <p className="text-sm text-muted-foreground">No conversations found</p>
               </div>
             ) : (
-              <ChatList conversations={filteredConversations} selectedId={selectedConversationId} onSelect={handleSelectConversation} />
+              <ChatList
+                conversations={filteredConversations}
+                selectedId={selectedConversationId}
+                onSelect={handleSelectConversation}
+                onTogglePin={togglePin}
+                onToggleMute={toggleMute}
+                onToggleRead={toggleRead}
+                onDelete={deleteConversation}
+              />
             )}
           </div>
         </div>

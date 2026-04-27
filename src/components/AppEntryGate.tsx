@@ -47,28 +47,35 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
 
   const showOverlay = showSplash || showWelcome || fadeOut;
 
+  // Persistent logo is always mounted to avoid remount-flicker. We just fade
+  // its opacity in once the splash finishes — at exactly the same instant the
+  // splash overlay fades out — so the handoff is invisible.
+  const persistentVisible = isReady && !fadeOut;
+
   return (
     <>
       {showOverlay && (
         <div
-          className={`fixed inset-0 z-[99] transition-opacity duration-400 ${
+          className={`fixed inset-0 z-[99] transition-opacity duration-300 ${
             fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         />
       )}
 
       {(showSplash || showWelcome) && !fadeOut && (
-        <SplashScreen
-          onComplete={handleComplete}
-        />
+        <SplashScreen onComplete={handleComplete} />
       )}
 
-      {isReady && (
-        <>
-          <PersistentLogoLayer />
-          {children}
-        </>
-      )}
+      <div
+        className={`transition-opacity duration-300 ${
+          persistentVisible ? 'opacity-100' : 'opacity-0'
+        }`}
+        aria-hidden={!persistentVisible}
+      >
+        <PersistentLogoLayer />
+      </div>
+
+      {isReady && children}
     </>
   );
 };

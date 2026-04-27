@@ -26,7 +26,7 @@ const PersistentLogoLayer = memo(() => {
     <div
       className={cn(
         "pointer-events-none fixed z-50",
-        isCentered ? "top-4 left-1/2 -translate-x-1/2" : "top-3 left-5",
+        isCentered ? "top-6 left-1/2 -translate-x-1/2" : "top-3 left-5",
       )}
       aria-hidden={false}
     >

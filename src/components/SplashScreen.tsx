@@ -62,12 +62,13 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   const textReveal = t > 500 ? easeOut((t - 500) / 800) : 0;
 
   // Phase 2: migrate from screen-center to final top-center position.
-  // PersistentLogoLayer renders the logo at top-4 (≈16px) horizontally
-  // centered. We drive a translateY from screen-center to ~16px from top.
-  const migrate = t > 1500 ? easeOut((t - 1500) / 800) : 0;
-  // Distance from viewport center to top-4 position:
+  // PersistentLogoLayer renders the logo at top-6 (24px) horizontally
+  // centered. We drive a translateY from screen-center to that point.
+  // A longer, gentler curve removes any feeling of "snapping".
+  const migrate = t > 1400 ? easeOut((t - 1400) / 900) : 0;
   const centerY = typeof window !== 'undefined' ? window.innerHeight / 2 : 400;
-  const finalCenterOffset = 16 + 24; // top-4 (16px) + half logo height (~24px)
+  // top-6 (24px) + half final logo height (24px) = 48px from top to logo center
+  const finalCenterOffset = 24 + 24;
   const shiftY = -(centerY - finalCenterOffset) * migrate;
 
   // Logo is 48px in PersistentLogoLayer; splash starts a bit larger.
