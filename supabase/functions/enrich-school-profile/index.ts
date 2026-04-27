@@ -100,16 +100,18 @@ function chipsFromScorecard(d: Record<string, unknown>): string[] {
 
 function chipsFromNces(d: Record<string, unknown>): string[] {
   const chips: string[] = [];
-  const level = d["school_level"] as string | null;
-  if (level) chips.push(level.replace(/^./, (c) => c.toUpperCase()));
+  const levelInt = typeof d["school_level"] === "number" ? (d["school_level"] as number) : null;
+  const levelLabel = levelInt != null ? SCHOOL_LEVEL_LABEL[levelInt] : null;
+  if (levelLabel) chips.push(`${levelLabel} School`);
   if (d["charter"] === 1) chips.push("Charter School");
   if (d["magnet"] === 1) chips.push("Magnet School");
   if (d["title_i_eligible"] === 1) chips.push("Title I");
+  if (d["virtual"] === 1) chips.push("Virtual");
   chips.push("Public School");
   chips.push("College Prep");
   chips.push("Athletics");
   chips.push("Clubs & Activities");
-  return chips.slice(0, 8);
+  return Array.from(new Set(chips)).slice(0, 8);
 }
 
 /* ─────────────────────── AI description (Lovable AI) ─────────────────────── */
@@ -331,30 +333,48 @@ serve(async (req) => {
     /* ── High Schools (US): Urban Institute / NCES CCD directory ── */
     if (school.type === "high_school" && school.country === "US") {
       try {
-        // The Urban Institute API exposes years; use most recent commonly available
-        const year = 2022;
-        // Search by name + state
-        const stateParam = school.state ? `&fips=${encodeURIComponent(school.state)}` : "";
-        const url = `${URBAN_HS_BASE}/${year}/?school_name=${encodeURIComponent(school.name)}${stateParam}&page_size=5`;
+        const year = 2022; // Most recent year reliably available across all states
+        const fips = school.state ? STATE_TO_FIPS[school.state] : null;
+        const stateParam = fips ? `&fips=${fips}` : "";
+        const url = `${URBAN_HS_BASE}/${year}/?school_name=${encodeURIComponent(school.name)}${stateParam}&page_size=25`;
         const r = await fetch(url);
         if (r.ok) {
           const j = await r.json();
           const results: Array<Record<string, unknown>> = j.results || [];
-          // Match by name (case-insensitive contains)
+          // Filter to high schools only (school_level 3 = High, 5 = Combined K-12)
+          const highSchools = results.filter(
+            (x) => x.school_level === 3 || x.school_level === 5,
+          );
+          const candidates = highSchools.length > 0 ? highSchools : results;
           const lower = school.name.toLowerCase();
+          const cityLower = (school.city || "").toLowerCase();
+          // Prefer exact name match in same city
           const match =
-            results.find(
+            candidates.find(
+              (x) =>
+                String(x.school_name || "").toLowerCase() === lower &&
+                String(x.city_location || "").toLowerCase() === cityLower,
+            ) ||
+            candidates.find(
               (x) => String(x.school_name || "").toLowerCase() === lower,
-            ) || results[0];
+            ) ||
+            candidates[0];
 
           if (match) {
             const enrollment = match.enrollment as number | null;
-            const ratio = match.teachers_fte && enrollment
-              ? `${Math.round(enrollment / (match.teachers_fte as number))}:1`
+            const teachers = match.teachers_fte as number | null;
+            const ratio =
+              teachers && enrollment && teachers > 0
+                ? `${Math.round(enrollment / teachers)}:1`
+                : null;
+            const levelInt = typeof match.school_level === "number"
+              ? (match.school_level as number)
               : null;
             const demographics = {
               free_or_reduced_lunch: match.free_or_reduced_price_lunch ?? null,
-              total_teachers: match.teachers_fte ?? null,
+              total_teachers: teachers,
+              lowest_grade: match.lowest_grade_offered ?? null,
+              highest_grade: match.highest_grade_offered ?? null,
             };
 
             enriched = {
@@ -363,7 +383,7 @@ serve(async (req) => {
               student_faculty_ratio: ratio,
               chips: chipsFromNces(match),
               demographics,
-              school_subtype: (match.school_level as string) || null,
+              school_subtype: levelInt != null ? (SCHOOL_LEVEL_LABEL[levelInt] || null) : null,
               locale: localeLabel(match.urban_centric_locale as number | null) || null,
               nces_id: String(match.ncessch || ""),
               ownership_type:
@@ -385,11 +405,17 @@ serve(async (req) => {
             aiFacts = {
               location: [school.city, school.state, "USA"].filter(Boolean).join(", "),
               type: "Public high school",
-              subtype: enriched.school_subtype,
+              subtype: enriched.school_subtype
+                ? `${enriched.school_subtype} school`
+                : null,
               ownership: enriched.ownership_type,
               enrollment: enriched.enrollment,
               student_teacher_ratio: enriched.student_faculty_ratio,
               locale: enriched.locale,
+              grade_range:
+                demographics.lowest_grade != null && demographics.highest_grade != null
+                  ? `Grades ${demographics.lowest_grade}-${demographics.highest_grade}`
+                  : null,
             };
           }
         } else {
