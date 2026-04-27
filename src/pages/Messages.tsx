@@ -43,6 +43,7 @@ const adaptConversation = (
     participantNames: isGroup
       ? others.map((p) => p.profile?.display_name || "Unknown")
       : undefined,
+    participantRole: "Student",
     participantSchool: primary?.profile?.school_name || "",
     participantBadge: primary?.profile?.grade_or_year || undefined,
     lastMessage: last?.content || "No messages yet",
