@@ -84,86 +84,61 @@ const SchoolConfirm = () => {
           <p className="text-muted-foreground">Confirm your details</p>
         </div>
 
-        <div className="gradient-border animate-fade-in">
-          <div className="bg-card rounded-lg p-4 space-y-2.5">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full gradient-bg flex items-center justify-center flex-shrink-0">
-                {data.schoolType === 'college' ? (
-                  <GraduationCap className="w-4 h-4 text-primary-foreground" />
-                ) : (
-                  <School className="w-4 h-4 text-primary-foreground" />
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">School</p>
-                <p className="text-sm font-semibold text-foreground">{data.schoolName}</p>
-              </div>
-            </div>
-            
-            <div className="h-px bg-border" />
-            
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                  {data.schoolType === 'college' ? 'Year' : 'Grade'}
-                </p>
-                <p className="text-sm font-semibold text-foreground">{data.gradeOrYear}</p>
-              </div>
-            </div>
+        <div className="space-y-3 animate-fade-in">
+          <DetailCard
+            icon={
+              data.schoolType === 'college' ? (
+                <GraduationCap className="w-4 h-4 text-primary-foreground" />
+              ) : (
+                <School className="w-4 h-4 text-primary-foreground" />
+              )
+            }
+            iconBg="gradient-bg"
+            label="School"
+            value={data.schoolName || '—'}
+          />
 
-            {data.interests && data.interests.length > 0 && (
-              <>
-                <div className="h-px bg-border" />
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="w-4 h-4 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                      {data.schoolType === 'college' ? 'Major(s)' : 'Intended Major(s)'}
-                    </p>
-                    <p className="text-sm font-semibold text-foreground">{data.interests.join(', ')}</p>
-                  </div>
-                </div>
-              </>
-            )}
+          <DetailCard
+            icon={<Calendar className="w-4 h-4 text-primary" />}
+            iconBg="bg-secondary"
+            label={data.schoolType === 'college' ? 'Year' : 'Grade'}
+            value={data.gradeOrYear || '—'}
+          />
 
-            {data.extracurriculars && data.extracurriculars.length > 0 && (
-              <>
-                <div className="h-px bg-border" />
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <Activity className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Extracurriculars</p>
-                    <p className="text-sm font-semibold text-foreground">{data.extracurriculars.slice(0, 3).join(', ')}{data.extracurriculars.length > 3 ? ` +${data.extracurriculars.length - 3} more` : ''}</p>
-                  </div>
-                </div>
-              </>
-            )}
+          {data.interests && data.interests.length > 0 && (
+            <DetailCard
+              icon={<BookOpen className="w-4 h-4 text-accent" />}
+              iconBg="bg-secondary"
+              label={data.schoolType === 'college' ? 'Major(s)' : 'Intended Major(s)'}
+              value={data.interests.join(', ')}
+            />
+          )}
 
-            {data.aspirationalSchool && (
-              <>
-                <div className="h-px bg-border" />
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Dream School</p>
-                    <p className="text-sm font-semibold text-foreground">{data.aspirationalSchool}</p>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          {data.extracurriculars && data.extracurriculars.length > 0 && (
+            <DetailCard
+              icon={<Activity className="w-4 h-4 text-primary" />}
+              iconBg="bg-secondary"
+              label="Extracurriculars"
+              value={
+                data.extracurriculars.slice(0, 3).join(', ') +
+                (data.extracurriculars.length > 3
+                  ? ` +${data.extracurriculars.length - 3} more`
+                  : '')
+              }
+            />
+          )}
+
+          {data.aspirationalSchool && (
+            <DetailCard
+              icon={<Sparkles className="w-4 h-4 text-primary" />}
+              iconBg="bg-secondary"
+              label="Dream School"
+              value={data.aspirationalSchool}
+            />
+          )}
         </div>
 
-        <div className="flex gap-4 animate-fade-in mt-4">
+        <div className="flex gap-3 animate-fade-in mt-5">
           <GradientButton 
             variant="default"
             className="flex-1"
@@ -196,5 +171,26 @@ const SchoolConfirm = () => {
     </OnboardingLayout>
   );
 };
+
+interface DetailCardProps {
+  icon: React.ReactNode;
+  iconBg: string;
+  label: string;
+  value: string;
+}
+
+const DetailCard = ({ icon, iconBg, label, value }: DetailCardProps) => (
+  <div className="gradient-border">
+    <div className="bg-card rounded-lg px-4 py-3 flex items-center gap-3">
+      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-semibold text-foreground truncate">{value}</p>
+      </div>
+    </div>
+  </div>
+);
 
 export default SchoolConfirm;

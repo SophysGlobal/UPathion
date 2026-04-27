@@ -9,12 +9,12 @@ interface SplashScreenProps {
  * Splash screen — single RAF timeline, zero remounts.
  *
  * Timeline (total ~2300ms):
- *   0–600ms     logo fades + scales in (centered)
- *   500–1300ms  "UPathion" wordmark clip-reveals
- *   1500–2300ms logo+wordmark migrate to final top-center position
- *               (matches PersistentLogoLayer's centered placement so the
- *                handoff is invisible)
- *   2300ms      complete → fade overlay + mount persistent logo
+ *   0–850ms      logo fades + scales in (centered)
+ *   700–1700ms   "UPathion" wordmark clip-reveals
+ *   1900–3200ms  logo+wordmark migrate to final top-center position
+ *                (matches PersistentLogoLayer's centered placement so the
+ *                 handoff is invisible)
+ *   3200ms       complete → fade overlay + mount persistent logo
  *
  * The persistent top logo only appears AFTER this completes, so there is
  * never a duplicate logo on screen.
@@ -26,7 +26,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   completeRef.current = onComplete;
   const doneRef = useRef(false);
 
-  const TOTAL = 2300;
+  const TOTAL = 3200;
 
   const tick = useCallback((now: number) => {
     if (doneRef.current) return;
@@ -53,22 +53,27 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
     const c = Math.min(1, Math.max(0, v));
     return 1 - Math.pow(1 - c, 3);
   };
+  // Smoother, gentler curve for the migration phase (ease-in-out cubic).
+  const easeInOut = (v: number) => {
+    const c = Math.min(1, Math.max(0, v));
+    return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
+  };
 
   const t = Math.max(0, elapsed);
   const visible = elapsed >= 0;
 
-  // Phase 1: logo + wordmark intro
-  const logoFade = easeOut(t / 600);
-  const textReveal = t > 500 ? easeOut((t - 500) / 800) : 0;
+  // Phase 1: logo + wordmark intro (slightly slower for a premium feel).
+  const logoFade = easeOut(t / 850);
+  const textReveal = t > 700 ? easeOut((t - 700) / 1000) : 0;
 
   // Phase 2: migrate from screen-center to final top-center position.
-  // PersistentLogoLayer renders the logo at top-6 (24px) horizontally
+  // PersistentLogoLayer renders the logo at top-16 (64px) horizontally
   // centered. We drive a translateY from screen-center to that point.
-  // A longer, gentler curve removes any feeling of "snapping".
-  const migrate = t > 1400 ? easeOut((t - 1400) / 900) : 0;
+  // Longer, gentler ease-in-out removes any feeling of "snapping".
+  const migrate = t > 1900 ? easeInOut((t - 1900) / 1300) : 0;
   const centerY = typeof window !== 'undefined' ? window.innerHeight / 2 : 400;
-  // top-6 (24px) + half final logo height (24px) = 48px from top to logo center
-  const finalCenterOffset = 24 + 24;
+  // top-16 (64px) + half final logo height (24px) = 88px from top to logo center
+  const finalCenterOffset = 64 + 24;
   const shiftY = -(centerY - finalCenterOffset) * migrate;
 
   // Logo is 48px in PersistentLogoLayer; splash starts a bit larger.

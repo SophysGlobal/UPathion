@@ -144,7 +144,7 @@ const SignIn = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       
-      <div className="w-full max-w-md space-y-8 relative z-10 pt-20">
+      <div className="w-full max-w-md space-y-8 relative z-10 pt-32">
 
         {/* Welcome text — adapts to new vs returning users */}
         <div className="text-center space-y-2 animate-fade-in">

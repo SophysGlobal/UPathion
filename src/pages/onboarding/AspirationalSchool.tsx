@@ -4,7 +4,7 @@ import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import MultiSelectSchools from "@/components/MultiSelectSchools";
-import { ChevronLeft } from "lucide-react";
+import BackSkipRow from "@/components/onboarding/BackSkipRow";
 
 const AspirationalSchool = () => {
   const navigate = useNavigate();
@@ -32,11 +32,13 @@ const AspirationalSchool = () => {
 
       <div className="space-y-3 animate-fade-in pt-2">
         <GradientButton variant="filled" className="w-full" onClick={handleContinue} disabled={selectedSchools.length === 0}>Continue</GradientButton>
-        <button onClick={handleSkip} className="w-full py-3 text-muted-foreground hover:text-foreground transition-colors text-sm">Skip for now</button>
-        <button onClick={() => { updateData({ aspirationalSchool: selectedSchools.join(', ') }); navigate("/onboarding/school"); }}
-          className="w-full flex items-center justify-center gap-1 py-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
-          <ChevronLeft className="w-4 h-4" /> Back
-        </button>
+        <BackSkipRow
+          onBack={() => {
+            updateData({ aspirationalSchool: selectedSchools.join(', ') });
+            navigate("/onboarding/school");
+          }}
+          onSkip={handleSkip}
+        />
       </div>
 
       <div className="flex justify-center gap-2 pt-4 animate-fade-in">
