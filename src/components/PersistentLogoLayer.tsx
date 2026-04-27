@@ -155,6 +155,53 @@ const PersistentLogoLayer = memo(
     // BUT only once we're fully docked — never mid-transition.
     if (!showsOnRoute && migrate >= 1) return null;
 
+    // Once fully docked on auth/onboarding routes, switch from `fixed` to
+    // `absolute` so the logo becomes part of the document flow and scrolls
+    // away with the page content (instead of pinning to the viewport).
+    // App-header routes keep the logo fixed (it lives in the sticky header
+    // area at the top-left).
+    const fullyDocked = migrate >= 1;
+    const useAbsolute = fullyDocked && dockedCentered;
+
+    if (useAbsolute) {
+      return (
+        <div
+          className="pointer-events-none absolute left-1/2 z-50"
+          style={{
+            top: 64,
+            transform: `translate(-50%, 0) translateZ(0)`,
+          }}
+          aria-hidden={false}
+        >
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState({}, "", "/");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }}
+            className={cn(
+              "pointer-events-auto flex items-center gap-3 hover:opacity-80 transition-opacity",
+            )}
+          >
+            <img
+              src={upathionLogo}
+              alt="UPathion Logo"
+              loading="eager"
+              decoding="sync"
+              className="object-contain"
+              style={{ width: endSize, height: endSize }}
+            />
+            {showWordmarkDocked && (
+              <span className="text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block" style={{ transform: `scale(${1 - 0.25})`, transformOrigin: "left center" }}>
+                UPathion
+              </span>
+            )}
+          </a>
+        </div>
+      );
+    }
+
     return (
       <div
         className="pointer-events-none fixed left-1/2 top-1/2 z-50"
