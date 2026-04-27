@@ -70,12 +70,18 @@ serve(async (req) => {
       );
     }
 
+    // Admin bypass
+    const { data: isAdmin } = await supabaseClient.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin',
+    });
+
     // Check if premium and not expired
     const now = new Date();
-    const isActive = profile.is_premium && 
+    const isActive = profile.is_premium &&
       (!profile.subscription_ends_at || new Date(profile.subscription_ends_at) > now);
 
-    if (!isActive) {
+    if (!isActive && !isAdmin) {
       console.log('User is not premium or subscription expired:', userId);
       return new Response(
         JSON.stringify({ error: 'Premium subscription required' }),
