@@ -8,7 +8,7 @@ interface OnboardingLayoutProps {
 const OnboardingLayout = memo(({ children }: OnboardingLayoutProps) => {
   const { pathname } = useLocation();
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 pt-24 pb-4 relative">
+    <div className="min-h-screen flex items-start justify-center px-4 pt-36 pb-8 relative">
       {/* Keying on pathname forces a fresh fade-in on every step transition,
           so even content that stays mounted (e.g. layout chrome) re-animates. */}
       <div
