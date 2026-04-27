@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -179,18 +180,48 @@ interface DetailCardProps {
   value: string;
 }
 
-const DetailCard = ({ icon, iconBg, label, value }: DetailCardProps) => (
-  <div className="gradient-border">
-    <div className="bg-card rounded-lg px-4 py-3 flex items-center gap-3">
-      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-        <p className="text-sm font-semibold text-foreground truncate">{value}</p>
-      </div>
+const DetailCard = ({ icon, iconBg, label, value }: DetailCardProps) => {
+  const [expanded, setExpanded] = useState(false);
+  // Only show expand affordance when content is long enough to warrant it
+  const isLong = value.length > 42;
+
+  return (
+    <div className="gradient-border">
+      <button
+        type="button"
+        onClick={() => isLong && setExpanded((v) => !v)}
+        className={`w-full text-left bg-card rounded-lg px-4 py-3 flex items-start gap-3 transition-colors ${
+          isLong ? "hover:bg-card/80 cursor-pointer" : "cursor-default"
+        }`}
+        aria-expanded={isLong ? expanded : undefined}
+      >
+        <div
+          className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${iconBg}`}
+        >
+          {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+            {label}
+          </p>
+          <p
+            className={`text-sm font-semibold text-foreground break-words transition-all duration-300 ${
+              isLong && !expanded ? "line-clamp-1" : ""
+            }`}
+          >
+            {value}
+          </p>
+        </div>
+        {isLong && (
+          <ChevronDown
+            className={`w-4 h-4 text-muted-foreground flex-shrink-0 mt-2 transition-transform duration-300 ${
+              expanded ? "rotate-180" : ""
+            }`}
+          />
+        )}
+      </button>
     </div>
-  </div>
-);
+  );
+};
 
 export default SchoolConfirm;

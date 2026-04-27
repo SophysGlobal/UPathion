@@ -14,24 +14,46 @@ const PasswordReset = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setEmailError(null);
+
     const trimmedEmail = email.trim();
     
     if (!trimmedEmail) {
-      toast.error("Please enter your email address");
+      setEmailError("Please enter your email address");
       return;
     }
     
     if (!EMAIL_RE.test(trimmedEmail)) {
-      toast.error("Please enter a valid email address");
+      setEmailError("Please enter a valid email address");
       return;
     }
     
     setIsLoading(true);
-    
+
+    // Pre-check: confirm email is registered in profiles before sending reset link
+    const { data: existing, error: lookupError } = await supabase
+      .from("profiles")
+      .select("id")
+      .ilike("email", trimmedEmail)
+      .maybeSingle();
+
+    if (lookupError) {
+      console.error("Email lookup error:", lookupError);
+      setIsLoading(false);
+      setEmailError("Couldn't verify your email. Please try again.");
+      return;
+    }
+
+    if (!existing) {
+      setIsLoading(false);
+      setEmailError("This email is not registered");
+      return;
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
       redirectTo: `${window.location.origin}/update-password`,
     });
@@ -40,8 +62,7 @@ const PasswordReset = () => {
     
     if (error) {
       console.error("Password reset error:", error);
-      // Don't reveal if the email exists or not for security
-      toast.error("Failed to send reset email. Please try again.");
+      setEmailError("Failed to send reset email. Please try again.");
       return;
     }
     
@@ -113,9 +134,20 @@ const PasswordReset = () => {
               type="email"
               placeholder="Email address"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (emailError) setEmailError(null);
+              }}
               disabled={isLoading}
             />
+            {emailError && (
+              <p
+                role="alert"
+                className="mt-2 text-sm text-destructive font-medium"
+              >
+                {emailError}
+              </p>
+            )}
           </div>
 
           <div className="animate-fade-in">
