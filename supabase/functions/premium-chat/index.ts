@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.95.0';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -32,10 +32,11 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Verify the JWT and get user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    
-    if (authError || !user) {
+    // Verify the JWT and get user via claims (compatible with signing-keys system)
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: authError } = await supabaseClient.auth.getClaims(token);
+
+    if (authError || !claimsData?.claims?.sub) {
       console.log('Invalid or expired token:', authError?.message);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
@@ -43,7 +44,7 @@ serve(async (req) => {
       );
     }
 
-    const userId = user.id;
+    const userId = claimsData.claims.sub as string;
     console.log('Authenticated user:', userId);
 
     // Verify premium subscription status
