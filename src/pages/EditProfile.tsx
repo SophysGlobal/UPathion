@@ -268,14 +268,17 @@ const ProfileFieldRow = ({
   onVisibilityChange: (v: Visibility) => void;
   children: React.ReactNode;
 }) => (
-  <div className="grid grid-cols-[120px_1fr_1fr] md:grid-cols-[140px_auto_1fr] gap-3 items-start py-3 border-b border-border/30 last:border-b-0">
-    <div className="flex items-center min-h-[36px]">
-      <span className="text-sm font-medium text-foreground">{label}</span>
+  <div className="grid grid-cols-[110px_1fr] md:grid-cols-[140px_auto_1fr] gap-3 items-start py-3 border-b border-border/30 last:border-b-0 min-w-0">
+    <div className="flex items-center min-h-[36px] min-w-0">
+      <span className="text-sm font-medium text-foreground truncate">{label}</span>
     </div>
-    <div className="flex items-center min-h-[36px]">
+    <div className="hidden md:flex items-center min-h-[36px] min-w-0">
       <VisibilityControl value={visibility} onChange={onVisibilityChange} />
     </div>
-    <div className="min-h-[36px]">{children}</div>
+    <div className="min-h-[36px] min-w-0 overflow-hidden">{children}</div>
+    <div className="md:hidden col-span-2 -mt-1">
+      <VisibilityControl value={visibility} onChange={onVisibilityChange} />
+    </div>
   </div>
 );
 
