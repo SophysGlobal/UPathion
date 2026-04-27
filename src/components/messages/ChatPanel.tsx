@@ -1,14 +1,17 @@
-import { useState, useRef, useEffect, memo } from "react";
+import { useState, useRef, useEffect, memo, useMemo } from "react";
 import { User, Users, Send, SmilePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  USE_SEED_DATA,
   seedConversations,
   seedMessages,
   seedGroupMessages,
   type SeedConversation,
   type SeedMessage,
 } from "@/data/seedData";
+import { useMessages } from "@/hooks/useMessages";
+import { useAuth } from "@/context/AuthContext";
 
 interface ChatPanelProps {
   conversationId: string | null;
@@ -17,40 +20,117 @@ interface ChatPanelProps {
 const EMOJI_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
+  const { user } = useAuth();
   const [inputValue, setInputValue] = useState('');
-  const [localMessages, setLocalMessages] = useState<SeedMessage[]>([]);
+  const [seedFallbackMessages, setSeedFallbackMessages] = useState<SeedMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Detect if this conversation is a real DB conversation (uuid) or a seed id.
+  const isRealConversation = useMemo(() => {
+    if (!conversationId) return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      conversationId,
+    );
+  }, [conversationId]);
+
+  const {
+    messages: dbMessages,
+    sendMessage: dbSendMessage,
+  } = useMessages(isRealConversation ? conversationId ?? undefined : undefined);
 
   const conversation = seedConversations.find(c => c.id === conversationId);
   const isGroup = conversation?.type === 'group';
 
-  // Load seed messages for selected conversation
+  // Load seed messages for selected seed conversation only.
   useEffect(() => {
-    if (!conversationId) {
-      setLocalMessages([]);
+    if (!conversationId || isRealConversation) {
+      setSeedFallbackMessages([]);
       return;
     }
     const allMessages = [...seedMessages, ...seedGroupMessages];
     const convMessages = allMessages.filter(m => m.conversationId === conversationId);
-    setLocalMessages(convMessages);
+    setSeedFallbackMessages(convMessages);
+  }, [conversationId, isRealConversation]);
+
+  // Unified message list (real DB messages take precedence).
+  const localMessages: SeedMessage[] = useMemo(() => {
+    if (isRealConversation) {
+      return dbMessages.map((m) => ({
+        id: m.id,
+        conversationId: m.conversation_id,
+        senderId: (m.sender_id === user?.id ? "me" : "other") as "me" | "other",
+        senderName: m.sender?.display_name ?? undefined,
+        text: m.content,
+        timestamp: new Date(m.created_at).toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      }));
+    }
+    return seedFallbackMessages;
+  }, [isRealConversation, dbMessages, seedFallbackMessages, user?.id]);
+
+  // Scroll position persistence per conversation. New messages auto-scroll to
+  // bottom; navigating away and back restores the previous scroll position.
+  const scrollKey = conversationId ? `chat_scroll_${conversationId}` : null;
+  const lastMessageCountRef = useRef(0);
+
+  // Restore scroll on conversation switch.
+  useEffect(() => {
+    if (!scrollKey || !scrollContainerRef.current) return;
+    const saved = sessionStorage.getItem(scrollKey);
+    if (saved !== null) {
+      scrollContainerRef.current.scrollTop = Number(saved);
+    } else {
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
+    }
+    lastMessageCountRef.current = localMessages.length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
-  // Scroll to bottom
+  // Persist scroll on every scroll event.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = scrollContainerRef.current;
+    if (!el || !scrollKey) return;
+    const onScroll = () => {
+      sessionStorage.setItem(scrollKey, String(el.scrollTop));
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [scrollKey]);
+
+  // Auto-scroll to bottom only when a new message arrives.
+  useEffect(() => {
+    if (localMessages.length > lastMessageCountRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    lastMessageCountRef.current = localMessages.length;
   }, [localMessages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim() || !conversationId) return;
+    const text = inputValue.trim();
+    setInputValue('');
+
+    if (isRealConversation) {
+      try {
+        await dbSendMessage(text);
+      } catch (err) {
+        console.error("Failed to send message:", err);
+      }
+      return;
+    }
+
     const newMsg: SeedMessage = {
       id: `local-${Date.now()}`,
       conversationId,
       senderId: 'me',
-      text: inputValue.trim(),
+      text,
       timestamp: 'Just now',
     };
-    setLocalMessages(prev => [...prev, newMsg]);
-    setInputValue('');
+    setSeedFallbackMessages(prev => [...prev, newMsg]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -101,7 +181,7 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
         {localMessages.length === 0 && (
           <div className="text-center py-12">
             <p className="text-sm text-muted-foreground">No messages yet. Say hello!</p>

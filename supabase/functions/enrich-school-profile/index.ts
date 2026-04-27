@@ -9,6 +9,21 @@ const corsHeaders = {
 // College Scorecard API base URL
 const SCORECARD_BASE_URL = 'https://api.data.gov/ed/collegescorecard/v1/schools';
 
+// Derive a public logo URL from a school's website using Logo.dev
+// (free CDN, no auth required, falls back gracefully on the client if missing).
+function deriveLogoUrl(websiteUrl: string | null | undefined): string | null {
+  if (!websiteUrl) return null;
+  try {
+    const url = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`;
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    if (!host || !host.includes('.')) return null;
+    // img.logo.dev returns a 200x200 PNG with a transparent background fallback
+    return `https://img.logo.dev/${host}?token=pk_X-1ZO13GSgeOoUrIuJ6GMQ&size=200&format=png&fallback=monogram`;
+  } catch {
+    return null;
+  }
+}
+
 // Helper to verify admin authorization
 async function verifyAdminAuth(req: Request): Promise<{ userId: string } | { error: string; status: number }> {
   const authHeader = req.headers.get('Authorization');
@@ -363,6 +378,7 @@ serve(async (req) => {
             programs_count: programsCount,
             chips,
             website_url: websiteUrl,
+            logo_url: deriveLogoUrl(websiteUrl),
             about_text: aboutText,
             tagline: `Empowering students in ${school.city || 'their community'}`,
             carnegie_classification: bestMatch['school.carnegie_basic'],

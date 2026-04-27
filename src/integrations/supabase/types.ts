@@ -228,6 +228,7 @@ export type Database = {
           ipeds_id: string | null
           last_enrichment_attempt: string | null
           locale: string | null
+          logo_url: string | null
           nces_id: string | null
           ownership_type: string | null
           programs_count: number | null
@@ -265,6 +266,7 @@ export type Database = {
           ipeds_id?: string | null
           last_enrichment_attempt?: string | null
           locale?: string | null
+          logo_url?: string | null
           nces_id?: string | null
           ownership_type?: string | null
           programs_count?: number | null
@@ -302,6 +304,7 @@ export type Database = {
           ipeds_id?: string | null
           last_enrichment_attempt?: string | null
           locale?: string | null
+          logo_url?: string | null
           nces_id?: string | null
           ownership_type?: string | null
           programs_count?: number | null
