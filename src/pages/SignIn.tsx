@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Divider from "@/components/Divider";
 import { GradientInput } from "@/components/ui/GradientInput";
@@ -16,6 +16,20 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // New vs returning user — based on the device-level sign-in flag set by
+  // useAppEntry the first time anyone successfully authenticates here.
+  const isReturningUser = useMemo(() => {
+    try {
+      return localStorage.getItem('upathion_has_signed_in_on_device') === 'true';
+    } catch {
+      return false;
+    }
+  }, []);
+  const heading = isReturningUser ? 'Welcome back' : 'Welcome';
+  const subheading = isReturningUser
+    ? 'Sign in to connect with your school community'
+    : 'Sign in to join your school community';
 
   const isFormValid = EMAIL_RE.test(email.trim()) && password.trim() !== "";
 
@@ -132,10 +146,10 @@ const SignIn = () => {
       
       <div className="w-full max-w-md space-y-8 relative z-10 pt-20">
 
-        {/* Welcome text */}
+        {/* Welcome text — adapts to new vs returning users */}
         <div className="text-center space-y-2 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
-          <p className="text-muted-foreground">Sign in to connect with your school community</p>
+          <h1 className="text-3xl font-bold text-foreground">{heading}</h1>
+          <p className="text-muted-foreground">{subheading}</p>
         </div>
 
         {/* Error display */}
