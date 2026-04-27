@@ -262,11 +262,16 @@ serve(async (req) => {
             student_faculty_ratio: sfr ? `${sfr}:1` : null,
             tuition_in_state: match["latest.cost.tuition.in_state"],
             tuition_out_of_state: match["latest.cost.tuition.out_of_state"],
-            programs_count: programs > 0 ? programs : null,
+            // Scorecard returns degree-level *availability* flags (0/1), not program counts.
+            // Sum of flags is at most 4 — meaningless to display as "programs offered".
+            programs_count: null,
             chips: chipsFromScorecard(match),
             website_url: website,
             logo_url: deriveLogoFromWebsite(website) || deriveLogoFromName(school.name),
-            carnegie_classification: match["school.carnegie_basic"],
+            carnegie_classification:
+              typeof match["school.carnegie_basic"] === "string"
+                ? (match["school.carnegie_basic"] as string)
+                : null,
             ownership_type: ownership(match["school.ownership"] as number),
             locale: localeLabel(match["school.locale"] as number | null),
             religious_affiliation: match["school.religious_affiliation"],
@@ -287,12 +292,16 @@ serve(async (req) => {
           aiFacts = {
             location: [school.city, school.state, "USA"].filter(Boolean).join(", "),
             ownership: enriched.ownership_type,
-            carnegie_classification: enriched.carnegie_classification,
+            // Only include Carnegie if it's a human-readable string
+            carnegie_classification:
+              typeof enriched.carnegie_classification === "string" &&
+              isNaN(Number(enriched.carnegie_classification))
+                ? enriched.carnegie_classification
+                : null,
             enrollment: enriched.enrollment,
             acceptance_rate_percent: enriched.acceptance_rate,
             graduation_rate_percent: enriched.graduation_rate,
             student_faculty_ratio: enriched.student_faculty_ratio,
-            programs_offered: enriched.programs_count,
             national_ranking: nationalRank,
             selectivity: tier,
           };
