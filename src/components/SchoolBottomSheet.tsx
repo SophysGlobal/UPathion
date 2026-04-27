@@ -40,6 +40,17 @@ interface SchoolBottomSheetProps {
   isOwnSchool?: boolean;
 }
 
+const getAcronym = (name: string): string => {
+  const stop = new Set(["of", "the", "and", "for", "at", "in", "on", "a", "an"]);
+  const letters = name
+    .replace(/[^A-Za-z\s-]/g, " ")
+    .split(/[\s-]+/)
+    .filter((w) => w && !stop.has(w.toLowerCase()))
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
+  return (letters || name[0]!.toUpperCase()).slice(0, 5);
+};
+
 const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: SchoolBottomSheetProps) => {
   const navigate = useNavigate();
   const [schoolId, setSchoolId] = useState<string | null>(null);
@@ -186,10 +197,10 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
                   loading="lazy"
                   onError={() => setLogoFailed(true)}
                 />
-              ) : isHighSchool ? (
-                <SchoolIcon className="w-7 h-7 text-primary" />
               ) : (
-                <Building2 className="w-7 h-7 text-primary" />
+                <span className="text-sm font-bold tracking-tight text-primary">
+                  {getAcronym(school.name)}
+                </span>
               )}
             </div>
             <div className="flex-1 min-w-0">
