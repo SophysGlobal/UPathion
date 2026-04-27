@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import AppHeader from "@/components/AppHeader";
@@ -11,45 +11,165 @@ import { Search, PenSquare, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { USE_SEED_DATA, seedConversations, type SeedConversation } from "@/data/seedData";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useConversations, type Conversation } from "@/hooks/useMessages";
+import { useAuth } from "@/context/AuthContext";
+
+// Adapt a real DB conversation into the shape ChatList already understands.
+// Falls back to sensible defaults for fields the seed UI expects.
+const adaptConversation = (
+  conv: Conversation,
+  currentUserId: string | undefined,
+): SeedConversation => {
+  const others = conv.participants.filter((p) => p.user_id !== currentUserId);
+  const primary = others[0];
+  const isGroup = conv.participants.length > 2;
+  const myParticipation = conv.participants.find((p) => p.user_id === currentUserId);
+
+  const last = conv.last_message;
+  const lastTime = last?.created_at
+    ? new Date(last.created_at).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "";
+
+  return {
+    id: conv.id,
+    type: isGroup ? "group" : "individual",
+    participantName:
+      (isGroup
+        ? others.map((p) => p.profile?.display_name).filter(Boolean).join(", ")
+        : primary?.profile?.display_name) || "Unknown",
+    participantNames: isGroup
+      ? others.map((p) => p.profile?.display_name || "Unknown")
+      : undefined,
+    participantSchool: primary?.profile?.school_name || "",
+    participantBadge: primary?.profile?.grade_or_year || undefined,
+    lastMessage: last?.content || "No messages yet",
+    lastMessageTime: lastTime,
+    unreadCount: conv.unread_count,
+    isPinned: false, // pin state is UI-only for now
+    isMuted: !!myParticipation?.is_muted,
+  };
+};
 
 type ChatFilter = 'all' | 'individual' | 'group';
 
 const Messages = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const {
+    conversations: dbConversations,
+    loading: dbLoading,
+    markAsRead,
+    toggleMute: dbToggleMute,
+    deleteConversation: dbDeleteConversation,
+  } = useConversations();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ChatFilter>('all');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
+  // Real DB conversations take precedence; fall back to seed data only when
+  // the user has none AND seed mode is on (for demo/empty-state purposes).
+  const adapted = useMemo(
+    () => dbConversations.map((c) => adaptConversation(c, user?.id)),
+    [dbConversations, user?.id],
+  );
+
+  const useSeedFallback = USE_SEED_DATA && !dbLoading && adapted.length === 0;
+
   // Local copy so context-menu actions (pin / mute / read / delete) reflect
-  // immediately without a backend round-trip.
-  const [conversations, setConversations] = useState<SeedConversation[]>(
+  // immediately without a backend round-trip when in seed-fallback mode.
+  const [seedCopy, setSeedCopy] = useState<SeedConversation[]>(
     () => (USE_SEED_DATA ? seedConversations.map((c) => ({ ...c })) : []),
   );
 
-  const togglePin = useCallback((id: string) => {
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isPinned: !c.isPinned } : c)),
-    );
-  }, []);
-  const toggleMute = useCallback((id: string) => {
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isMuted: !c.isMuted } : c)),
-    );
-  }, []);
-  const toggleRead = useCallback((id: string) => {
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, unreadCount: c.unreadCount > 0 ? 0 : 1 }
-          : c,
-      ),
-    );
-  }, []);
-  const deleteConversation = useCallback((id: string) => {
-    setConversations((prev) => prev.filter((c) => c.id !== id));
-    setSelectedConversationId((sel) => (sel === id ? null : sel));
-  }, []);
+  // Pin state for real conversations is persisted locally per-user (UI-only).
+  const pinKey = user?.id ? `upathion_pinned_chats_${user.id}` : null;
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined" || !pinKey) return new Set();
+    try {
+      const raw = window.localStorage.getItem(pinKey);
+      return new Set<string>(raw ? JSON.parse(raw) : []);
+    } catch {
+      return new Set();
+    }
+  });
+  useEffect(() => {
+    if (!pinKey) return;
+    try {
+      window.localStorage.setItem(pinKey, JSON.stringify(Array.from(pinnedIds)));
+    } catch {
+      /* ignore */
+    }
+  }, [pinKey, pinnedIds]);
+
+  const conversations = useMemo<SeedConversation[]>(() => {
+    if (useSeedFallback) return seedCopy;
+    return adapted.map((c) => ({ ...c, isPinned: pinnedIds.has(c.id) }));
+  }, [useSeedFallback, seedCopy, adapted, pinnedIds]);
+
+  const togglePin = useCallback(
+    (id: string) => {
+      if (useSeedFallback) {
+        setSeedCopy((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, isPinned: !c.isPinned } : c)),
+        );
+        return;
+      }
+      setPinnedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    },
+    [useSeedFallback],
+  );
+  const toggleMute = useCallback(
+    (id: string) => {
+      if (useSeedFallback) {
+        setSeedCopy((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, isMuted: !c.isMuted } : c)),
+        );
+        return;
+      }
+      void dbToggleMute(id);
+    },
+    [useSeedFallback, dbToggleMute],
+  );
+  const toggleRead = useCallback(
+    (id: string) => {
+      if (useSeedFallback) {
+        setSeedCopy((prev) =>
+          prev.map((c) =>
+            c.id === id ? { ...c, unreadCount: c.unreadCount > 0 ? 0 : 1 } : c,
+          ),
+        );
+        return;
+      }
+      void markAsRead(id);
+    },
+    [useSeedFallback, markAsRead],
+  );
+  const deleteConversation = useCallback(
+    (id: string) => {
+      if (useSeedFallback) {
+        setSeedCopy((prev) => prev.filter((c) => c.id !== id));
+      } else {
+        void dbDeleteConversation(id);
+      }
+      setSelectedConversationId((sel) => (sel === id ? null : sel));
+    },
+    [useSeedFallback, dbDeleteConversation],
+  );
+
+  // When a real conversation is opened, mark it as read in the DB.
+  useEffect(() => {
+    if (!selectedConversationId || useSeedFallback) return;
+    void markAsRead(selectedConversationId);
+  }, [selectedConversationId, useSeedFallback, markAsRead]);
 
   const filteredConversations = useMemo(() => {
     let filtered = conversations;
@@ -95,7 +215,7 @@ const Messages = () => {
             <button onClick={() => setSelectedConversationId(null)}
               className="p-2 -ml-2 hover:bg-secondary/50 rounded-lg transition-colors text-foreground">←</button>
             <h1 className="text-base font-semibold text-foreground truncate">
-              {seedConversations.find(c => c.id === selectedConversationId)?.participantName || 'Chat'}
+              {conversations.find(c => c.id === selectedConversationId)?.participantName || 'Chat'}
             </h1>
           </div>
         </header>
