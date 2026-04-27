@@ -105,8 +105,10 @@
 
   body {
     @apply text-foreground;
-    /* Soft layered atmosphere — gives both themes depth without losing the
-       AnimatedBackground orbs underneath. */
+    /* Body background MUST be transparent so the fixed -z-10
+       AnimatedBackground (orbs + particles) renders behind the UI.
+       The base color lives on <html>; the soft gradient atmosphere
+       is overlaid via a transparent radial gradient only. */
     background:
       radial-gradient(
         ellipse at top,
@@ -118,7 +120,7 @@
         hsl(var(--accent) / 0.05) 0%,
         transparent 60%
       ),
-      hsl(var(--background));
+      transparent;
     min-height: 100vh;
     min-height: 100dvh;
     -webkit-overflow-scrolling: touch;
@@ -128,11 +130,11 @@
     background:
       radial-gradient(
         ellipse at top,
-        hsl(222 47% 11%) 0%,
-        hsl(222 47% 7%) 60%,
-        hsl(222 47% 5%) 100%
+        hsl(222 47% 11% / 0.55) 0%,
+        hsl(222 47% 7% / 0.35) 60%,
+        transparent 100%
       ),
-      hsl(var(--background));
+      transparent;
   }
 }
 
