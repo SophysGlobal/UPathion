@@ -4,7 +4,8 @@ import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { Check, ChevronLeft } from "lucide-react";
+import { Check } from "lucide-react";
+import BackSkipRow from "@/components/onboarding/BackSkipRow";
 
 const REFERRAL_OPTIONS = [
   { id: 'search', label: 'Search engine', icon: '🔍' },
