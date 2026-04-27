@@ -114,18 +114,18 @@ const Messages = () => {
   // Desktop: split panel
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
-      <div className="flex h-[calc(100vh-4rem)]">
+      <AppHeader
+        title="Messages"
+        subtitle={`${unreadTotal} unread`}
+        rightSlot={
+          <Button size="icon" variant="ghost" onClick={handleNewMessage}>
+            <PenSquare className="w-5 h-5" />
+          </Button>
+        }
+      />
+      <div className="flex h-[calc(100vh-4rem-72px)]">
         <div className="w-[340px] flex-shrink-0 border-r border-border/50 flex flex-col bg-background/60 animate-fade-in">
           <div className="px-4 py-3 border-b border-border/50">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">Messages</h1>
-                <p className="text-xs text-muted-foreground">{unreadTotal} unread</p>
-              </div>
-              <Button size="icon" variant="ghost" onClick={handleNewMessage} className="h-8 w-8">
-                <PenSquare className="w-4 h-4" />
-              </Button>
-            </div>
             <div className="flex gap-1.5 mb-3">
               {filters.map(f => (
                 <button key={f.key} onClick={() => setActiveFilter(f.key)}
