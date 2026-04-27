@@ -325,6 +325,7 @@ export interface SeedConversation {
   lastMessageTime: string;
   unreadCount: number;
   isMuted: boolean;
+  isPinned?: boolean;
 }
 
 export const seedConversations: SeedConversation[] = [
@@ -338,7 +339,8 @@ export const seedConversations: SeedConversation[] = [
     lastMessage: 'Hey! Did you finish the AP Chem homework?',
     lastMessageTime: '2m ago',
     unreadCount: 3,
-    isMuted: false
+    isMuted: false,
+    isPinned: true
   },
   { 
     id: 'conv2', 
@@ -399,7 +401,8 @@ export const seedConversations: SeedConversation[] = [
     lastMessage: 'Alex: Can someone share the lab notes from today?',
     lastMessageTime: '30m ago',
     unreadCount: 5,
-    isMuted: false
+    isMuted: false,
+    isPinned: true
   },
   { 
     id: 'conv7', 
