@@ -219,6 +219,8 @@ export type Database = {
           chips: string[] | null
           created_at: string
           data_source: string | null
+          demographics: Json | null
+          description_year: number | null
           enrichment_error: string | null
           enrichment_status: string | null
           enrollment: number | null
@@ -229,6 +231,7 @@ export type Database = {
           last_enrichment_attempt: string | null
           locale: string | null
           logo_url: string | null
+          national_ranking: number | null
           nces_id: string | null
           ownership_type: string | null
           programs_count: number | null
@@ -236,10 +239,13 @@ export type Database = {
           ranking_source: string | null
           religious_affiliation: string | null
           school_id: string
+          school_subtype: string | null
           scorecard_id: number | null
+          selectivity_tier: string | null
           source_name: string | null
           source_retrieved_at: string | null
           source_url: string | null
+          state_ranking: number | null
           stats: Json | null
           student_faculty_ratio: string | null
           tagline: string | null
@@ -257,6 +263,8 @@ export type Database = {
           chips?: string[] | null
           created_at?: string
           data_source?: string | null
+          demographics?: Json | null
+          description_year?: number | null
           enrichment_error?: string | null
           enrichment_status?: string | null
           enrollment?: number | null
@@ -267,6 +275,7 @@ export type Database = {
           last_enrichment_attempt?: string | null
           locale?: string | null
           logo_url?: string | null
+          national_ranking?: number | null
           nces_id?: string | null
           ownership_type?: string | null
           programs_count?: number | null
@@ -274,10 +283,13 @@ export type Database = {
           ranking_source?: string | null
           religious_affiliation?: string | null
           school_id: string
+          school_subtype?: string | null
           scorecard_id?: number | null
+          selectivity_tier?: string | null
           source_name?: string | null
           source_retrieved_at?: string | null
           source_url?: string | null
+          state_ranking?: number | null
           stats?: Json | null
           student_faculty_ratio?: string | null
           tagline?: string | null
@@ -295,6 +307,8 @@ export type Database = {
           chips?: string[] | null
           created_at?: string
           data_source?: string | null
+          demographics?: Json | null
+          description_year?: number | null
           enrichment_error?: string | null
           enrichment_status?: string | null
           enrollment?: number | null
@@ -305,6 +319,7 @@ export type Database = {
           last_enrichment_attempt?: string | null
           locale?: string | null
           logo_url?: string | null
+          national_ranking?: number | null
           nces_id?: string | null
           ownership_type?: string | null
           programs_count?: number | null
@@ -312,10 +327,13 @@ export type Database = {
           ranking_source?: string | null
           religious_affiliation?: string | null
           school_id?: string
+          school_subtype?: string | null
           scorecard_id?: number | null
+          selectivity_tier?: string | null
           source_name?: string | null
           source_retrieved_at?: string | null
           source_url?: string | null
+          state_ranking?: number | null
           stats?: Json | null
           student_faculty_ratio?: string | null
           tagline?: string | null
