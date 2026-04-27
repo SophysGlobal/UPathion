@@ -59,7 +59,7 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
       return dbMessages.map((m) => ({
         id: m.id,
         conversationId: m.conversation_id,
-        senderId: m.sender_id === user?.id ? "me" : m.sender_id,
+        senderId: (m.sender_id === user?.id ? "me" : "other") as "me" | "other",
         senderName: m.sender?.display_name ?? undefined,
         text: m.content,
         timestamp: new Date(m.created_at).toLocaleTimeString([], {
