@@ -21,14 +21,11 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
     showWelcome,
     isReady,
     onSplashComplete,
-    onWelcomeComplete,
     markDeviceSignedIn,
     markAdminSession,
-    shouldShowWelcome,
   } = useAppEntry();
 
   const [fadeOut, setFadeOut] = useState(false);
-  const [includeWelcome] = useState(() => shouldShowWelcome());
 
   useEffect(() => {
     if (user) markDeviceSignedIn();
@@ -38,17 +35,14 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
     if (user && isAdmin !== undefined) markAdminSession(isAdmin);
   }, [user, isAdmin, markAdminSession]);
 
-  // Full sequence complete (splash+welcome or splash-only)
+  // Splash sequence complete — fade out, then mark ready so the persistent
+  // top logo and routed children become visible in one frame.
   const handleComplete = () => {
     setFadeOut(true);
     setTimeout(() => {
-      if (includeWelcome) {
-        onWelcomeComplete();
-      } else {
-        onSplashComplete();
-      }
+      onSplashComplete();
       setFadeOut(false);
-    }, 400);
+    }, 300);
   };
 
   const showOverlay = showSplash || showWelcome || fadeOut;
@@ -65,11 +59,6 @@ const AppEntryGate = ({ children }: AppEntryGateProps) => {
 
       {(showSplash || showWelcome) && !fadeOut && (
         <SplashScreen
-          includeWelcome={includeWelcome}
-          onSplashPhaseComplete={() => {
-            // Mark splash shown so navigation knows
-            onSplashComplete();
-          }}
           onComplete={handleComplete}
         />
       )}
