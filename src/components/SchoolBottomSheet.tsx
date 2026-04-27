@@ -40,6 +40,17 @@ interface SchoolBottomSheetProps {
   isOwnSchool?: boolean;
 }
 
+const getAcronym = (name: string): string => {
+  const stop = new Set(["of", "the", "and", "for", "at", "in", "on", "a", "an"]);
+  const letters = name
+    .replace(/[^A-Za-z\s-]/g, " ")
+    .split(/[\s-]+/)
+    .filter((w) => w && !stop.has(w.toLowerCase()))
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
+  return (letters || name[0]!.toUpperCase()).slice(0, 5);
+};
+
 const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: SchoolBottomSheetProps) => {
   const navigate = useNavigate();
   const [schoolId, setSchoolId] = useState<string | null>(null);
@@ -54,16 +65,24 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
   useEffect(() => {
     const findSchoolAndProfile = async () => {
       if (!school?.name || !open) return;
-      
+
+      // CRITICAL: reset stale data from previously-viewed school before fetching
+      setSchoolId(null);
+      setEnrichedData(null);
+      setLogoFailed(false);
       setIsLoadingId(true);
       setIsLoadingProfile(true);
+      const requestedName = school.name;
       try {
         // First find the school ID
         const { data: schoolData } = await supabase
           .from('schools')
           .select('id')
-          .ilike('name', school.name)
+          .ilike('name', requestedName)
           .maybeSingle();
+
+        // Defensive: bail if the user has switched to another school mid-flight
+        if (school?.name !== requestedName) return;
 
         const foundId = schoolData?.id || null;
         setSchoolId(foundId);
@@ -75,6 +94,7 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
           const { data: result } = await supabase.functions.invoke('get-school-profile', {
             body: { schoolId: foundId },
           });
+          if (school?.name !== requestedName) return;
           const p = result?.profile;
           if (p) {
             setEnrichedData({
@@ -177,10 +197,10 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
                   loading="lazy"
                   onError={() => setLogoFailed(true)}
                 />
-              ) : isHighSchool ? (
-                <SchoolIcon className="w-7 h-7 text-primary" />
               ) : (
-                <Building2 className="w-7 h-7 text-primary" />
+                <span className="text-sm font-bold tracking-tight text-primary">
+                  {getAcronym(school.name)}
+                </span>
               )}
             </div>
             <div className="flex-1 min-w-0">
