@@ -347,7 +347,11 @@ const SchoolProfilePage = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h2 className="text-xl font-bold text-foreground mb-1 leading-tight">
-                      {school?.name}
+                      {school?.name
+                        ? (school.type === 'high_school'
+                            ? school.name
+                            : getDisplaySchoolName(school.name, 'college'))
+                        : ''}
                     </h2>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
