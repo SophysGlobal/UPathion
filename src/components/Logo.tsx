@@ -3,27 +3,31 @@ import upathionLogo from "@/assets/upathion-logo.png";
 
 interface LogoProps {
   showText?: boolean;
+  size?: number;
 }
 
 /**
  * Logo component — uses <a> instead of useNavigate to avoid
  * re-rendering on every route change (which caused flicker).
+ * Always navigates to /dashboard (the home of the signed-in app).
  */
-const Logo = memo(({ showText = true }: LogoProps) => {
+const Logo = memo(({ showText = true, size = 48 }: LogoProps) => {
   return (
     <a
-      href="/"
+      href="/dashboard"
       onClick={(e) => {
         e.preventDefault();
-        window.history.pushState({}, "", "/");
+        window.history.pushState({}, "", "/dashboard");
         window.dispatchEvent(new PopStateEvent("popstate"));
       }}
       className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+      aria-label="UPathion — go to dashboard"
     >
-      <img 
-        src={upathionLogo} 
-        alt="UPathion Logo" 
-        className="w-12 h-12 object-contain" 
+      <img
+        src={upathionLogo}
+        alt="UPathion Logo"
+        className="object-contain"
+        style={{ width: size, height: size }}
         loading="eager"
         decoding="sync"
       />
