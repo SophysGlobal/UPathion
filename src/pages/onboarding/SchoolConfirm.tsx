@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { School, GraduationCap, BookOpen, Calendar, Sparkles, Activity } from "lucide-react";
 import { toast } from "sonner";
+import { getDisplaySchoolName } from "@/lib/schoolName";
 
 const SchoolConfirm = () => {
   const navigate = useNavigate();
@@ -96,7 +97,7 @@ const SchoolConfirm = () => {
             }
             iconBg="gradient-bg"
             label="School"
-            value={data.schoolName || '—'}
+            value={getDisplaySchoolName(data.schoolName, data.schoolType) || '—'}
           />
 
           <DetailCard
@@ -134,7 +135,7 @@ const SchoolConfirm = () => {
               icon={<Sparkles className="w-4 h-4 text-primary" />}
               iconBg="bg-secondary"
               label="Dream School"
-              value={data.aspirationalSchool}
+              value={getDisplaySchoolName(data.aspirationalSchool, 'college')}
             />
           )}
         </div>
@@ -158,7 +159,7 @@ const SchoolConfirm = () => {
           </GradientButton>
         </div>
 
-        <div className="flex justify-center gap-2 pt-4 animate-fade-in">
+        <div className="flex justify-center gap-2 pt-10 animate-fade-in">
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />

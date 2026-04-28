@@ -11,6 +11,7 @@ import {
   DrawerTitle,
   DrawerClose,
 } from "@/components/ui/drawer";
+import { getDisplaySchoolName } from "@/lib/schoolName";
 
 interface SchoolInfo {
   name: string;
@@ -175,7 +176,7 @@ const SchoolBottomSheet = ({ open, onOpenChange, school, isOwnSchool = false }: 
         {/* Header with title and close button */}
         <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-border/30">
           <DrawerTitle className="text-lg font-semibold text-foreground truncate pr-4">
-            {school.name}
+            {isHighSchool ? school.name : getDisplaySchoolName(school.name, 'college')}
           </DrawerTitle>
           <DrawerClose asChild>
             <button className="p-2 hover:bg-secondary/50 rounded-full transition-colors flex-shrink-0">

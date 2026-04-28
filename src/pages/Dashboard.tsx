@@ -8,6 +8,7 @@ import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass, School, Activity } from "lucide-react";
+import { getDisplaySchoolName } from "@/lib/schoolName";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -118,7 +119,7 @@ const Dashboard = () => {
                   {data.schoolName && (
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
                       <School className="w-4 h-4 text-primary" />
-                      <span className="text-sm text-foreground truncate max-w-[200px]">{data.schoolName}</span>
+                      <span className="text-sm text-foreground truncate max-w-[200px]">{getDisplaySchoolName(data.schoolName, data.schoolType)}</span>
                     </div>
                   )}
                 </div>

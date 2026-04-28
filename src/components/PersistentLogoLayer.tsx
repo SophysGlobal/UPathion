@@ -121,7 +121,11 @@ const PersistentLogoLayer = memo(
     const viewportW = typeof window !== "undefined" ? window.innerWidth : 1024;
     const viewportH = typeof window !== "undefined" ? window.innerHeight : 768;
 
-    const startSize = 80;
+    // Scale the splash logo down on narrow screens so the wordmark never
+    // overflows the viewport. We reserve ~32px of horizontal padding on each
+    // side and use the natural wordmark width as the constraint.
+    const isNarrow = viewportW < 420;
+    const startSize = isNarrow ? 64 : 80;
     const endSize = 48;
     const logoSize = startSize - (startSize - endSize) * migrateE;
 
@@ -193,7 +197,7 @@ const PersistentLogoLayer = memo(
               style={{ width: endSize, height: endSize }}
             />
             {showWordmarkDocked && (
-              <span className="text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block" style={{ transform: `scale(${1 - 0.25})`, transformOrigin: "left center" }}>
+              <span className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block" style={{ transform: `scale(${1 - 0.25})`, transformOrigin: "left center" }}>
                 UPathion
               </span>
             )}
@@ -208,6 +212,9 @@ const PersistentLogoLayer = memo(
         style={{
           transform: `translate(-50%, -50%) translate(${shiftX}px, ${shiftY}px) translateZ(0)`,
           willChange: "transform",
+          maxWidth: `calc(100vw - 32px)`,
+          paddingLeft: 8,
+          paddingRight: 8,
         }}
         aria-hidden={false}
       >
@@ -241,13 +248,16 @@ const PersistentLogoLayer = memo(
           <div
             className="overflow-hidden"
             style={{
-              maxWidth: `${textReveal * 220}px`,
+              // Use clip-path so the text width is determined by its natural
+              // (responsive) font size — no fixed pixel cap that could clip
+              // the last characters on small screens.
+              clipPath: `inset(0 ${(1 - textReveal) * 100}% 0 0)`,
               opacity: wordmarkOpacity,
-              willChange: "max-width, opacity",
+              willChange: "clip-path, opacity",
             }}
           >
             <span
-              className="text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block"
+              className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block"
               style={{
                 opacity: textReveal,
                 transform: `translateX(${(1 - textReveal) * -20}px) scale(${textScale}) translateZ(0)`,
