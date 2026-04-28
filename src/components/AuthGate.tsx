@@ -123,32 +123,24 @@ const AuthGate = ({ children }: AuthGateProps) => {
 
     const isPremium = profile?.is_premium ?? false;
 
-    // RULE 2: Authenticated + signed in this session
+    // RULE 2: Authenticated + signed in this session — entry routing
     if (isAuthRoute || currentPath === '/') {
-    if (isAdmin && !adminQuestionnaireDone) {
-        // Admins always go through questionnaire
-        navigate('/onboarding/name', { replace: true });
-      } else if (isAdmin) {
-        navigate('/dashboard', { replace: true });
-      } else if (isPremium) {
-        // Premium users go straight to dashboard
-        navigate('/dashboard', { replace: true });
+      if (isAdmin) {
+        // ADMINS: always forced through questionnaire (QA mode) and then
+        // ALWAYS through the subscription screen — every login, no exception.
+        if (!adminQuestionnaireDone) {
+          navigate('/onboarding/name', { replace: true });
+        } else {
+          navigate('/subscription', { replace: true });
+        }
       } else if (!hasCompletedOnboarding) {
-        // Normal first-time users go to subscription (questionnaire navigates there)
-        if (shouldShowSubscription()) {
-          markSubscriptionShown();
-          navigate('/subscription', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
+        // First-time normal user: send into the questionnaire. The
+        // questionnaire's final step navigates to /subscription, then to app.
+        navigate('/onboarding/name', { replace: true });
       } else {
-        // Returning non-premium: show subscription 2x/week
-        if (shouldShowSubscription()) {
-          markSubscriptionShown();
-          navigate('/subscription', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
+        // Returning normal user (premium or not): straight to the app.
+        // Weekly subscription nudge is handled in-app by WeeklySubscriptionPrompt.
+        navigate('/dashboard', { replace: true });
       }
       setHasRouted(true);
       return;
@@ -167,12 +159,8 @@ const AuthGate = ({ children }: AuthGateProps) => {
       return;
     }
 
-    // Admin who completed questionnaire: skip subscription, go to dashboard
-    if (isAdmin && adminQuestionnaireDone && currentPath === '/subscription') {
-      navigate('/dashboard', { replace: true });
-      setHasRouted(true);
-      return;
-    }
+    // Admins who completed the questionnaire are intentionally KEPT on
+    // /subscription — they must see the subscription screen every login.
 
     // Normal users: if completed onboarding, skip onboarding routes (except subscription)
     if (!isAdmin && hasCompletedOnboarding && isOnboardingRoute && currentPath !== '/subscription') {
