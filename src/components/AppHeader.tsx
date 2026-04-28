@@ -1,4 +1,5 @@
 import { memo } from "react";
+import Logo from "./Logo";
 
 interface AppHeaderProps {
   title: string;
@@ -10,11 +11,14 @@ const AppHeader = memo(({ title, subtitle, rightSlot }: AppHeaderProps) => {
   return (
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 pt-[env(safe-area-inset-top)]">
       <div className="flex items-center justify-between px-5 py-4 min-h-[56px]">
-        <div className="pl-16">
-          <h1 className="text-lg font-semibold text-foreground leading-tight">{title}</h1>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
-          )}
+        <div className="flex items-center gap-3 min-w-0">
+          <Logo showText={false} size={36} />
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-foreground leading-tight truncate">{title}</h1>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+            )}
+          </div>
         </div>
         {rightSlot && <div>{rightSlot}</div>}
       </div>
