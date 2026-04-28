@@ -5,6 +5,7 @@ import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { getDisplaySchoolName } from "@/lib/schoolName";
 import {
   ChevronLeft,
   GraduationCap,
