@@ -45,10 +45,11 @@ const PersistentLogoLayer = memo(
     const isAuth = matchesAny(pathname, authPatterns);
     const isOnboarding = matchesAny(pathname, onboardingPatterns);
     const isAppHeader = matchesAny(pathname, appHeaderPatterns);
-    const showsOnRoute = isAuth || isOnboarding || isAppHeader;
+    // App-header routes own their own logo (rendered inside AppHeader).
+    // The persistent overlay only handles auth + onboarding.
+    const showsOnRoute = isAuth || isOnboarding;
 
-    // Final docked layout: centered with wordmark on auth/onboarding,
-    // top-left icon-only on app pages.
+    // Final docked layout: centered with wordmark on auth/onboarding.
     const dockedCentered = isAuth || isOnboarding;
 
     // ---- Single RAF timeline ----------------------------------------------
@@ -178,10 +179,10 @@ const PersistentLogoLayer = memo(
           aria-hidden={false}
         >
           <a
-            href="/"
+            href="/dashboard"
             onClick={(e) => {
               e.preventDefault();
-              window.history.pushState({}, "", "/");
+              window.history.pushState({}, "", "/dashboard");
               window.dispatchEvent(new PopStateEvent("popstate"));
             }}
             className={cn(
@@ -219,10 +220,10 @@ const PersistentLogoLayer = memo(
         aria-hidden={false}
       >
         <a
-          href="/"
+          href="/dashboard"
           onClick={(e) => {
             e.preventDefault();
-            window.history.pushState({}, "", "/");
+            window.history.pushState({}, "", "/dashboard");
             window.dispatchEvent(new PopStateEvent("popstate"));
           }}
           className={cn(
