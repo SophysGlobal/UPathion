@@ -3,14 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
+import WeeklySubscriptionPrompt from '@/components/WeeklySubscriptionPrompt';
 
 interface AuthGateProps {
   children: ReactNode;
 }
 
 const SESSION_SIGNED_IN_KEY = 'upathion_signed_in_this_session';
-const SUBSCRIPTION_SHOWN_KEY = 'upathion_sub_shown_timestamps';
-const MAX_SUB_SHOWS_PER_WEEK = 2;
 
 export const markSessionSignedIn = () => {
   try {
@@ -24,30 +23,6 @@ const hasSignedInThisSession = (): boolean => {
   } catch {
     return false;
   }
-};
-
-/** Check if subscription screen should be shown (max 2x per week for non-premium) */
-const shouldShowSubscription = (): boolean => {
-  try {
-    const raw = localStorage.getItem(SUBSCRIPTION_SHOWN_KEY);
-    const timestamps: number[] = raw ? JSON.parse(raw) : [];
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const recentShows = timestamps.filter((t) => t > oneWeekAgo);
-    return recentShows.length < MAX_SUB_SHOWS_PER_WEEK;
-  } catch {
-    return true;
-  }
-};
-
-const markSubscriptionShown = () => {
-  try {
-    const raw = localStorage.getItem(SUBSCRIPTION_SHOWN_KEY);
-    const timestamps: number[] = raw ? JSON.parse(raw) : [];
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const recentShows = timestamps.filter((t) => t > oneWeekAgo);
-    recentShows.push(Date.now());
-    localStorage.setItem(SUBSCRIPTION_SHOWN_KEY, JSON.stringify(recentShows));
-  } catch {}
 };
 
 // Routes that don't require authentication
@@ -149,32 +124,24 @@ const AuthGate = ({ children }: AuthGateProps) => {
 
     const isPremium = profile?.is_premium ?? false;
 
-    // RULE 2: Authenticated + signed in this session
+    // RULE 2: Authenticated + signed in this session — entry routing
     if (isAuthRoute || currentPath === '/') {
-    if (isAdmin && !adminQuestionnaireDone) {
-        // Admins always go through questionnaire
-        navigate('/onboarding/name', { replace: true });
-      } else if (isAdmin) {
-        navigate('/dashboard', { replace: true });
-      } else if (isPremium) {
-        // Premium users go straight to dashboard
-        navigate('/dashboard', { replace: true });
+      if (isAdmin) {
+        // ADMINS: always forced through questionnaire (QA mode) and then
+        // ALWAYS through the subscription screen — every login, no exception.
+        if (!adminQuestionnaireDone) {
+          navigate('/onboarding/name', { replace: true });
+        } else {
+          navigate('/subscription', { replace: true });
+        }
       } else if (!hasCompletedOnboarding) {
-        // Normal first-time users go to subscription (questionnaire navigates there)
-        if (shouldShowSubscription()) {
-          markSubscriptionShown();
-          navigate('/subscription', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
+        // First-time normal user: send into the questionnaire. The
+        // questionnaire's final step navigates to /subscription, then to app.
+        navigate('/onboarding/name', { replace: true });
       } else {
-        // Returning non-premium: show subscription 2x/week
-        if (shouldShowSubscription()) {
-          markSubscriptionShown();
-          navigate('/subscription', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
+        // Returning normal user (premium or not): straight to the app.
+        // Weekly subscription nudge is handled in-app by WeeklySubscriptionPrompt.
+        navigate('/dashboard', { replace: true });
       }
       setHasRouted(true);
       return;
@@ -193,12 +160,8 @@ const AuthGate = ({ children }: AuthGateProps) => {
       return;
     }
 
-    // Admin who completed questionnaire: skip subscription, go to dashboard
-    if (isAdmin && adminQuestionnaireDone && currentPath === '/subscription') {
-      navigate('/dashboard', { replace: true });
-      setHasRouted(true);
-      return;
-    }
+    // Admins who completed the questionnaire are intentionally KEPT on
+    // /subscription — they must see the subscription screen every login.
 
     // Normal users: if completed onboarding, skip onboarding routes (except subscription)
     if (!isAdmin && hasCompletedOnboarding && isOnboardingRoute && currentPath !== '/subscription') {
@@ -253,7 +216,16 @@ const AuthGate = ({ children }: AuthGateProps) => {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {/* Weekly gentle subscription nudge for returning, non-admin,
+          non-premium users who finished onboarding. Self-gates internally. */}
+      {user && signedInThisSession && isProtectedAppRoute && (
+        <WeeklySubscriptionPrompt />
+      )}
+    </>
+  );
 };
 
 export default AuthGate;
