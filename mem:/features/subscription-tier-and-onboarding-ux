@@ -1,0 +1,14 @@
+---
+name: Subscription Tier and Flow UX
+description: Strict per-role subscription flow rules — admins always see /subscription on every login; new users go through questionnaire then subscription once; returning normal users go straight to the app and get a gentle weekly UpgradeModal popup
+type: feature
+---
+Premium subscriptions ($4.99/mo, $49.99/yr) via Stripe Checkout.
+
+Flow rules (enforced in `src/components/AuthGate.tsx`):
+- ADMIN: every login → Splash → Sign-in → Questionnaire (QA mode) → /subscription (mandatory, no bypass). Admin questionnaire completion is session-scoped (`admin-questionnaire-done` sessionStorage flag); after that, future entry routing for admins goes directly to /subscription.
+- NEW NORMAL USER (first time): Splash → Sign-up → Questionnaire → /subscription → /dashboard. The questionnaire's final step navigates to /subscription.
+- RETURNING NORMAL USER: Splash → Sign-in → /dashboard. NO forced /subscription redirect on login (regardless of premium status).
+- WEEKLY NUDGE: `src/components/WeeklySubscriptionPrompt.tsx` mounts inside protected app routes and shows the `UpgradeModal` at most once per 7 days per user (localStorage key `upathion_last_sub_prompt_<userId>`), and at most once per session (sessionStorage). 4s initial delay. Self-gated: skipped for admins, premium users, or users who haven't completed onboarding.
+
+Subscription page (/subscription) shows a close (X) button after 3s so users can skip into /dashboard. Admins see an extra "Go to Admin Dashboard" link.
