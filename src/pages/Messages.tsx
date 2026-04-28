@@ -229,7 +229,7 @@ const Messages = () => {
   // Mobile: list view
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background/80 pb-20 relative">
+      <div className="min-h-screen bg-background/80 pb-20 relative animate-fade-in">
         <AppHeader title="Messages" subtitle={`${unreadTotal} unread`}
           rightSlot={<Button size="icon" variant="ghost" onClick={handleNewMessage}><PenSquare className="w-5 h-5" /></Button>} />
         <div className="px-6 pb-3 flex gap-2 border-b border-border/50 animate-fade-in">
@@ -248,7 +248,11 @@ const Messages = () => {
             <GradientInput placeholder="Search messages..." className="pl-9 h-9 text-sm"
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
-          {filteredConversations.length === 0 ? (
+          {dbLoading && !useSeedFallback ? (
+            <div className="text-center py-12 animate-fade-in">
+              <p className="text-sm text-muted-foreground">Loading messages…</p>
+            </div>
+          ) : filteredConversations.length === 0 ? (
             <div className="text-center py-12 animate-fade-in">
               <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
                 <MessageCircle className="w-8 h-8 text-muted-foreground" />
@@ -279,7 +283,7 @@ const Messages = () => {
 
   // Desktop: split panel
   return (
-    <div className="min-h-screen bg-background/80 pb-20 relative">
+    <div className="min-h-screen bg-background/80 pb-20 relative animate-fade-in">
       <AppHeader
         title="Messages"
         subtitle={`${unreadTotal} unread`}
@@ -308,7 +312,11 @@ const Messages = () => {
             </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 ? (
+            {dbLoading && !useSeedFallback ? (
+              <div className="text-center py-12 px-4 animate-fade-in">
+                <p className="text-sm text-muted-foreground">Loading messages…</p>
+              </div>
+            ) : filteredConversations.length === 0 ? (
               <div className="text-center py-12 px-4 animate-fade-in">
                 <MessageCircle className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No conversations found</p>
