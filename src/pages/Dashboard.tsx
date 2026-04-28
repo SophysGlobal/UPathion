@@ -8,6 +8,7 @@ import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass, School, Activity } from "lucide-react";
+import { getDisplaySchoolName } from "@/lib/schoolName";
 
 const Dashboard = () => {
   const { user } = useAuth();
