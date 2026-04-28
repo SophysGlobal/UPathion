@@ -7,6 +7,7 @@ import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
+import { getDisplaySchoolName } from "@/lib/schoolName";
 
 interface PostCardProps {
   post: SeedFeedPost;
@@ -36,7 +37,7 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCar
               {post.authorRole && <span className="text-xs text-muted-foreground">{post.authorRole}</span>}
               {post.authorRole && post.schoolName && <span className="text-xs text-muted-foreground">•</span>}
               {post.schoolName && (
-                <button onClick={() => onSchoolClick(post.schoolName!)} className="text-xs text-primary hover:underline truncate max-w-[200px]">{post.schoolName}</button>
+                <button onClick={() => onSchoolClick(post.schoolName!)} className="text-xs text-primary hover:underline truncate max-w-[200px]">{getDisplaySchoolName(post.schoolName)}</button>
               )}
             </div>
             <span className="text-xs text-muted-foreground">{post.createdAt}</span>
