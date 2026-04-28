@@ -9,8 +9,6 @@ interface AuthGateProps {
 }
 
 const SESSION_SIGNED_IN_KEY = 'upathion_signed_in_this_session';
-const SUBSCRIPTION_SHOWN_KEY = 'upathion_sub_shown_timestamps';
-const MAX_SUB_SHOWS_PER_WEEK = 2;
 
 export const markSessionSignedIn = () => {
   try {
@@ -24,30 +22,6 @@ const hasSignedInThisSession = (): boolean => {
   } catch {
     return false;
   }
-};
-
-/** Check if subscription screen should be shown (max 2x per week for non-premium) */
-const shouldShowSubscription = (): boolean => {
-  try {
-    const raw = localStorage.getItem(SUBSCRIPTION_SHOWN_KEY);
-    const timestamps: number[] = raw ? JSON.parse(raw) : [];
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const recentShows = timestamps.filter((t) => t > oneWeekAgo);
-    return recentShows.length < MAX_SUB_SHOWS_PER_WEEK;
-  } catch {
-    return true;
-  }
-};
-
-const markSubscriptionShown = () => {
-  try {
-    const raw = localStorage.getItem(SUBSCRIPTION_SHOWN_KEY);
-    const timestamps: number[] = raw ? JSON.parse(raw) : [];
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const recentShows = timestamps.filter((t) => t > oneWeekAgo);
-    recentShows.push(Date.now());
-    localStorage.setItem(SUBSCRIPTION_SHOWN_KEY, JSON.stringify(recentShows));
-  } catch {}
 };
 
 // Routes that don't require authentication
