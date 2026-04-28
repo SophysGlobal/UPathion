@@ -158,7 +158,7 @@ const SchoolConfirm = () => {
           </GradientButton>
         </div>
 
-        <div className="flex justify-center gap-2 pt-4 animate-fade-in">
+        <div className="flex justify-center gap-2 pt-10 animate-fade-in">
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
           <div className="w-8 h-1 rounded-full gradient-bg" />
