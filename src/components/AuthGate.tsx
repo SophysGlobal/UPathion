@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { useAdminStatus } from '@/hooks/useAdminStatus';
+import WeeklySubscriptionPrompt from '@/components/WeeklySubscriptionPrompt';
 
 interface AuthGateProps {
   children: ReactNode;
@@ -215,7 +216,16 @@ const AuthGate = ({ children }: AuthGateProps) => {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      {/* Weekly gentle subscription nudge for returning, non-admin,
+          non-premium users who finished onboarding. Self-gates internally. */}
+      {user && signedInThisSession && isProtectedAppRoute && (
+        <WeeklySubscriptionPrompt />
+      )}
+    </>
+  );
 };
 
 export default AuthGate;
