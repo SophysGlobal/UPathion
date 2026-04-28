@@ -11,6 +11,7 @@ import {
   DrawerTitle,
   DrawerClose,
 } from "@/components/ui/drawer";
+import { getDisplaySchoolName } from "@/lib/schoolName";
 
 interface SchoolInfo {
   name: string;
