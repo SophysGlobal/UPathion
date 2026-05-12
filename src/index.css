@@ -126,6 +126,21 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Global overscroll bounce: native elastic scroll on iOS/Safari + smooth
+     physics on macOS, while preventing scroll-chaining (rubber band on
+     parents like the BottomNav / sticky headers). Pages can opt out with
+     `overscroll-none` (e.g. Messages chat panels). */
+  html, body {
+    overscroll-behavior-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  /* Inner scroll containers should bounce locally without affecting parents. */
+  .overscroll-bounce {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .dark body {
     background:
       radial-gradient(

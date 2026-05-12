@@ -208,9 +208,9 @@ const AuthGate = ({ children }: AuthGateProps) => {
   if (isLoading || !hasRouted) {
     return (
       <div className="fixed inset-0 flex items-center justify-center px-4">
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center justify-center gap-3 text-center mx-auto">
           <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground text-sm leading-none">Loading…</p>
+          <p className="text-muted-foreground text-sm leading-none text-center">Loading…</p>
         </div>
       </div>
     );
