@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/OnboardingLayout";
-import { GradientInput } from "@/components/ui/GradientInput";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { toast } from "sonner";
 import { GraduationCap, School } from "lucide-react";
 import SchoolSearchDropdown from "@/components/SchoolSearchDropdown";
+import MajorMultiSelect from "@/components/MajorMultiSelect";
 import BackSkipRow from "@/components/onboarding/BackSkipRow";
 
 const SchoolSetup = () => {
@@ -118,7 +118,12 @@ const SchoolSetup = () => {
         {schoolType === 'college' && (
           <div className="space-y-2 animate-fade-in">
             <label className="text-sm font-medium text-foreground">Major(s) <span className="text-muted-foreground">(optional)</span></label>
-            <GradientInput type="text" placeholder="e.g., Computer Science, Business" value={major} onChange={(e) => setMajor(e.target.value)} />
+            <MajorMultiSelect
+              value={major}
+              onChange={setMajor}
+              placeholder="Search majors..."
+              maxSelections={3}
+            />
           </div>
         )}
         <div className="space-y-3 animate-fade-in pt-2">
