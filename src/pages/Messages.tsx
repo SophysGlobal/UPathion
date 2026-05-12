@@ -210,7 +210,7 @@ const Messages = () => {
   // Mobile: chat panel view
   if (isMobile && selectedConversationId) {
     return (
-      <div className="min-h-screen bg-background/80 pb-20 flex flex-col relative animate-fade-in">
+      <div className="fixed inset-0 bg-background/80 pb-16 flex flex-col relative animate-fade-in overscroll-none">
         <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50">
           <div className="flex items-center gap-3 px-4 py-3">
             <button onClick={() => setSelectedConversationId(null)}
@@ -220,7 +220,9 @@ const Messages = () => {
             </h1>
           </div>
         </header>
-        <ChatPanel conversationId={selectedConversationId} />
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <ChatPanel conversationId={selectedConversationId} />
+        </div>
         <BottomNav />
       </div>
     );
@@ -229,7 +231,7 @@ const Messages = () => {
   // Mobile: list view
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background/80 pb-20 relative animate-fade-in">
+      <div className="min-h-screen bg-background/80 pb-20 relative animate-fade-in overscroll-y-contain">
         <AppHeader title="Messages" subtitle={`${unreadTotal} unread`}
           rightSlot={<Button size="icon" variant="ghost" onClick={handleNewMessage}><PenSquare className="w-5 h-5" /></Button>} />
         <div className="px-6 pb-3 flex gap-2 border-b border-border/50 animate-fade-in">
@@ -283,7 +285,7 @@ const Messages = () => {
 
   // Desktop: split panel
   return (
-    <div className="min-h-screen bg-background/80 pb-20 relative animate-fade-in">
+    <div className="h-screen bg-background/80 pb-16 relative animate-fade-in flex flex-col overflow-hidden overscroll-none">
       <AppHeader
         title="Messages"
         subtitle={`${unreadTotal} unread`}
@@ -293,8 +295,8 @@ const Messages = () => {
           </Button>
         }
       />
-      <div className="flex h-[calc(100vh-4rem-72px)]">
-        <div className="w-[340px] flex-shrink-0 border-r border-border/50 flex flex-col bg-background/60 animate-fade-in">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="w-[340px] flex-shrink-0 border-r border-border/50 flex flex-col bg-background/60 animate-fade-in min-h-0">
           <div className="px-4 py-3 border-b border-border/50">
             <div className="flex gap-1.5 mb-3">
               {filters.map(f => (
@@ -311,7 +313,7 @@ const Messages = () => {
                 value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
             {dbLoading && !useSeedFallback ? (
               <div className="text-center py-12 px-4 animate-fade-in">
                 <p className="text-sm text-muted-foreground">Loading messages…</p>
@@ -334,7 +336,7 @@ const Messages = () => {
             )}
           </div>
         </div>
-        <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 animate-fade-in overflow-hidden">
           <ChatPanel conversationId={selectedConversationId} />
         </div>
       </div>
