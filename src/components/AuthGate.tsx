@@ -73,9 +73,15 @@ const AuthGate = ({ children }: AuthGateProps) => {
   const [hasRouted, setHasRouted] = useState(false);
   const [secondaryTimedOut, setSecondaryTimedOut] = useState(false);
   const secondaryTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  // Once we've successfully routed for the current user, never flash the
+  // loading spinner again — even if a background refetch briefly toggles
+  // profile/admin loading. This prevents reload-feeling flickers between
+  // pages and during questionnaire navigation.
+  const initiallyResolvedRef = useRef(false);
 
   useEffect(() => {
     setHasRouted(false);
+    initiallyResolvedRef.current = false;
     if (user?.id) {
       setAdminQuestionnaireDone(false);
       sessionStorage.removeItem('admin-questionnaire-done');
@@ -188,9 +194,15 @@ const AuthGate = ({ children }: AuthGateProps) => {
 
   useEffect(() => {
     if (isLoading) {
-      setHasRouted(false);
+      // Only clear hasRouted on the very first resolution. Subsequent
+      // background loading states (refetches) must NOT replace the app
+      // with a spinner.
+      if (!initiallyResolvedRef.current) {
+        setHasRouted(false);
+      }
       return;
     }
+    initiallyResolvedRef.current = true;
     performRouting();
   }, [isLoading, performRouting]);
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { searchMajors } from "@/data/majors";
 import { cn } from "@/lib/utils";
@@ -28,18 +29,38 @@ const MajorMultiSelect = ({
   const selected = useMemo(() => splitMajors(value), [value]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement>(null);
+
+  // Track trigger position for the portal dropdown.
+  useEffect(() => {
+    if (!open || !containerRef.current) return;
+    const update = () => {
+      const r = containerRef.current!.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: r.left, width: r.width });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open, query]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target)) return;
+      if (portalRef.current?.contains(target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  const results = useMemo(() => searchMajors(query, 80), [query]);
+  const results = useMemo(() => searchMajors(query, 40), [query]);
 
   const toggle = (major: string) => {
     if (selected.includes(major)) {
@@ -94,8 +115,12 @@ const MajorMultiSelect = ({
         />
       </button>
 
-      {open && (
-        <div className="absolute z-50 mt-2 w-full rounded-lg border border-border bg-popover shadow-lg overflow-hidden animate-fade-in">
+      {open && createPortal(
+        <div
+          ref={portalRef}
+          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 9999 }}
+          className="rounded-lg border border-border bg-popover shadow-lg overflow-hidden animate-fade-in"
+        >
           <div className="px-3 py-2 border-b border-border/60">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
@@ -113,7 +138,7 @@ const MajorMultiSelect = ({
               </p>
             )}
           </div>
-          <div className="max-h-64 overflow-y-auto overscroll-contain">
+          <div className="max-h-56 overflow-y-auto overscroll-contain">
             {results.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-6">
                 No majors match your search
@@ -129,7 +154,7 @@ const MajorMultiSelect = ({
                     disabled={disabled}
                     onClick={() => toggle(m)}
                     className={cn(
-                      "w-full flex items-center justify-between px-3 py-2 text-sm transition-colors border-b border-border/30 last:border-0",
+                      "w-full flex items-center justify-between px-3 py-1.5 text-sm transition-colors border-b border-border/30 last:border-0",
                       isSelected
                         ? "bg-primary/10 text-foreground"
                         : "text-foreground hover:bg-secondary/50",
@@ -138,7 +163,7 @@ const MajorMultiSelect = ({
                   >
                     <span className="truncate">{m}</span>
                     {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0 ml-2">
+                      <div className="w-4 h-4 rounded-full bg-primary flex items-center justify-center shrink-0 ml-2">
                         <Check className="w-3 h-3 text-primary-foreground" />
                       </div>
                     )}
@@ -147,7 +172,8 @@ const MajorMultiSelect = ({
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
