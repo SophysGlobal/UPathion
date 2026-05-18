@@ -75,9 +75,9 @@ const Subscription = () => {
 
       <div className="w-full max-w-md space-y-6 relative z-10">
         {/* Spacer aligns content below the docked UPathion lockup.
-            Reduced from h-16 so "Unlock Premium" sits closer to the brand
-            without feeling cramped against the page edge. */}
-        <div className="h-6" />
+            Bumped to h-20 so the branding sits comfortably above
+            "Unlock Premium" with proper breathing room. */}
+        <div className="h-20" />
 
         <div className="text-center space-y-2 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground">

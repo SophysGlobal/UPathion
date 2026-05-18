@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { searchMajors } from "@/data/majors";
 import { cn } from "@/lib/utils";
@@ -29,31 +28,12 @@ const MajorMultiSelect = ({
   const selected = useMemo(() => splitMajors(value), [value]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const portalRef = useRef<HTMLDivElement>(null);
-
-  // Track trigger position for the portal dropdown.
-  useEffect(() => {
-    if (!open || !containerRef.current) return;
-    const update = () => {
-      const r = containerRef.current!.getBoundingClientRect();
-      setPos({ top: r.bottom + 6, left: r.left, width: r.width });
-    };
-    update();
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, true);
-    return () => {
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
-    };
-  }, [open, query]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const target = e.target as Node;
       if (containerRef.current?.contains(target)) return;
-      if (portalRef.current?.contains(target)) return;
       setOpen(false);
     };
     document.addEventListener("mousedown", onClick);
@@ -115,11 +95,9 @@ const MajorMultiSelect = ({
         />
       </button>
 
-      {open && createPortal(
+      {open && (
         <div
-          ref={portalRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 9999 }}
-          className="rounded-lg border border-border bg-popover shadow-lg overflow-hidden animate-fade-in"
+          className="mt-2 rounded-lg border border-border bg-popover shadow-lg overflow-hidden animate-fade-in"
         >
           <div className="px-3 py-2 border-b border-border/60">
             <div className="relative">
@@ -138,7 +116,7 @@ const MajorMultiSelect = ({
               </p>
             )}
           </div>
-          <div className="max-h-56 overflow-y-auto overscroll-contain">
+          <div className="max-h-44 overflow-y-auto overscroll-contain">
             {results.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-6">
                 No majors match your search
@@ -172,8 +150,7 @@ const MajorMultiSelect = ({
               })
             )}
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   );
