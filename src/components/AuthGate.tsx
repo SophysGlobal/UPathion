@@ -37,6 +37,7 @@ const ONBOARDING_ROUTES = [
   '/onboarding/aspirational-school',
   '/onboarding/interests',
   '/onboarding/extracurriculars',
+  '/onboarding/about',
   '/onboarding/school-confirm',
   '/subscription',
 ];
