@@ -45,9 +45,17 @@ const SchoolSetup = () => {
     if (!schoolType) { toast.error("Please select your school type"); return; }
     if (!schoolName.trim()) { toast.error("Please enter your school name"); return; }
     if (!gradeOrYear) { toast.error("Please select your grade or year"); return; }
-    updateData({ schoolType, schoolName: schoolName.trim(), gradeOrYear, major: major.trim() });
-    if (schoolType === 'high_school') { navigate("/onboarding/aspirational-school"); }
-    else { navigate("/onboarding/interests"); }
+    // College users already pick majors here, so we clear `interests`
+    // (intended majors) to prevent duplicate display on the profile, and
+    // skip the standalone "What are you studying?" question entirely.
+    const baseUpdate = { schoolType, schoolName: schoolName.trim(), gradeOrYear, major: major.trim() };
+    if (schoolType === 'high_school') {
+      updateData(baseUpdate);
+      navigate("/onboarding/aspirational-school");
+    } else {
+      updateData({ ...baseUpdate, interests: [] });
+      navigate("/onboarding/extracurriculars");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
