@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import { matchPath, useLocation } from "react-router-dom";
 import { useTheme } from "@/context/ThemeContext";
 
 /**
@@ -8,8 +9,29 @@ import { useTheme } from "@/context/ThemeContext";
  * repaints from propagating across layers — fixing flicker during splash
  * text animations (Welcome / Let's Get You Started).
  */
+// Routes where the animated particle/orb background is part of the
+// cinematic auth/onboarding experience. On all other (in-app) routes we
+// render a plain themed background so overscroll bounce reveals the
+// theme color only — never the particle field.
+const PARTICLE_ROUTE_PATTERNS = [
+  "/",
+  "/signin",
+  "/signup",
+  "/email-confirmation",
+  "/auth/callback",
+  "/password-reset",
+  "/update-password",
+  "/onboarding/*",
+  "/subscription",
+  "/welcome",
+];
+
 const AnimatedBackground = () => {
   const { resolvedTheme } = useTheme();
+  const { pathname } = useLocation();
+  const showParticles = PARTICLE_ROUTE_PATTERNS.some((p) =>
+    matchPath({ path: p, end: p.indexOf("*") === -1 }, pathname),
+  );
 
   // Stable style objects — never recreated between renders
   const gpuLayer = useMemo<React.CSSProperties>(() => ({
@@ -25,6 +47,20 @@ const AnimatedBackground = () => {
     contain: 'strict',
     isolation: 'isolate',
   }), []);
+
+  // In-app routes: render a flat themed background only. This keeps the
+  // overscroll bounce area visually identical to the page itself in both
+  // light and dark mode, and prevents the questionnaire particle field
+  // from leaking into the main app.
+  if (!showParticles) {
+    return (
+      <div
+        className="fixed inset-0 pointer-events-none -z-10"
+        style={{ background: "hsl(var(--background))" }}
+        aria-hidden
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10" style={containerStyle}>
