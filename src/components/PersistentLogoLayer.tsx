@@ -112,6 +112,27 @@ const PersistentLogoLayer = memo(
     // Wordmark reveal — starts ~40% into intro, finishes with intro.
     const textReveal = easeOut(Math.max(0, Math.min(1, (intro - 0.4) / 0.6)));
 
+    // Measure wordmark width so we can keep the LOGO perfectly centered on
+    // the viewport while the wordmark is still hidden, and gradually shift
+    // the whole group left as the wordmark reveals — producing the
+    // "logo introduces itself, then the brand lockup completes" feel.
+    const wordmarkRef = useRef<HTMLSpanElement | null>(null);
+    const [wordmarkW, setWordmarkW] = useState(0);
+    useEffect(() => {
+      const measure = () => {
+        if (wordmarkRef.current) {
+          setWordmarkW(wordmarkRef.current.offsetWidth);
+        }
+      };
+      measure();
+      window.addEventListener("resize", measure);
+      return () => window.removeEventListener("resize", measure);
+    }, []);
+    // gap-3 = 12px. Offset = half of (wordmark + gap), faded out as text appears
+    // and as migration completes (so docked final layout is the true center).
+    const groupShiftX =
+      ((wordmarkW + 12) / 2) * (1 - textReveal) * (1 - migrateE);
+
     // ---- Geometry ---------------------------------------------------------
     // Splash anchor: viewport center.
     // Docked anchor (centered route): top:64px, horizontal center.
@@ -229,7 +250,10 @@ const PersistentLogoLayer = memo(
           className={cn(
             "pointer-events-auto flex items-center gap-3 hover:opacity-80 transition-opacity",
           )}
-          style={{ transform: "translateZ(0)" }}
+          style={{
+            transform: `translateX(${groupShiftX}px) translateZ(0)`,
+            willChange: "transform",
+          }}
         >
           <img
             src={upathionLogo}
@@ -258,6 +282,7 @@ const PersistentLogoLayer = memo(
             }}
           >
             <span
+              ref={wordmarkRef}
               className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block"
               style={{
                 opacity: textReveal,
