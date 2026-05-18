@@ -188,7 +188,14 @@ const Extracurriculars = () => {
 
   const handleBack = () => {
     updateData({ extracurriculars: selected });
-    navigate("/onboarding/interests");
+    // College users skip the standalone "What are you studying?" step
+    // (majors are captured during school selection), so Back goes
+    // straight to the school step for them.
+    if (data.schoolType === "college") {
+      navigate("/onboarding/school");
+    } else {
+      navigate("/onboarding/interests");
+    }
   };
 
   return (
