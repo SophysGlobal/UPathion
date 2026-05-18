@@ -159,7 +159,7 @@ const PersistentLogoLayer = memo(
     let dockedCenterY: number;
     if (dockedCentered) {
       dockedCenterX = viewportW / 2;
-      dockedCenterY = 64 + endSize / 2; // top-16 + half logo
+      dockedCenterY = 40 + endSize / 2; // top-10 + half logo (raised for tighter header)
     } else {
       dockedCenterX = 20 + endSize / 2; // left-5 + half logo
       dockedCenterY = 12 + endSize / 2; // top-3 + half logo
@@ -194,7 +194,7 @@ const PersistentLogoLayer = memo(
         <div
           className="pointer-events-none absolute left-1/2 z-50"
           style={{
-            top: 64,
+            top: 40,
             transform: `translate(-50%, 0) translateZ(0)`,
           }}
           aria-hidden={false}
