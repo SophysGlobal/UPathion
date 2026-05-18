@@ -6,12 +6,14 @@ interface UserProfile {
   display_name: string | null;
   avatar_url: string | null;
   is_premium: boolean;
+  bio: string | null;
 }
 
 const defaultProfile: UserProfile = {
   display_name: null,
   avatar_url: null,
   is_premium: false,
+  bio: null,
 };
 
 export const useUserProfile = () => {
@@ -24,7 +26,7 @@ export const useUserProfile = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url, is_premium")
+        .select("display_name, avatar_url, is_premium, bio")
         .eq("id", user.id)
         .maybeSingle();
 
