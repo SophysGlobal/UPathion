@@ -132,12 +132,22 @@ const BioSection = ({
       return;
     }
     setGenerating(true);
-    // Simulate AI generation (would call edge function in production)
-    setTimeout(() => {
-      const generated = `Passionate about ${aiPrompt.trim()}. Always looking for new opportunities to learn and grow in my academic journey. Excited to connect with like-minded peers and make the most of the college experience.`;
-      setAiResult(generated);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-bio", {
+        body: { prompt: aiPrompt.trim() },
+      });
+      if (error) throw error;
+      const bio = (data as { bio?: string; error?: string } | null)?.bio?.trim();
+      const errMsg = (data as { error?: string } | null)?.error;
+      if (!bio) throw new Error(errMsg || "AI returned an empty response");
+      setAiResult(bio);
+    } catch (err) {
+      console.error("Bio generation failed:", err);
+      const message = err instanceof Error ? err.message : "Failed to generate bio";
+      toast.error(message);
+    } finally {
       setGenerating(false);
-    }, 1500);
+    }
   };
 
   const handleApply = () => {

@@ -188,6 +188,7 @@ serve(async (req) => {
       return await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
+          'Lovable-API-Key': lovableApiKey ?? '',
           Authorization: `Bearer ${lovableApiKey}`,
           'Content-Type': 'application/json',
         },
