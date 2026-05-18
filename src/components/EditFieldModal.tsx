@@ -17,6 +17,11 @@ const EditFieldModal = ({ open, onOpenChange }: EditFieldModalProps) => {
   const navigate = useNavigate();
   const { data } = useOnboarding();
 
+  const isCollege = data.schoolType === 'college';
+  const majorList = isCollege
+    ? (data.major || '').split(',').map((m) => m.trim()).filter(Boolean)
+    : (data.interests || []);
+
   const fields = [
     {
       label: "Name & Username",
@@ -43,16 +48,25 @@ const EditFieldModal = ({ open, onOpenChange }: EditFieldModalProps) => {
       value: data.aspirationalSchool || "Not set",
     }] : []),
     {
-      label: data.schoolType === 'college' ? "Current Studies" : "Intended Major(s)",
+      label: isCollege ? "Major(s)" : "Intended Major(s)",
       icon: BookOpen,
-      route: "/onboarding/interests",
-      value: data.interests?.length ? data.interests.slice(0, 2).join(", ") : "Not set",
+      // College users edit their major on the school selection step
+      // (majors are captured inline there). High schoolers use the
+      // standalone intended-majors step.
+      route: isCollege ? "/onboarding/school" : "/onboarding/interests",
+      value: majorList.length ? majorList.slice(0, 2).join(", ") : "Not set",
     },
     {
       label: "Extracurriculars",
       icon: Activity,
       route: "/onboarding/extracurriculars",
       value: data.extracurriculars?.length ? data.extracurriculars.slice(0, 2).join(", ") : "Not set",
+    },
+    {
+      label: "About",
+      icon: MessageSquare,
+      route: "/onboarding/about",
+      value: data.about?.trim() ? data.about.trim().slice(0, 40) + (data.about.trim().length > 40 ? "…" : "") : "Not set",
     },
   ];
 
