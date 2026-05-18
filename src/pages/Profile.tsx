@@ -74,80 +74,103 @@ const Profile = () => {
       <main className="relative z-10 px-6 py-6 space-y-6">
         {isReady ? (
           <>
-            {/* Profile Card */}
-            <div className="gradient-border animate-fade-in">
-              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 text-center">
-                <div className="flex justify-center mb-4">
-                  <ProfileAvatar
-                    avatarUrl={profile.avatar_url}
-                    isPremium={profile.is_premium}
-                    size="lg"
-                  />
-                </div>
-                <h2 className="text-xl font-bold text-foreground">
-                  {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
-                </h2>
-                {data.username && (
-                  <p className="text-sm text-primary">@{data.username}</p>
-                )}
-                {data.schoolName ? (
-                  <button
-                    onClick={() => schoolId && navigate(`/school/${schoolId}`)}
-                    className={`text-sm mt-1 transition-colors ${
-                      schoolId 
-                        ? 'text-primary hover:underline cursor-pointer' 
-                        : 'text-muted-foreground cursor-default'
-                    }`}
-                  >
-                    {data.schoolName}
-                  </button>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-1">No school set</p>
-                )}
-                {data.gradeOrYear && (
-                  <p className="text-xs text-muted-foreground mt-1">Grade: {data.gradeOrYear}</p>
-                )}
-                {data.major && (
-                  <p className="text-xs text-muted-foreground">{data.major}</p>
-                )}
-                {data.interests && data.interests.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs text-muted-foreground mb-1.5">Intended Majors</p>
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {data.interests.map((interest) => (
-                        <span key={interest} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-                          {interest}
+            {/* Profile Card — structured two-column layout:
+                LEFT  → identity (avatar, name, plan, school)
+                RIGHT → academic/social (majors, extracurriculars)
+                Stacks vertically on mobile. */}
+            {(() => {
+              const isCollege = data.schoolType === 'college';
+              const majorsList = isCollege
+                ? (data.major || '').split(',').map((m) => m.trim()).filter(Boolean)
+                : (data.interests || []);
+              const majorsLabel = isCollege ? 'Majors' : 'Intended Majors';
+              return (
+                <div className="gradient-border animate-fade-in">
+                  <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-5 sm:gap-6">
+                    {/* LEFT — identity */}
+                    <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-2 sm:min-w-[140px]">
+                      <ProfileAvatar
+                        avatarUrl={profile.avatar_url}
+                        isPremium={profile.is_premium}
+                        size="lg"
+                      />
+                      <div className="flex-1 sm:flex-none min-w-0">
+                        <h2 className="text-lg font-bold text-foreground truncate">
+                          {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
+                        </h2>
+                        {data.username && (
+                          <p className="text-sm text-primary truncate">@{data.username}</p>
+                        )}
+                        <span
+                          className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            profile.is_premium
+                              ? 'bg-accent/20 text-accent'
+                              : 'bg-secondary text-muted-foreground'
+                          }`}
+                        >
+                          {profile.is_premium ? 'Premium' : 'Free'}
                         </span>
-                      ))}
+                        {data.schoolName ? (
+                          <button
+                            onClick={() => schoolId && navigate(`/school/${schoolId}`)}
+                            className={`block text-sm mt-2 text-left transition-colors truncate ${
+                              schoolId
+                                ? 'text-primary hover:underline cursor-pointer'
+                                : 'text-muted-foreground cursor-default'
+                            }`}
+                          >
+                            {data.schoolName}
+                          </button>
+                        ) : (
+                          <p className="text-sm text-muted-foreground mt-2">No school set</p>
+                        )}
+                        {data.gradeOrYear && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{data.gradeOrYear}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {data.extracurriculars && data.extracurriculars.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs text-muted-foreground mb-1.5">Extracurriculars</p>
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {data.extracurriculars.slice(0, 5).map((ec) => (
-                        <span key={ec} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs">
-                          {ec}
-                        </span>
-                      ))}
-                      {data.extracurriculars.length > 5 && (
-                        <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
-                          +{data.extracurriculars.length - 5} more
-                        </span>
+
+                    {/* RIGHT — academic / social */}
+                    <div className="space-y-4 sm:border-l sm:border-border/40 sm:pl-6">
+                      {majorsList.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1.5">{majorsLabel}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {majorsList.map((m) => (
+                              <span key={m} className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">
+                                {m}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {data.extracurriculars && data.extracurriculars.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1.5">Extracurriculars</p>
+                          <div className="flex flex-wrap gap-1">
+                            {data.extracurriculars.slice(0, 6).map((ec) => (
+                              <span key={ec} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs">
+                                {ec}
+                              </span>
+                            ))}
+                            {data.extracurriculars.length > 6 && (
+                              <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
+                                +{data.extracurriculars.length - 6}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {majorsList.length === 0 && (!data.extracurriculars || data.extracurriculars.length === 0) && (
+                        <p className="text-xs text-muted-foreground italic">
+                          Add majors and activities to complete your profile.
+                        </p>
                       )}
                     </div>
                   </div>
-                )}
-                <div className="h-6 mt-2">
-                  {profile.is_premium && (
-                    <span className="inline-block px-3 py-1 rounded-full bg-accent/20 text-accent text-xs font-medium">
-                      Premium Member
-                    </span>
-                  )}
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Menu Items */}
             <div className="space-y-3">
