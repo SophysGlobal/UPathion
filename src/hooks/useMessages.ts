@@ -415,36 +415,20 @@ export function useMessages(conversationId: string | undefined) {
 }
 
 export async function createConversation(participantIds: string[]): Promise<string | null> {
-  // Create conversation
-  const { data: conversation, error: convError } = await supabase
-    .from('conversations')
-    .insert({})
-    .select()
-    .single();
-
-  if (convError || !conversation) {
-    console.error('Error creating conversation:', convError);
+  // Direct (1:1) conversation creation goes through a SECURITY DEFINER RPC
+  // so users cannot add themselves to arbitrary conversations.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const other = participantIds.find((id) => id !== user.id);
+  if (!other) return null;
+  const { data, error } = await supabase.rpc('create_direct_conversation', {
+    other_user_id: other,
+  });
+  if (error) {
+    console.error('Error creating conversation:', error);
     return null;
   }
-
-  // Add participants
-  const participants = participantIds.map(userId => ({
-    conversation_id: conversation.id,
-    user_id: userId,
-  }));
-
-  const { error: participantsError } = await supabase
-    .from('conversation_participants')
-    .insert(participants);
-
-  if (participantsError) {
-    console.error('Error adding participants:', participantsError);
-    // Cleanup conversation
-    await supabase.from('conversations').delete().eq('id', conversation.id);
-    return null;
-  }
-
-  return conversation.id;
+  return (data as string) ?? null;
 }
 
 export async function findExistingConversation(userId1: string, userId2: string): Promise<string | null> {
