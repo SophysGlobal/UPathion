@@ -178,12 +178,12 @@ const Extracurriculars = () => {
 
   const handleContinue = () => {
     updateData({ extracurriculars: selected });
-    navigate("/onboarding/school-confirm");
+    navigate("/onboarding/about");
   };
 
   const handleSkip = () => {
     updateData({ extracurriculars: [] });
-    navigate("/onboarding/school-confirm");
+    navigate("/onboarding/about");
   };
 
   const handleBack = () => {

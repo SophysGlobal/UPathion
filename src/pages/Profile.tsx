@@ -10,7 +10,7 @@ import { GradientButton } from "@/components/ui/GradientButton";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import UpgradeModal from "@/components/UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
-import { School, Settings, LogOut, ChevronRight, User, Crown } from "lucide-react";
+import { School, Settings, LogOut, ChevronRight, User, Crown, MessageSquare } from "lucide-react";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -71,12 +71,13 @@ const Profile = () => {
       
       <AppHeader title="Profile" />
 
-      <main className="relative z-10 px-6 py-6 space-y-6">
+      <main className="relative z-10 px-6 py-6 space-y-6 max-w-6xl mx-auto">
         {isReady ? (
           <>
-            {/* Profile Card — structured two-column layout:
-                LEFT  → identity (avatar, name, plan, school)
-                RIGHT → academic/social (majors, extracurriculars)
+            {/* Profile screen — 50/50 split:
+                LEFT  → identity content block (avatar, name, school, majors,
+                         extracurriculars, About)
+                RIGHT → action buttons (Edit, School, Settings, Plan, Sign Out)
                 Stacks vertically on mobile. */}
             {(() => {
               const isCollege = data.schoolType === 'college';
@@ -84,124 +85,148 @@ const Profile = () => {
                 ? (data.major || '').split(',').map((m) => m.trim()).filter(Boolean)
                 : (data.interests || []);
               const majorsLabel = isCollege ? 'Majors' : 'Intended Majors';
+              const aboutText = (profile.bio || data.about || '').trim();
               return (
-                <div className="gradient-border animate-fade-in">
-                  <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-5 sm:gap-6">
-                    {/* LEFT — identity */}
-                    <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-2 sm:min-w-[140px]">
-                      <ProfileAvatar
-                        avatarUrl={profile.avatar_url}
-                        isPremium={profile.is_premium}
-                        size="lg"
-                      />
-                      <div className="flex-1 sm:flex-none min-w-0">
-                        <h2 className="text-lg font-bold text-foreground truncate">
-                          {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
-                        </h2>
-                        {data.username && (
-                          <p className="text-sm text-primary truncate">@{data.username}</p>
-                        )}
-                        <span
-                          className={`inline-block mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            profile.is_premium
-                              ? 'bg-accent/20 text-accent'
-                              : 'bg-secondary text-muted-foreground'
-                          }`}
-                        >
-                          {profile.is_premium ? 'Premium' : 'Free'}
-                        </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                  {/* LEFT — identity content block */}
+                  <div className="gradient-border">
+                    <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 space-y-5 h-full">
+                      <div className="flex items-center gap-4">
+                        <ProfileAvatar
+                          avatarUrl={profile.avatar_url}
+                          isPremium={profile.is_premium}
+                          size="lg"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <h2 className="text-lg font-bold text-foreground truncate">
+                            {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
+                          </h2>
+                          {data.username && (
+                            <p className="text-sm text-primary truncate">@{data.username}</p>
+                          )}
+                          <span
+                            className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                              profile.is_premium
+                                ? 'bg-accent/20 text-accent'
+                                : 'bg-secondary text-muted-foreground'
+                            }`}
+                          >
+                            {profile.is_premium ? 'Premium' : 'Free'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-border/40" />
+
+                      {/* School */}
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">School</p>
                         {data.schoolName ? (
                           <button
                             onClick={() => schoolId && navigate(`/school/${schoolId}`)}
-                            className={`block text-sm mt-2 text-left transition-colors truncate ${
+                            className={`block text-sm text-left transition-colors truncate ${
                               schoolId
                                 ? 'text-primary hover:underline cursor-pointer'
-                                : 'text-muted-foreground cursor-default'
+                                : 'text-foreground cursor-default'
                             }`}
                           >
                             {data.schoolName}
                           </button>
                         ) : (
-                          <p className="text-sm text-muted-foreground mt-2">No school set</p>
+                          <p className="text-sm text-muted-foreground">No school set</p>
                         )}
                         {data.gradeOrYear && (
                           <p className="text-xs text-muted-foreground mt-0.5">{data.gradeOrYear}</p>
                         )}
                       </div>
-                    </div>
 
-                    {/* RIGHT — academic / social */}
-                    <div className="space-y-4 sm:border-l sm:border-border/40 sm:pl-6">
+                      {/* Majors */}
                       {majorsList.length > 0 && (
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1.5">{majorsLabel}</p>
-                          <div className="flex flex-wrap gap-1">
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">{majorsLabel}</p>
+                          <div className="flex flex-wrap gap-1.5">
                             {majorsList.map((m) => (
-                              <span key={m} className="px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">
+                              <span key={m} className="px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">
                                 {m}
                               </span>
                             ))}
                           </div>
                         </div>
                       )}
+
+                      {/* Extracurriculars */}
                       {data.extracurriculars && data.extracurriculars.length > 0 && (
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1.5">Extracurriculars</p>
-                          <div className="flex flex-wrap gap-1">
-                            {data.extracurriculars.slice(0, 6).map((ec) => (
-                              <span key={ec} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs">
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Extracurriculars</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {data.extracurriculars.slice(0, 8).map((ec) => (
+                              <span key={ec} className="px-2.5 py-0.5 rounded-full bg-accent/10 text-accent text-xs">
                                 {ec}
                               </span>
                             ))}
-                            {data.extracurriculars.length > 6 && (
-                              <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
-                                +{data.extracurriculars.length - 6}
+                            {data.extracurriculars.length > 8 && (
+                              <span className="px-2.5 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
+                                +{data.extracurriculars.length - 8}
                               </span>
                             )}
                           </div>
                         </div>
                       )}
-                      {majorsList.length === 0 && (!data.extracurriculars || data.extracurriculars.length === 0) && (
-                        <p className="text-xs text-muted-foreground italic">
-                          Add majors and activities to complete your profile.
+
+                      {/* About */}
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" /> About
                         </p>
-                      )}
+                        {aboutText ? (
+                          <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                            {aboutText}
+                          </p>
+                        ) : (
+                          <button
+                            onClick={() => navigate('/edit-profile')}
+                            className="text-sm text-muted-foreground italic hover:text-primary transition-colors text-left"
+                          >
+                            Add a short intro so others can get to know you.
+                          </button>
+                        )}
+                      </div>
                     </div>
+                  </div>
+
+                  {/* RIGHT — action buttons */}
+                  <div className="space-y-3">
+                    {menuItems.filter(item => !item.hidden).map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={item.action}
+                        className="w-full gradient-border group"
+                      >
+                        <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
+                          <div className="flex items-center gap-3">
+                            <item.icon className="w-5 h-5 text-primary" />
+                            <span className="font-medium text-foreground">{item.label}</span>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      </button>
+                    ))}
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full gradient-border group"
+                    >
+                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-destructive/10">
+                        <div className="flex items-center gap-3">
+                          <LogOut className="w-5 h-5 text-destructive" />
+                          <span className="font-medium text-destructive">Sign Out</span>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    </button>
                   </div>
                 </div>
               );
             })()}
-
-            {/* Menu Items */}
-            <div className="space-y-3">
-              {menuItems.filter(item => !item.hidden).map((item) => (
-                <button
-                  key={item.label}
-                  onClick={item.action}
-                  className="w-full gradient-border group animate-fade-in"
-                >
-                  <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
-                    <div className="flex items-center gap-3">
-                      <item.icon className="w-5 h-5 text-primary" />
-                      <span className="font-medium text-foreground">{item.label}</span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Sign Out */}
-            <div className="pt-4 animate-fade-in">
-              <GradientButton
-                variant="ghost"
-                className="w-full text-destructive hover:bg-destructive/10"
-                onClick={handleSignOut}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </GradientButton>
-            </div>
           </>
         ) : (
           <div className="space-y-6">

@@ -7,7 +7,7 @@ import EditFieldModal from "@/components/EditFieldModal";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { School, GraduationCap, BookOpen, Calendar, Sparkles, Activity } from "lucide-react";
+import { School, GraduationCap, BookOpen, Calendar, Sparkles, Activity, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { getDisplaySchoolName } from "@/lib/schoolName";
 
@@ -41,6 +41,7 @@ const SchoolConfirm = () => {
         referral_source_other: data.referralSourceOther || null,
         interests: data.interests?.length ? data.interests : [],
         extracurriculars: data.extracurriculars?.length ? data.extracurriculars : [],
+        bio: data.about?.trim() ? data.about.trim() : null,
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };
@@ -107,14 +108,21 @@ const SchoolConfirm = () => {
             value={data.gradeOrYear || '—'}
           />
 
-          {data.interests && data.interests.length > 0 && (
-            <DetailCard
-              icon={<BookOpen className="w-4 h-4 text-accent" />}
-              iconBg="bg-secondary"
-              label={data.schoolType === 'college' ? 'Major(s)' : 'Intended Major(s)'}
-              value={data.interests.join(', ')}
-            />
-          )}
+          {(() => {
+            const isCollege = data.schoolType === 'college';
+            const majorList = isCollege
+              ? (data.major || '').split(',').map((m) => m.trim()).filter(Boolean)
+              : (data.interests || []);
+            if (majorList.length === 0) return null;
+            return (
+              <DetailCard
+                icon={<BookOpen className="w-4 h-4 text-accent" />}
+                iconBg="bg-secondary"
+                label={isCollege ? 'Major(s)' : 'Intended Major(s)'}
+                value={majorList.join(', ')}
+              />
+            );
+          })()}
 
           {data.extracurriculars && data.extracurriculars.length > 0 && (
             <DetailCard
@@ -136,6 +144,15 @@ const SchoolConfirm = () => {
               iconBg="bg-secondary"
               label="Dream School"
               value={getDisplaySchoolName(data.aspirationalSchool, 'college')}
+            />
+          )}
+
+          {data.about && data.about.trim() && (
+            <DetailCard
+              icon={<MessageSquare className="w-4 h-4 text-primary" />}
+              iconBg="bg-secondary"
+              label="About"
+              value={data.about.trim()}
             />
           )}
         </div>
