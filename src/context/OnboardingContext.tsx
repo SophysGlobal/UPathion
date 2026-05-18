@@ -15,6 +15,7 @@ interface OnboardingData {
   aspirationalSchool: string;
   interests: string[];
   extracurriculars: string[];
+  about: string;
 }
 
 interface OnboardingContextType {
@@ -36,6 +37,7 @@ const defaultData: OnboardingData = {
   aspirationalSchool: '',
   interests: [],
   extracurriculars: [],
+  about: '',
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -53,7 +55,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { data: userData, error } = await supabase
           .from('profiles')
-          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests, extracurriculars')
+          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests, extracurriculars, bio')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -72,6 +74,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
           referralSourceOther: userData?.referral_source_other || '',
           interests: userData?.interests || [],
           extracurriculars: (userData as any)?.extracurriculars || [],
+          about: userData?.bio || '',
         };
         
         initialDataRef.current = result;
