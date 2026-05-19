@@ -146,7 +146,7 @@ const SignIn = () => {
       {/* Fixed top offset (not viewport-height based) so the gap between the
           docked logo (top:64, ~48px tall) and the welcome heading is constant
           across every device. */}
-      <div className="w-full max-w-md space-y-8 relative z-10 pt-[160px]">
+      <div className="w-full max-w-md space-y-8 relative z-10 pt-[156px]">
 
         {/* Welcome text — adapts to new vs returning users */}
         <div className="text-center space-y-2 animate-fade-in">
