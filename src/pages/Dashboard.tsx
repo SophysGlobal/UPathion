@@ -186,15 +186,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Empty State */}
-        <div className="text-center py-12 animate-fade-in" style={{ animationDelay: '0.25s', animationFillMode: 'both' }}>
-          <div className="w-20 h-20 rounded-full bg-secondary/50 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
-            <Users className="w-10 h-10 text-muted-foreground" />
-          </div>
-          <h3 className="font-medium text-foreground mb-2">No activity yet</h3>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto">Start exploring to see what's happening in your community</p>
-        </div>
-
         {/* ===== FEED SECTION — appears below existing dashboard blocks ===== */}
         <DashboardFeed onExplore={() => navigate('/explore')} />
       </main>
