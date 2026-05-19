@@ -118,6 +118,25 @@ const Subscription = () => {
           });
           return;
         }
+        // Detect when the user closes the Stripe tab without completing
+        // checkout. Verify subscription one last time before declaring it
+        // canceled — handles the race where Stripe redirects + auto-closes
+        // the tab after a successful payment.
+        const popupRef = checkoutWindowRef.current;
+        if (popupRef && popupRef.closed) {
+          const ok = await checkSubscription();
+          stopPolling();
+          setIsWaiting(false);
+          if (ok) {
+            toast.success("Welcome to Premium!");
+            navigate("/dashboard");
+          } else {
+            toast.error("Payment canceled or incomplete", {
+              description: "Your checkout was closed before payment finished. You can try again anytime.",
+            });
+          }
+          return;
+        }
         const ok = await checkSubscription();
         if (ok) {
           stopPolling();
