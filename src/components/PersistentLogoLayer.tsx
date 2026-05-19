@@ -151,8 +151,12 @@ const PersistentLogoLayer = memo(
     const endSize = 48;
     const logoSize = startSize - (startSize - endSize) * migrateE;
 
-    // Wordmark scales to match Logo's text-2xl in docked state.
-    const textScale = 1 - 0.25 * migrateE;
+    // Wordmark renders at its final size (text-2xl) the entire time so the
+    // reserved layout width matches the actual visible width. This keeps the
+    // logo+wordmark lockup OPTICALLY centered on the viewport — previously
+    // we applied a transform: scale(0.75) which shrank the visible wordmark
+    // but left the container width at the un-scaled size, shifting the
+    // visual midpoint of the lockup to the left of true center.
 
     // Compute translate from viewport center to docked anchor (logo center).
     let dockedCenterX: number;
@@ -219,7 +223,7 @@ const PersistentLogoLayer = memo(
               style={{ width: endSize, height: endSize }}
             />
             {showWordmarkDocked && (
-              <span className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block" style={{ transform: `scale(${1 - 0.25})`, transformOrigin: "left center" }}>
+              <span className="text-2xl font-bold gradient-text whitespace-nowrap block">
                 UPathion
               </span>
             )}
@@ -283,10 +287,10 @@ const PersistentLogoLayer = memo(
           >
             <span
               ref={wordmarkRef}
-              className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text whitespace-nowrap block"
+              className="text-2xl font-bold gradient-text whitespace-nowrap block"
               style={{
                 opacity: textReveal,
-                transform: `translateX(${(1 - textReveal) * -20}px) scale(${textScale}) translateZ(0)`,
+                transform: `translateX(${(1 - textReveal) * -20}px) translateZ(0)`,
                 transformOrigin: "left center",
                 willChange: "transform, opacity",
               }}

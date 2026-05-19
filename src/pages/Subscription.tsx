@@ -92,8 +92,12 @@ const Subscription = () => {
       if (!url) throw new Error("No checkout URL returned");
 
       // Open Stripe checkout in a new tab so the main app stays stable.
-      const popup = window.open(url, "_blank", "noopener,noreferrer");
-      if (!popup) {
+      // NOTE: do NOT pass "noopener" here — window.open returns null with
+      // noopener, which makes our popup-blocker fallback fire and causes
+      // BOTH tabs to redirect to Stripe. Omitting it lets us detect a real
+      // popup block (returns null only when blocked).
+      const popup = window.open(url, "_blank");
+      if (!popup || popup.closed || typeof popup.closed === "undefined") {
         // Popup blocked — fall back to same-tab redirect.
         window.location.href = url;
         return;
@@ -220,15 +224,15 @@ const Subscription = () => {
             disabled={isLoading || isWaiting}
           >
             {isLoading ? (
-              <span className="inline-flex items-center justify-center gap-2 leading-none">
+              <>
                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                <span>Processing...</span>
-              </span>
+                <span className="leading-none">Processing...</span>
+              </>
             ) : isWaiting ? (
-              <span className="inline-flex items-center justify-center gap-2 leading-none">
+              <>
                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                <span>Waiting for payment...</span>
-              </span>
+                <span className="leading-none">Waiting for payment...</span>
+              </>
             ) : (
               "Start Premium"
             )}
