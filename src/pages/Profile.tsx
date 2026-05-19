@@ -71,7 +71,7 @@ const Profile = () => {
       
       <AppHeader title="Profile" />
 
-      <main className="relative z-10 px-6 py-6 space-y-6 max-w-6xl mx-auto">
+      <main className="relative z-10 px-5 py-5 space-y-5 max-w-5xl mx-auto">
         {isReady ? (
           <>
             {/* Profile screen — 50/50 split:
@@ -87,10 +87,10 @@ const Profile = () => {
               const majorsLabel = isCollege ? 'Majors' : 'Intended Majors';
               const aboutText = (profile.bio || data.about || '').trim();
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in items-start">
                   {/* LEFT — identity content block */}
                   <div className="gradient-border">
-                    <div className="bg-card/90 backdrop-blur-sm rounded-lg p-6 space-y-5 h-full">
+                    <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5 space-y-4 h-full">
                       <div className="flex items-center gap-4">
                         <ProfileAvatar
                           avatarUrl={profile.avatar_url}
@@ -195,14 +195,14 @@ const Profile = () => {
                   </div>
 
                   {/* RIGHT — action buttons */}
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {menuItems.filter(item => !item.hidden).map((item) => (
                       <button
                         key={item.label}
                         onClick={item.action}
                         className="w-full gradient-border group"
                       >
-                        <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
+                        <div className="bg-card/90 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
                           <div className="flex items-center gap-3">
                             <item.icon className="w-5 h-5 text-primary" />
                             <span className="font-medium text-foreground">{item.label}</span>
@@ -215,7 +215,7 @@ const Profile = () => {
                       onClick={handleSignOut}
                       className="w-full gradient-border group"
                     >
-                      <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-center justify-between transition-colors group-hover:bg-destructive/10">
+                      <div className="bg-card/90 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center justify-between transition-colors group-hover:bg-destructive/10">
                         <div className="flex items-center gap-3">
                           <LogOut className="w-5 h-5 text-destructive" />
                           <span className="font-medium text-destructive">Sign Out</span>
