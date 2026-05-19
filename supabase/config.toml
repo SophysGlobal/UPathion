@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.import-schools]
 verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
