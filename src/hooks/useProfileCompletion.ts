@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { usePlanSimulation, applyPlanOverride } from './usePlanSimulation';
 
 export interface ProfileData {
   id: string;
@@ -23,6 +24,7 @@ export interface ProfileData {
 
 export const useProfileCompletion = () => {
   const { user } = useAuth();
+  const { isAdmin, simulatedPlan } = usePlanSimulation();
 
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ['profile-completion', user?.id],
@@ -47,16 +49,20 @@ export const useProfileCompletion = () => {
     gcTime: 1000 * 60 * 10,
   });
 
+  const effectiveProfile = profile
+    ? { ...profile, is_premium: applyPlanOverride(profile.is_premium, isAdmin, simulatedPlan) }
+    : profile;
+
   const isProfileComplete = !!(
-    profile?.display_name &&
-    profile?.username &&
-    profile?.school_name
+    effectiveProfile?.display_name &&
+    effectiveProfile?.username &&
+    effectiveProfile?.school_name
   );
 
-  const hasCompletedOnboarding = profile?.onboarding_completed ?? false;
+  const hasCompletedOnboarding = effectiveProfile?.onboarding_completed ?? false;
 
   return {
-    profile,
+    profile: effectiveProfile,
     isLoading,
     isProfileComplete,
     hasCompletedOnboarding,

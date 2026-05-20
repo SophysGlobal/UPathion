@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +13,10 @@ import {
   Badge, 
   Building2, 
   Sparkles, 
-  Check 
+  Check,
+  Loader2,
 } from "lucide-react";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -24,7 +25,9 @@ interface UpgradeModalProps {
 
 const UpgradeModal = ({ open, onOpenChange }: UpgradeModalProps) => {
   const [isYearly, setIsYearly] = useState(false);
-  const navigate = useNavigate();
+  const { isLoading, isWaiting, startCheckout, cancelWaiting } = useStripeCheckout(
+    () => onOpenChange(false),
+  );
 
   const pricing = {
     monthly: { price: 4.99, period: "month" },
@@ -57,8 +60,7 @@ const UpgradeModal = ({ open, onOpenChange }: UpgradeModalProps) => {
   ];
 
   const handleSubscribe = () => {
-    onOpenChange(false);
-    navigate("/subscription");
+    startCheckout(isYearly ? "yearly" : "monthly");
   };
 
   return (
@@ -128,10 +130,33 @@ const UpgradeModal = ({ open, onOpenChange }: UpgradeModalProps) => {
             className="w-full" 
             size="lg"
             onClick={handleSubscribe}
+            disabled={isLoading || isWaiting}
           >
-            <Check className="w-4 h-4 mr-2" />
-            Start Premium
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" />
+                <span>Processing...</span>
+              </>
+            ) : isWaiting ? (
+              <>
+                <Loader2 className="animate-spin" />
+                <span>Waiting for payment...</span>
+              </>
+            ) : (
+              <>
+                <Check />
+                <span>Start Premium</span>
+              </>
+            )}
           </GradientButton>
+          {isWaiting && (
+            <button
+              onClick={cancelWaiting}
+              className="w-full -mt-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Cancel and return
+            </button>
+          )}
 
           <p className="text-xs text-center text-muted-foreground">
             Cancel anytime. No commitments.

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { usePlanSimulation, applyPlanOverride } from "./usePlanSimulation";
 
 export const usePremiumStatus = () => {
   const { user } = useAuth();
+  const { isAdmin, simulatedPlan } = usePlanSimulation();
   const [isPremium, setIsPremium] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -35,5 +37,8 @@ export const usePremiumStatus = () => {
     checkPremiumStatus();
   }, [user]);
 
-  return { isPremium, loading };
+  return {
+    isPremium: applyPlanOverride(isPremium, isAdmin, simulatedPlan),
+    loading,
+  };
 };

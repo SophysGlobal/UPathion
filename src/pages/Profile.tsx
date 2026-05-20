@@ -10,7 +10,8 @@ import { GradientButton } from "@/components/ui/GradientButton";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import UpgradeModal from "@/components/UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
-import { School, Settings, LogOut, ChevronRight, User, Crown, MessageSquare } from "lucide-react";
+import { School, Settings, LogOut, ChevronRight, User, Crown, MessageSquare, FlaskConical } from "lucide-react";
+import { usePlanSimulation } from "@/hooks/usePlanSimulation";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -19,6 +20,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [schoolId, setSchoolId] = useState<string | null>(null);
+  const { isAdmin, simulatedPlan, togglePlan } = usePlanSimulation();
 
   const isReady = !profileLoading && !onboardingLoading;
 
@@ -211,6 +213,28 @@ const Profile = () => {
                         </div>
                       </button>
                     ))}
+                    {isAdmin && (
+                      <button
+                        onClick={togglePlan}
+                        className="w-full gradient-border group"
+                        aria-label="Admin plan toggle"
+                      >
+                        <div className="bg-card/90 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center justify-between transition-colors group-hover:bg-secondary/50">
+                          <div className="flex items-center gap-3">
+                            <FlaskConical className="w-5 h-5 text-accent" />
+                            <div className="text-left">
+                              <span className="font-medium text-foreground block leading-tight">
+                                Switch Plan (Admin)
+                              </span>
+                              <span className="text-[11px] text-muted-foreground">
+                                Currently testing: {(simulatedPlan ?? "premium") === "premium" ? "Premium" : "Free"}
+                              </span>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      </button>
+                    )}
                     <button
                       onClick={handleSignOut}
                       className="w-full gradient-border group"
