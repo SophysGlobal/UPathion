@@ -1,6 +1,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { usePlanSimulation, applyPlanOverride } from "./usePlanSimulation";
 
 interface UserProfile {
   display_name: string | null;
@@ -18,6 +19,7 @@ const defaultProfile: UserProfile = {
 
 export const useUserProfile = () => {
   const { user } = useAuth();
+  const { isAdmin, simulatedPlan } = usePlanSimulation();
 
   const { data: profile, isLoading: loading } = useQuery({
     queryKey: ["user-profile", user?.id],
@@ -42,5 +44,12 @@ export const useUserProfile = () => {
     gcTime: 1000 * 60 * 10, // Keep in garbage collection for 10 minutes
   });
 
-  return { profile: profile ?? defaultProfile, loading };
+  const base = profile ?? defaultProfile;
+  return {
+    profile: {
+      ...base,
+      is_premium: applyPlanOverride(base.is_premium, isAdmin, simulatedPlan),
+    },
+    loading,
+  };
 };
