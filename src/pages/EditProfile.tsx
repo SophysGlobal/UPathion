@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import SchoolSearchDropdown from "@/components/SchoolSearchDropdown";
 import MultiSelectSchools from "@/components/MultiSelectSchools";
+import UpgradeModal from "@/components/UpgradeModal";
 import {
   ChevronLeft,
   Mail,
@@ -125,6 +126,18 @@ const BioSection = ({
   const [aiResult, setAiResult] = useState("");
   const [generating, setGenerating] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+
+  const handleAiClick = () => {
+    if (!isPremium) {
+      setUpgradeOpen(true);
+      return;
+    }
+    // Seed the AI prompt with whatever the user already wrote so they can
+    // "rewrite" rather than start from scratch (LinkedIn-style assist).
+    setAiPrompt(bio.trim());
+    setAiModalOpen(true);
+  };
 
   const handleGenerate = async () => {
     if (!aiPrompt.trim()) {
@@ -168,22 +181,22 @@ const BioSection = ({
   return (
     <div className="gradient-border animate-fade-in">
       <div className="bg-card/90 backdrop-blur-sm rounded-lg p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">About Me</h2>
-            <p className="text-xs text-muted-foreground">Write a short bio about yourself</p>
-          </div>
-          {isPremium && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setAiModalOpen(true)}
-              className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Generate with AI
-            </Button>
-          )}
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-foreground">About Me</h2>
+          <p className="text-xs text-muted-foreground">Write a short bio about yourself</p>
+        </div>
+        {/* Write with AI lives at the top-left of the bio editing area,
+            LinkedIn-style. Free users see the upgrade modal on click. */}
+        <div className="mb-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleAiClick}
+            className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Write with AI
+          </Button>
         </div>
         <textarea
           value={bio}
@@ -201,10 +214,11 @@ const BioSection = ({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
-                Generate Bio with AI
+                Write Bio with AI
               </DialogTitle>
               <DialogDescription>
-                Enter keywords about your interests, goals, and personality
+                Paste your bio or list keywords — AI will rewrite it to sound
+                more professional and networking-friendly.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -220,7 +234,7 @@ const BioSection = ({
                 disabled={generating || !aiPrompt.trim()}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                {generating ? "Generating..." : "Generate Bio"}
+                {generating ? "Writing..." : aiResult ? "Regenerate" : "Write Bio"}
               </Button>
               {aiResult && (
                 <div className="space-y-2">
@@ -261,6 +275,9 @@ const BioSection = ({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Free users hit this when they tap Write with AI. */}
+        <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
       </div>
     </div>
   );
