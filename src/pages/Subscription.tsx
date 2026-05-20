@@ -1,71 +1,24 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { X, Search, Award, Building2, Sparkles, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { useAdminStatus } from "@/hooks/useAdminStatus";
-
-const PRICES = {
-  monthly: "price_1T8nR6QaZOki2KO0sb3eSsvK",
-  yearly: "price_1T8nR6QaZOki2KO0ujPE1DA0",
-} as const;
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { usePlanSimulation } from "@/hooks/usePlanSimulation";
 
 const Subscription = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAdminStatus();
+  const { simulatedPlan, togglePlan } = usePlanSimulation();
   const [isYearly, setIsYearly] = useState(false);
   const [showClose, setShowClose] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isWaiting, setIsWaiting] = useState(false);
-  const pollRef = useRef<number | null>(null);
-  const checkoutWindowRef = useRef<Window | null>(null);
+  const { isLoading, isWaiting, startCheckout, cancelWaiting } = useStripeCheckout();
 
   useEffect(() => {
     const timer = setTimeout(() => setShowClose(true), 3000);
     return () => clearTimeout(timer);
   }, []);
-
-  // Safety: if user navigates back via bfcache restore, clear stuck state.
-  useEffect(() => {
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) {
-        setIsLoading(false);
-        setIsWaiting(false);
-      }
-    };
-    window.addEventListener("pageshow", onPageShow);
-    return () => window.removeEventListener("pageshow", onPageShow);
-  }, []);
-
-  const stopPolling = useCallback(() => {
-    if (pollRef.current !== null) {
-      window.clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => () => stopPolling(), [stopPolling]);
-
-  const checkSubscription = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("check-subscription");
-      if (error) return false;
-      return !!(data as { subscribed?: boolean } | null)?.subscribed;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  const handleCancelWaiting = useCallback(() => {
-    stopPolling();
-    setIsWaiting(false);
-    setIsLoading(false);
-    toast.message("Payment canceled", {
-      description: "You can restart your premium upgrade anytime.",
-    });
-  }, [stopPolling]);
 
   const monthlyPrice = 4.99;
   const yearlyPrice = 49.99;
@@ -79,78 +32,7 @@ const Subscription = () => {
     { icon: Sparkles, title: "AI-Powered Features", description: "Use AI for specialized searching and profile building" },
   ];
 
-  const handleSubscribe = async () => {
-    if (isLoading || isWaiting) return;
-    setIsLoading(true);
-    try {
-      const priceId = isYearly ? PRICES.yearly : PRICES.monthly;
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
-      });
-      if (error) throw error;
-      const url = (data as { url?: string } | null)?.url;
-      if (!url) throw new Error("No checkout URL returned");
-
-      // Open Stripe checkout in a new tab so the main app stays stable.
-      // NOTE: do NOT pass "noopener" here — window.open returns null with
-      // noopener, which makes our popup-blocker fallback fire and causes
-      // BOTH tabs to redirect to Stripe. Omitting it lets us detect a real
-      // popup block (returns null only when blocked).
-      const popup = window.open(url, "_blank");
-      if (!popup || popup.closed || typeof popup.closed === "undefined") {
-        // Popup blocked — fall back to same-tab redirect.
-        window.location.href = url;
-        return;
-      }
-      checkoutWindowRef.current = popup;
-      setIsLoading(false);
-      setIsWaiting(true);
-
-      // Poll subscription status; stop when active or after ~10 minutes.
-      const startedAt = Date.now();
-      const MAX_MS = 10 * 60 * 1000;
-      pollRef.current = window.setInterval(async () => {
-        if (Date.now() - startedAt > MAX_MS) {
-          stopPolling();
-          setIsWaiting(false);
-          toast.message("Checkout session expired", {
-            description: "Please try again if you'd like to upgrade.",
-          });
-          return;
-        }
-        // Detect when the user closes the Stripe tab without completing
-        // checkout. Verify subscription one last time before declaring it
-        // canceled — handles the race where Stripe redirects + auto-closes
-        // the tab after a successful payment.
-        const popupRef = checkoutWindowRef.current;
-        if (popupRef && popupRef.closed) {
-          const ok = await checkSubscription();
-          stopPolling();
-          setIsWaiting(false);
-          if (ok) {
-            toast.success("Welcome to Premium!");
-            navigate("/dashboard");
-          } else {
-            toast.error("Payment canceled or incomplete", {
-              description: "Your checkout was closed before payment finished. You can try again anytime.",
-            });
-          }
-          return;
-        }
-        const ok = await checkSubscription();
-        if (ok) {
-          stopPolling();
-          setIsWaiting(false);
-          toast.success("Welcome to Premium!");
-          navigate("/dashboard");
-        }
-      }, 4000);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to start checkout");
-      setIsLoading(false);
-      setIsWaiting(false);
-    }
-  };
+  const handleSubscribe = () => startCheckout(isYearly ? "yearly" : "monthly");
 
   const handleSkip = () => {
     navigate("/dashboard");
@@ -244,13 +126,13 @@ const Subscription = () => {
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                <span className="leading-none">Processing...</span>
+                <Loader2 className="animate-spin" />
+                <span>Processing...</span>
               </>
             ) : isWaiting ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                <span className="leading-none">Waiting for payment...</span>
+                <Loader2 className="animate-spin" />
+                <span>Waiting for payment...</span>
               </>
             ) : (
               "Start Premium"
@@ -258,7 +140,7 @@ const Subscription = () => {
           </GradientButton>
           {isWaiting && (
             <button
-              onClick={handleCancelWaiting}
+              onClick={cancelWaiting}
               className="mt-3 w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
             >
               Cancel and return
@@ -269,7 +151,16 @@ const Subscription = () => {
         <p className="text-center text-xs text-muted-foreground animate-fade-in">Cancel anytime. Terms apply.</p>
 
         {isAdmin && (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in space-y-2 pt-2 border-t border-border/30">
+            <p className="text-center text-[10px] uppercase tracking-wider text-muted-foreground">
+              Admin testing
+            </p>
+            <button
+              onClick={togglePlan}
+              className="w-full py-2 text-xs text-foreground bg-secondary/60 hover:bg-secondary rounded-lg transition-colors"
+            >
+              Switch to {(simulatedPlan ?? "premium") === "premium" ? "Free" : "Premium"} (testing)
+            </button>
             <button
               onClick={() => navigate("/dashboard")}
               className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
