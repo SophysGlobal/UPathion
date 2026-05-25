@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
@@ -18,7 +18,23 @@ type ExploreTab = 'people' | 'groups' | 'events' | 'places';
 
 const Explore = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<ExploreTab>('people');
+
+  // Sync tab from ?tab= query so Dashboard cards / external links can deep-link.
+  useEffect(() => {
+    const t = searchParams.get('tab') as ExploreTab | null;
+    if (t && ['people', 'groups', 'events', 'places'].includes(t)) {
+      setActiveTab(t);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (key: ExploreTab) => {
+    setActiveTab(key);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', key);
+    setSearchParams(next, { replace: true });
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPerson, setSelectedPerson] = useState<SeedPerson | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
@@ -182,7 +198,7 @@ const Explore = () => {
 
         <div className="grid grid-cols-4 gap-3 animate-fade-in">
           {tabs.map((tab) => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            <button key={tab.key} onClick={() => handleTabChange(tab.key)}
               className={`gradient-border group ${activeTab === tab.key ? 'ring-2 ring-primary/50' : ''}`}>
               <div className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center transition-colors ${activeTab === tab.key ? 'bg-primary/10' : 'group-hover:bg-secondary/50'}`}>
                 <tab.icon className={`w-6 h-6 mx-auto mb-2 ${activeTab === tab.key ? 'text-primary' : 'text-muted-foreground'}`} />

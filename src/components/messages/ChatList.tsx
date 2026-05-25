@@ -9,6 +9,9 @@ import {
   CheckCheck,
   Mail,
   Trash2,
+  Star,
+  Heart,
+  Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type SeedConversation } from "@/data/seedData";
@@ -28,6 +31,12 @@ interface ChatListProps {
   onToggleMute?: (id: string) => void;
   onToggleRead?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onToggleStar?: (id: string) => void;
+  onToggleFavorite?: (id: string) => void;
+  onToggleArchive?: (id: string) => void;
+  starredIds?: Set<string>;
+  favoritedIds?: Set<string>;
+  archivedIds?: Set<string>;
 }
 
 const ChatList = memo(({
@@ -38,6 +47,12 @@ const ChatList = memo(({
   onToggleMute,
   onToggleRead,
   onDelete,
+  onToggleStar,
+  onToggleFavorite,
+  onToggleArchive,
+  starredIds,
+  favoritedIds,
+  archivedIds,
 }: ChatListProps) => {
   if (conversations.length === 0) {
     return (
@@ -53,6 +68,9 @@ const ChatList = memo(({
         const isGroup = conv.type === 'group';
         const isSelected = selectedId === conv.id;
         const isUnread = conv.unreadCount > 0;
+        const isStarred = !!starredIds?.has(conv.id);
+        const isFavorited = !!favoritedIds?.has(conv.id);
+        const isArchived = !!archivedIds?.has(conv.id);
 
         const row = (
           <button
@@ -90,6 +108,12 @@ const ChatList = memo(({
                 {conv.isPinned && (
                   <Pin className="w-3 h-3 text-primary flex-shrink-0 fill-primary" />
                 )}
+                {isStarred && (
+                  <Star className="w-3 h-3 text-amber-400 flex-shrink-0 fill-amber-400" />
+                )}
+                {isFavorited && (
+                  <Heart className="w-3 h-3 text-pink-500 flex-shrink-0 fill-pink-500" />
+                )}
                 <span className={cn(
                   "text-sm truncate",
                   isUnread ? "font-semibold text-foreground" : "font-medium text-foreground/80"
@@ -97,6 +121,7 @@ const ChatList = memo(({
                   {conv.participantName}
                 </span>
                 {conv.isMuted && <VolumeX className="w-3 h-3 text-muted-foreground flex-shrink-0" />}
+                {isArchived && <Archive className="w-3 h-3 text-muted-foreground flex-shrink-0" />}
               </div>
               <p className={cn(
                 "text-xs truncate mt-0.5",
@@ -114,7 +139,15 @@ const ChatList = memo(({
         );
 
         // If no menu handlers were passed, fall back to plain row.
-        if (!onTogglePin && !onToggleMute && !onToggleRead && !onDelete) {
+        if (
+          !onTogglePin &&
+          !onToggleMute &&
+          !onToggleRead &&
+          !onDelete &&
+          !onToggleStar &&
+          !onToggleFavorite &&
+          !onToggleArchive
+        ) {
           return <div key={conv.id}>{row}</div>;
         }
 
@@ -133,6 +166,24 @@ const ChatList = memo(({
                       <Pin className="w-4 h-4 mr-2" /> Pin to top
                     </>
                   )}
+                </ContextMenuItem>
+              )}
+              {onToggleStar && (
+                <ContextMenuItem onClick={() => onToggleStar(conv.id)}>
+                  <Star className={cn("w-4 h-4 mr-2", isStarred && "fill-amber-400 text-amber-400")} />
+                  {isStarred ? "Unstar" : "Star"}
+                </ContextMenuItem>
+              )}
+              {onToggleFavorite && (
+                <ContextMenuItem onClick={() => onToggleFavorite(conv.id)}>
+                  <Heart className={cn("w-4 h-4 mr-2", isFavorited && "fill-pink-500 text-pink-500")} />
+                  {isFavorited ? "Remove favorite" : "Add to favorites"}
+                </ContextMenuItem>
+              )}
+              {onToggleArchive && (
+                <ContextMenuItem onClick={() => onToggleArchive(conv.id)}>
+                  <Archive className="w-4 h-4 mr-2" />
+                  {isArchived ? "Unarchive" : "Archive"}
                 </ContextMenuItem>
               )}
               {onToggleMute && (

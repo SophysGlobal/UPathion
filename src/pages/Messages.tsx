@@ -7,12 +7,14 @@ import ChatList from "@/components/messages/ChatList";
 import ChatPanel from "@/components/messages/ChatPanel";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
-import { Search, PenSquare, MessageCircle } from "lucide-react";
+import { Search, PenSquare, MessageCircle, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { USE_SEED_DATA, seedConversations, type SeedConversation } from "@/data/seedData";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useConversations, type Conversation } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
+import ChatSidebar, { type ChatStatusFilter } from "@/components/messages/ChatSidebar";
+import { useChatPreferences } from "@/hooks/useChatPreferences";
 
 // Adapt a real DB conversation into the shape ChatList already understands.
 // Falls back to sensible defaults for fields the seed UI expects.
@@ -70,6 +72,24 @@ const Messages = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ChatFilter>('all');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ChatStatusFilter>('all');
+
+  const {
+    prefs,
+    toggleStarred,
+    toggleFavorited,
+    toggleArchived,
+    toggleUnreadFlag,
+    setMute,
+    isMuted,
+    setNotification,
+  } = useChatPreferences();
+
+  const starredSet = useMemo(() => new Set(prefs.starred), [prefs.starred]);
+  const favoritedSet = useMemo(() => new Set(prefs.favorited), [prefs.favorited]);
+  const archivedSet = useMemo(() => new Set(prefs.archived), [prefs.archived]);
+  const unreadFlagSet = useMemo(() => new Set(prefs.unread), [prefs.unread]);
 
   // Real DB conversations take precedence; fall back to seed data only when
   // the user has none AND seed mode is on (for demo/empty-state purposes).
@@ -107,9 +127,15 @@ const Messages = () => {
   }, [pinKey, pinnedIds]);
 
   const conversations = useMemo<SeedConversation[]>(() => {
-    if (useSeedFallback) return seedCopy;
-    return adapted.map((c) => ({ ...c, isPinned: pinnedIds.has(c.id) }));
-  }, [useSeedFallback, seedCopy, adapted, pinnedIds]);
+    const base = useSeedFallback
+      ? seedCopy
+      : adapted.map((c) => ({ ...c, isPinned: pinnedIds.has(c.id) }));
+    return base.map((c) => ({
+      ...c,
+      isMuted: c.isMuted || isMuted(c.id),
+      unreadCount: unreadFlagSet.has(c.id) ? Math.max(c.unreadCount, 1) : c.unreadCount,
+    }));
+  }, [useSeedFallback, seedCopy, adapted, pinnedIds, isMuted, unreadFlagSet]);
 
   const togglePin = useCallback(
     (id: string) => {
@@ -150,9 +176,10 @@ const Messages = () => {
         );
         return;
       }
+      toggleUnreadFlag(id);
       void markAsRead(id);
     },
-    [useSeedFallback, markAsRead],
+    [useSeedFallback, markAsRead, toggleUnreadFlag],
   );
   const deleteConversation = useCallback(
     (id: string) => {
@@ -176,6 +203,16 @@ const Messages = () => {
     let filtered = conversations;
     if (activeFilter === 'individual') filtered = filtered.filter(c => c.type === 'individual');
     else if (activeFilter === 'group') filtered = filtered.filter(c => c.type === 'group');
+    switch (statusFilter) {
+      case 'unread': filtered = filtered.filter(c => c.unreadCount > 0); break;
+      case 'read': filtered = filtered.filter(c => c.unreadCount === 0); break;
+      case 'starred': filtered = filtered.filter(c => starredSet.has(c.id)); break;
+      case 'favorited': filtered = filtered.filter(c => favoritedSet.has(c.id)); break;
+      case 'pinned': filtered = filtered.filter(c => c.isPinned); break;
+      case 'archived': filtered = filtered.filter(c => archivedSet.has(c.id)); break;
+      case 'all':
+      default: filtered = filtered.filter(c => !archivedSet.has(c.id)); break;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(c =>
@@ -192,7 +229,22 @@ const Messages = () => {
       if (aU !== bU) return bU - aU;
       return 0;
     });
-  }, [conversations, activeFilter, searchQuery]);
+  }, [conversations, activeFilter, searchQuery, statusFilter, starredSet, favoritedSet, archivedSet]);
+
+  const sidebarCounts = useMemo(() => ({
+    all: conversations.filter(c => !archivedSet.has(c.id)).length,
+    unread: conversations.filter(c => c.unreadCount > 0).length,
+    read: conversations.filter(c => c.unreadCount === 0).length,
+    starred: conversations.filter(c => starredSet.has(c.id)).length,
+    favorited: conversations.filter(c => favoritedSet.has(c.id)).length,
+    pinned: conversations.filter(c => c.isPinned).length,
+    archived: conversations.filter(c => archivedSet.has(c.id)).length,
+  }) as Record<ChatStatusFilter, number>, [conversations, starredSet, favoritedSet, archivedSet]);
+
+  const selectedConversation = useMemo(
+    () => conversations.find(c => c.id === selectedConversationId) ?? null,
+    [conversations, selectedConversationId],
+  );
 
   const filters: { key: ChatFilter; label: string }[] = [
     { key: 'all', label: 'All Chats' },
@@ -206,6 +258,34 @@ const Messages = () => {
 
   const handleNewMessage = () => navigate('/messages/compose');
   const unreadTotal = conversations.filter(c => c.unreadCount > 0).length;
+
+  const hamburgerButton = (
+    <Button
+      size="icon"
+      variant="ghost"
+      onClick={() => setSidebarOpen(true)}
+      aria-label="Open messages menu"
+      className="-ml-2"
+    >
+      <Menu className="w-5 h-5" />
+    </Button>
+  );
+
+  const chatSidebar = (
+    <ChatSidebar
+      open={sidebarOpen}
+      onOpenChange={setSidebarOpen}
+      statusFilter={statusFilter}
+      onStatusChange={setStatusFilter}
+      counts={sidebarCounts}
+      prefs={prefs}
+      selectedConversationId={selectedConversationId}
+      selectedConversationName={selectedConversation?.participantName}
+      isSelectedMuted={selectedConversationId ? isMuted(selectedConversationId) : false}
+      onMuteSelected={(d) => selectedConversationId && setMute(selectedConversationId, d)}
+      onSetNotification={setNotification}
+    />
+  );
 
   // Mobile: chat panel view
   if (isMobile && selectedConversationId) {
@@ -224,6 +304,7 @@ const Messages = () => {
           <ChatPanel conversationId={selectedConversationId} />
         </div>
         <BottomNav />
+        {chatSidebar}
       </div>
     );
   }
@@ -233,6 +314,7 @@ const Messages = () => {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative animate-fade-in overscroll-y-contain">
         <AppHeader title="Messages" subtitle={`${unreadTotal} unread`}
+          leftSlot={hamburgerButton}
           rightSlot={<Button size="icon" variant="ghost" onClick={handleNewMessage}><PenSquare className="w-5 h-5" /></Button>} />
         <div className="px-6 pb-3 flex gap-2 border-b border-border/50 animate-fade-in">
           {filters.map((f, i) => (
@@ -274,11 +356,18 @@ const Messages = () => {
               onToggleMute={toggleMute}
               onToggleRead={toggleRead}
               onDelete={deleteConversation}
+              onToggleStar={toggleStarred}
+              onToggleFavorite={toggleFavorited}
+              onToggleArchive={toggleArchived}
+              starredIds={starredSet}
+              favoritedIds={favoritedSet}
+              archivedIds={archivedSet}
             />
           )}
         </main>
         <PremiumChatFAB />
         <BottomNav />
+        {chatSidebar}
       </div>
     );
   }
@@ -289,6 +378,7 @@ const Messages = () => {
       <AppHeader
         title="Messages"
         subtitle={`${unreadTotal} unread`}
+        leftSlot={hamburgerButton}
         rightSlot={
           <Button size="icon" variant="ghost" onClick={handleNewMessage}>
             <PenSquare className="w-5 h-5" />
@@ -332,6 +422,12 @@ const Messages = () => {
                 onToggleMute={toggleMute}
                 onToggleRead={toggleRead}
                 onDelete={deleteConversation}
+                onToggleStar={toggleStarred}
+                onToggleFavorite={toggleFavorited}
+                onToggleArchive={toggleArchived}
+                starredIds={starredSet}
+                favoritedIds={favoritedSet}
+                archivedIds={archivedSet}
               />
             )}
           </div>
@@ -342,6 +438,7 @@ const Messages = () => {
       </div>
       <PremiumChatFAB />
       <BottomNav />
+      {chatSidebar}
     </div>
   );
 };
