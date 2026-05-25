@@ -304,6 +304,7 @@ const Messages = () => {
           <ChatPanel conversationId={selectedConversationId} />
         </div>
         <BottomNav />
+        {chatSidebar}
       </div>
     );
   }
@@ -313,6 +314,7 @@ const Messages = () => {
     return (
       <div className="min-h-screen bg-background/80 pb-20 relative animate-fade-in overscroll-y-contain">
         <AppHeader title="Messages" subtitle={`${unreadTotal} unread`}
+          leftSlot={hamburgerButton}
           rightSlot={<Button size="icon" variant="ghost" onClick={handleNewMessage}><PenSquare className="w-5 h-5" /></Button>} />
         <div className="px-6 pb-3 flex gap-2 border-b border-border/50 animate-fade-in">
           {filters.map((f, i) => (
