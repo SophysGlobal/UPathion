@@ -72,6 +72,24 @@ const Messages = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ChatFilter>('all');
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ChatStatusFilter>('all');
+
+  const {
+    prefs,
+    toggleStarred,
+    toggleFavorited,
+    toggleArchived,
+    toggleUnreadFlag,
+    setMute,
+    isMuted,
+    setNotification,
+  } = useChatPreferences();
+
+  const starredSet = useMemo(() => new Set(prefs.starred), [prefs.starred]);
+  const favoritedSet = useMemo(() => new Set(prefs.favorited), [prefs.favorited]);
+  const archivedSet = useMemo(() => new Set(prefs.archived), [prefs.archived]);
+  const unreadFlagSet = useMemo(() => new Set(prefs.unread), [prefs.unread]);
 
   // Real DB conversations take precedence; fall back to seed data only when
   // the user has none AND seed mode is on (for demo/empty-state purposes).
