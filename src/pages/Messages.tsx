@@ -356,11 +356,18 @@ const Messages = () => {
               onToggleMute={toggleMute}
               onToggleRead={toggleRead}
               onDelete={deleteConversation}
+              onToggleStar={toggleStarred}
+              onToggleFavorite={toggleFavorited}
+              onToggleArchive={toggleArchived}
+              starredIds={starredSet}
+              favoritedIds={favoritedSet}
+              archivedIds={archivedSet}
             />
           )}
         </main>
         <PremiumChatFAB />
         <BottomNav />
+        {chatSidebar}
       </div>
     );
   }
