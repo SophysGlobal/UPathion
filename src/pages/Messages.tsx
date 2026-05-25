@@ -127,9 +127,15 @@ const Messages = () => {
   }, [pinKey, pinnedIds]);
 
   const conversations = useMemo<SeedConversation[]>(() => {
-    if (useSeedFallback) return seedCopy;
-    return adapted.map((c) => ({ ...c, isPinned: pinnedIds.has(c.id) }));
-  }, [useSeedFallback, seedCopy, adapted, pinnedIds]);
+    const base = useSeedFallback
+      ? seedCopy
+      : adapted.map((c) => ({ ...c, isPinned: pinnedIds.has(c.id) }));
+    return base.map((c) => ({
+      ...c,
+      isMuted: c.isMuted || isMuted(c.id),
+      unreadCount: unreadFlagSet.has(c.id) ? Math.max(c.unreadCount, 1) : c.unreadCount,
+    }));
+  }, [useSeedFallback, seedCopy, adapted, pinnedIds, isMuted, unreadFlagSet]);
 
   const togglePin = useCallback(
     (id: string) => {
