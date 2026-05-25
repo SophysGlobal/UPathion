@@ -259,6 +259,34 @@ const Messages = () => {
   const handleNewMessage = () => navigate('/messages/compose');
   const unreadTotal = conversations.filter(c => c.unreadCount > 0).length;
 
+  const hamburgerButton = (
+    <Button
+      size="icon"
+      variant="ghost"
+      onClick={() => setSidebarOpen(true)}
+      aria-label="Open messages menu"
+      className="-ml-2"
+    >
+      <Menu className="w-5 h-5" />
+    </Button>
+  );
+
+  const chatSidebar = (
+    <ChatSidebar
+      open={sidebarOpen}
+      onOpenChange={setSidebarOpen}
+      statusFilter={statusFilter}
+      onStatusChange={setStatusFilter}
+      counts={sidebarCounts}
+      prefs={prefs}
+      selectedConversationId={selectedConversationId}
+      selectedConversationName={selectedConversation?.participantName}
+      isSelectedMuted={selectedConversationId ? isMuted(selectedConversationId) : false}
+      onMuteSelected={(d) => selectedConversationId && setMute(selectedConversationId, d)}
+      onSetNotification={setNotification}
+    />
+  );
+
   // Mobile: chat panel view
   if (isMobile && selectedConversationId) {
     return (
