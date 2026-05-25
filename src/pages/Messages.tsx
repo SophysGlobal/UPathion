@@ -203,6 +203,16 @@ const Messages = () => {
     let filtered = conversations;
     if (activeFilter === 'individual') filtered = filtered.filter(c => c.type === 'individual');
     else if (activeFilter === 'group') filtered = filtered.filter(c => c.type === 'group');
+    switch (statusFilter) {
+      case 'unread': filtered = filtered.filter(c => c.unreadCount > 0); break;
+      case 'read': filtered = filtered.filter(c => c.unreadCount === 0); break;
+      case 'starred': filtered = filtered.filter(c => starredSet.has(c.id)); break;
+      case 'favorited': filtered = filtered.filter(c => favoritedSet.has(c.id)); break;
+      case 'pinned': filtered = filtered.filter(c => c.isPinned); break;
+      case 'archived': filtered = filtered.filter(c => archivedSet.has(c.id)); break;
+      case 'all':
+      default: filtered = filtered.filter(c => !archivedSet.has(c.id)); break;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(c =>
@@ -219,7 +229,22 @@ const Messages = () => {
       if (aU !== bU) return bU - aU;
       return 0;
     });
-  }, [conversations, activeFilter, searchQuery]);
+  }, [conversations, activeFilter, searchQuery, statusFilter, starredSet, favoritedSet, archivedSet]);
+
+  const sidebarCounts = useMemo(() => ({
+    all: conversations.filter(c => !archivedSet.has(c.id)).length,
+    unread: conversations.filter(c => c.unreadCount > 0).length,
+    read: conversations.filter(c => c.unreadCount === 0).length,
+    starred: conversations.filter(c => starredSet.has(c.id)).length,
+    favorited: conversations.filter(c => favoritedSet.has(c.id)).length,
+    pinned: conversations.filter(c => c.isPinned).length,
+    archived: conversations.filter(c => archivedSet.has(c.id)).length,
+  }) as Record<ChatStatusFilter, number>, [conversations, starredSet, favoritedSet, archivedSet]);
+
+  const selectedConversation = useMemo(
+    () => conversations.find(c => c.id === selectedConversationId) ?? null,
+    [conversations, selectedConversationId],
+  );
 
   const filters: { key: ChatFilter; label: string }[] = [
     { key: 'all', label: 'All Chats' },
