@@ -13,6 +13,8 @@ import { USE_SEED_DATA, seedConversations, type SeedConversation } from "@/data/
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useConversations, type Conversation } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
+import ChatSidebar, { type ChatStatusFilter } from "@/components/messages/ChatSidebar";
+import { useChatPreferences } from "@/hooks/useChatPreferences";
 
 // Adapt a real DB conversation into the shape ChatList already understands.
 // Falls back to sensible defaults for fields the seed UI expects.
