@@ -7,7 +7,7 @@ import { ChevronLeft, MapPin, Users, GraduationCap, Calendar, BookOpen, Building
 import PersonCard from "@/components/PersonCard";
 import { seedPeople } from "@/data/seedData";
 import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const SchoolInfo = () => {
@@ -220,10 +220,10 @@ const RecommendedConnections = () => {
   const { data } = useOnboarding();
   const [loading, setLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
     const t = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(t);
-  });
+  }, []);
 
   // Rank: same school first, then aspirational, then others.
   const recommended = useMemo(() => {
@@ -321,10 +321,10 @@ const RecommendedSchools = ({ onOpen }: { onOpen: (id: string) => void }) => {
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
     const t = setTimeout(() => setLoading(false), 700);
     return () => clearTimeout(t);
-  });
+  }, []);
 
   const toggleSave = (id: string, name: string) => {
     setSaved((s) => {
