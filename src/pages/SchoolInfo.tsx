@@ -3,7 +3,12 @@ import { useOnboarding } from "@/context/OnboardingContext";
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
-import { ChevronLeft, MapPin, Users, GraduationCap, Calendar, BookOpen, Building2, Globe, Award } from "lucide-react";
+import { ChevronLeft, MapPin, Users, GraduationCap, Calendar, BookOpen, Building2, Globe, Award, Sparkles, School as SchoolIcon, Bookmark, ExternalLink } from "lucide-react";
+import PersonCard from "@/components/PersonCard";
+import { seedPeople } from "@/data/seedData";
+import { Button } from "@/components/ui/button";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 const SchoolInfo = () => {
   const navigate = useNavigate();
