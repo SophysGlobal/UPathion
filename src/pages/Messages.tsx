@@ -7,7 +7,7 @@ import ChatList from "@/components/messages/ChatList";
 import ChatPanel from "@/components/messages/ChatPanel";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
-import { Search, PenSquare, MessageCircle } from "lucide-react";
+import { Search, PenSquare, MessageCircle, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { USE_SEED_DATA, seedConversations, type SeedConversation } from "@/data/seedData";
 import { useIsMobile } from "@/hooks/use-mobile";
