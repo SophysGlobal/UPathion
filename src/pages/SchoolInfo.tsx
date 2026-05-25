@@ -199,6 +199,9 @@ Known for its commitment to research and community engagement, the institution h
             {section.element}
           </div>
         ))}
+
+        <RecommendedConnections />
+        <RecommendedSchools onOpen={(id) => navigate(`/school/${id}`)} />
       </main>
 
       <PremiumChatFAB />
