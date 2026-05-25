@@ -198,7 +198,7 @@ const Explore = () => {
 
         <div className="grid grid-cols-4 gap-3 animate-fade-in">
           {tabs.map((tab) => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+            <button key={tab.key} onClick={() => handleTabChange(tab.key)}
               className={`gradient-border group ${activeTab === tab.key ? 'ring-2 ring-primary/50' : ''}`}>
               <div className={`bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center transition-colors ${activeTab === tab.key ? 'bg-primary/10' : 'group-hover:bg-secondary/50'}`}>
                 <tab.icon className={`w-6 h-6 mx-auto mb-2 ${activeTab === tab.key ? 'text-primary' : 'text-muted-foreground'}`} />
