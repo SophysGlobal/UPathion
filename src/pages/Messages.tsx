@@ -378,6 +378,7 @@ const Messages = () => {
       <AppHeader
         title="Messages"
         subtitle={`${unreadTotal} unread`}
+        leftSlot={hamburgerButton}
         rightSlot={
           <Button size="icon" variant="ghost" onClick={handleNewMessage}>
             <PenSquare className="w-5 h-5" />
@@ -421,6 +422,12 @@ const Messages = () => {
                 onToggleMute={toggleMute}
                 onToggleRead={toggleRead}
                 onDelete={deleteConversation}
+                onToggleStar={toggleStarred}
+                onToggleFavorite={toggleFavorited}
+                onToggleArchive={toggleArchived}
+                starredIds={starredSet}
+                favoritedIds={favoritedSet}
+                archivedIds={archivedSet}
               />
             )}
           </div>
@@ -431,6 +438,7 @@ const Messages = () => {
       </div>
       <PremiumChatFAB />
       <BottomNav />
+      {chatSidebar}
     </div>
   );
 };
