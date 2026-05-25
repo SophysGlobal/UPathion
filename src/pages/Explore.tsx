@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
@@ -18,7 +18,23 @@ type ExploreTab = 'people' | 'groups' | 'events' | 'places';
 
 const Explore = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<ExploreTab>('people');
+
+  // Sync tab from ?tab= query so Dashboard cards / external links can deep-link.
+  useEffect(() => {
+    const t = searchParams.get('tab') as ExploreTab | null;
+    if (t && ['people', 'groups', 'events', 'places'].includes(t)) {
+      setActiveTab(t);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (key: ExploreTab) => {
+    setActiveTab(key);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', key);
+    setSearchParams(next, { replace: true });
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPerson, setSelectedPerson] = useState<SeedPerson | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
