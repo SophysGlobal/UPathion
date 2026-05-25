@@ -35,9 +35,9 @@ const Dashboard = () => {
   const firstName = profile?.display_name?.split(' ')[0] || user?.email?.split('@')[0] || 'there';
 
   const quickStats = [
-    { icon: Users, label: "Connections", value: "0" },
-    { icon: TrendingUp, label: "Profile Views", value: "0" },
-    { icon: Calendar, label: "Events", value: "0" },
+    { icon: Users, label: "Connections", value: "0", action: () => navigate("/connections") },
+    { icon: TrendingUp, label: "Profile Views", value: "0", action: () => navigate("/profile-views") },
+    { icon: Calendar, label: "Events", value: "0", action: () => navigate("/explore?tab=events") },
   ];
 
   const hasAbout = !!(profile?.bio && profile.bio.trim());
@@ -87,13 +87,18 @@ const Dashboard = () => {
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
           {quickStats.map((stat) => (
-            <div key={stat.label} className="gradient-border">
-              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center">
+            <button
+              key={stat.label}
+              onClick={stat.action}
+              className="gradient-border group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg"
+              aria-label={`Open ${stat.label}`}
+            >
+              <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 text-center transition-all duration-200 group-hover:bg-secondary/50 group-hover:-translate-y-0.5">
                 <stat.icon className="w-6 h-6 text-primary mx-auto mb-2" />
                 <p className="text-xl font-bold text-foreground">{stat.value}</p>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
