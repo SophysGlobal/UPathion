@@ -176,9 +176,10 @@ const Messages = () => {
         );
         return;
       }
+      toggleUnreadFlag(id);
       void markAsRead(id);
     },
-    [useSeedFallback, markAsRead],
+    [useSeedFallback, markAsRead, toggleUnreadFlag],
   );
   const deleteConversation = useCallback(
     (id: string) => {
