@@ -9,6 +9,9 @@ import { Search, Filter, Users, BookOpen, Calendar, MapPin, Clock, Bookmark } fr
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import EventCalendar from "@/components/EventCalendar";
+import EventDetailModal from "@/components/EventDetailModal";
+import { cn } from "@/lib/utils";
 import { 
   USE_SEED_DATA, seedPeople, seedGroups, seedEvents, seedPlaces,
   type SeedPerson, type SeedGroup, type SeedEvent, type SeedPlace
@@ -38,6 +41,8 @@ const Explore = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPerson, setSelectedPerson] = useState<SeedPerson | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
+  const [eventsView, setEventsView] = useState<'list' | 'calendar'>('list');
+  const [selectedEvent, setSelectedEvent] = useState<SeedEvent | null>(null);
 
   const tabs: { key: ExploreTab; icon: typeof Users; label: string }[] = [
     { key: 'people', icon: Users, label: 'People' },
@@ -115,6 +120,9 @@ const Explore = () => {
   };
 
   const renderEvents = () => {
+    if (eventsView === 'calendar') {
+      return <EventCalendar events={events} onSelectEvent={setSelectedEvent} />;
+    }
     if (filteredEvents.length === 0) return renderEmptyState('Events');
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -208,11 +216,39 @@ const Explore = () => {
           ))}
         </div>
 
+        {activeTab === 'events' && (
+          <div className="flex justify-center animate-fade-in">
+            <div className="flex items-center gap-1 p-1 bg-secondary/60 rounded-full">
+              {(['list', 'calendar'] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setEventsView(v)}
+                  className={cn(
+                    'px-4 py-1.5 rounded-full text-xs font-medium capitalize transition-all',
+                    eventsView === v
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {v === 'list' ? 'Events' : 'Calendar'}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="animate-fade-in">{renderContent()}</div>
       </main>
 
       <UserProfileBottomSheet open={userSheetOpen} onOpenChange={setUserSheetOpen} userId={null}
         seedUser={selectedPerson ? { id: selectedPerson.id, name: selectedPerson.name, role: selectedPerson.role, badge: selectedPerson.badge, school: selectedPerson.school, bio: selectedPerson.bio } : null} />
+
+      <EventDetailModal
+        event={selectedEvent}
+        open={!!selectedEvent}
+        onOpenChange={(o) => !o && setSelectedEvent(null)}
+        onViewFull={(ev) => { setSelectedEvent(null); navigate(`/event/${ev.id}`); }}
+      />
 
       <PremiumChatFAB />
       <BottomNav />
