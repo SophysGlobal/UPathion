@@ -45,6 +45,7 @@ import MessageThread from "./pages/MessageThread";
 import ComposeMessage from "./pages/ComposeMessage";
 import Connections from "./pages/Connections";
 import ProfileViews from "./pages/ProfileViews";
+import CalendarPage from "./pages/Calendar";
 import UserProfile from "./pages/UserProfile";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
@@ -110,6 +111,7 @@ const App = () => (
                     <Route path="/messages/:conversationId" element={<MessageThread />} />
                     <Route path="/connections" element={<Connections />} />
                     <Route path="/profile-views" element={<ProfileViews />} />
+                    <Route path="/calendar" element={<CalendarPage />} />
                     <Route path="/user/:userId" element={<UserProfile />} />
                     <Route path="/welcome" element={<Welcome />} />
                     <Route path="*" element={<NotFound />} />
