@@ -4,19 +4,19 @@ import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { useOnboarding } from "@/context/OnboardingContext";
-import { Check } from "lucide-react";
+import { Check, Search, Users, Share2, Sparkles, GraduationCap, Star, type LucideIcon } from "lucide-react";
 import BackSkipRow from "@/components/onboarding/BackSkipRow";
 
-const REFERRAL_OPTIONS = [
-  { id: 'search', label: 'Search engine', icon: '🔍' },
-  { id: 'friends', label: 'Family or friends', icon: '👨‍👩‍👧‍👦' },
-  { id: 'social', label: 'Social media', icon: '📱' },
-  { id: 'ai', label: 'AI', icon: '🤖' },
-  { id: 'school', label: 'School', icon: '🏫' },
-  { id: 'other', label: 'Other', icon: '✨' },
+const REFERRAL_OPTIONS: ReadonlyArray<{ id: string; label: string; Icon: LucideIcon }> = [
+  { id: 'search', label: 'Search engine', Icon: Search },
+  { id: 'friends', label: 'Family or friends', Icon: Users },
+  { id: 'social', label: 'Social media', Icon: Share2 },
+  { id: 'ai', label: 'AI', Icon: Sparkles },
+  { id: 'school', label: 'School', Icon: GraduationCap },
+  { id: 'other', label: 'Other', Icon: Star },
 ] as const;
 
-type ReferralSource = typeof REFERRAL_OPTIONS[number]['id'];
+type ReferralSource = 'search' | 'friends' | 'social' | 'ai' | 'school' | 'other';
 
 const HowDidYouHear = () => {
   const navigate = useNavigate();
@@ -49,8 +49,9 @@ const HowDidYouHear = () => {
       <div className="grid grid-cols-2 gap-3 animate-fade-in">
         {REFERRAL_OPTIONS.map((option) => {
           const isSelected = selectedSource === option.id;
+          const Icon = option.Icon;
           return (
-            <button key={option.id} type="button" onClick={() => handleSelect(option.id)}
+            <button key={option.id} type="button" onClick={() => handleSelect(option.id as ReferralSource)}
               className={`relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 text-center ${
                 isSelected ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20' : 'border-border bg-card hover:border-primary/50 hover:bg-card/80'
               }`}>
@@ -61,7 +62,18 @@ const HowDidYouHear = () => {
                   </div>
                 </div>
               )}
-              <span className="text-2xl">{option.icon}</span>
+              <span
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 ${
+                  isSelected
+                    ? 'gradient-bg shadow-lg shadow-primary/30'
+                    : 'bg-secondary/60 group-hover:bg-secondary'
+                }`}
+              >
+                <Icon
+                  className={`w-5 h-5 ${isSelected ? 'text-primary-foreground' : 'text-primary'}`}
+                  strokeWidth={2.2}
+                />
+              </span>
               <span className={`text-sm font-medium ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{option.label}</span>
             </button>
           );
