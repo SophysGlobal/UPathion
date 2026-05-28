@@ -237,15 +237,29 @@ export interface SeedEvent {
   location: string;
   school: string;
   attendees: number;
+  /** ISO date (YYYY-MM-DD) for calendar placement. Optional for back-compat. */
+  isoDate?: string;
+  /** Long-form description shown in the calendar event modal. */
+  description?: string;
+  /** Category drives color in the calendar legend. */
+  category?: 'Networking' | 'Academic' | 'Club' | 'Social' | 'Career' | 'Service';
+  /** Capacity for participant progress in the event modal. */
+  maxAttendees?: number;
+  /** Whether the current user has RSVP'd (seed-level default). */
+  rsvpd?: boolean;
+  /** Whether the current user has bookmarked (seed-level default). */
+  bookmarked?: boolean;
 }
 
 export const seedEvents: SeedEvent[] = [
-  { id: 'e1', title: 'College Application Workshop', date: 'Jan 25', time: '3:00 PM', location: 'Library Room 201', school: 'Acton-Boxborough Regional High School', attendees: 34 },
-  { id: 'e2', title: 'Spring Formal Dance', date: 'Feb 14', time: '7:00 PM', location: 'Main Gymnasium', school: 'Lincoln-Sudbury Regional High School', attendees: 156 },
-  { id: 'e3', title: 'STEM Fair Showcase', date: 'Feb 20', time: '10:00 AM', location: 'Science Wing', school: 'Westford Academy', attendees: 89 },
-  { id: 'e4', title: 'Alumni Networking Night', date: 'Mar 5', time: '6:00 PM', location: 'Student Center', school: 'Northeastern University', attendees: 120 },
-  { id: 'e5', title: 'SAT Prep Bootcamp', date: 'Mar 12', time: '9:00 AM', location: 'Room 105', school: 'Concord-Carlisle High School', attendees: 45 },
-  { id: 'e6', title: 'Campus Open House', date: 'Mar 18', time: '11:00 AM', location: 'Admissions Center', school: 'Boston University', attendees: 200 },
+  { id: 'e1', title: 'College Application Workshop', date: 'Jan 25', time: '3:00 PM', location: 'Library Room 201', school: 'Acton-Boxborough Regional High School', attendees: 34, isoDate: '2026-06-04', description: 'Hands-on session walking through the Common App, essay structure, and supplemental questions with senior advisors.', category: 'Academic', maxAttendees: 60, rsvpd: true, bookmarked: false },
+  { id: 'e2', title: 'Spring Formal Dance', date: 'Feb 14', time: '7:00 PM', location: 'Main Gymnasium', school: 'Lincoln-Sudbury Regional High School', attendees: 156, isoDate: '2026-06-12', description: 'Annual spring formal with DJ, photo booth, and catered desserts. Dress code: semi-formal.', category: 'Social', maxAttendees: 250, rsvpd: false, bookmarked: true },
+  { id: 'e3', title: 'STEM Fair Showcase', date: 'Feb 20', time: '10:00 AM', location: 'Science Wing', school: 'Westford Academy', attendees: 89, isoDate: '2026-06-18', description: 'Student-led research projects across biology, robotics, and applied math. Judging by visiting industry mentors.', category: 'Academic', maxAttendees: 150, rsvpd: false, bookmarked: false },
+  { id: 'e4', title: 'Alumni Networking Night', date: 'Mar 5', time: '6:00 PM', location: 'Student Center', school: 'Northeastern University', attendees: 120, isoDate: '2026-06-23', description: 'Meet alumni working across tech, finance, healthcare, and the arts. Hors d\'oeuvres provided.', category: 'Networking', maxAttendees: 200, rsvpd: true, bookmarked: true },
+  { id: 'e5', title: 'SAT Prep Bootcamp', date: 'Mar 12', time: '9:00 AM', location: 'Room 105', school: 'Concord-Carlisle High School', attendees: 45, isoDate: '2026-06-27', description: 'Full-day diagnostic test followed by section-by-section strategy review with experienced tutors.', category: 'Academic', maxAttendees: 60, rsvpd: false, bookmarked: false },
+  { id: 'e6', title: 'Campus Open House', date: 'Mar 18', time: '11:00 AM', location: 'Admissions Center', school: 'Boston University', attendees: 200, isoDate: '2026-07-02', description: 'Tour residence halls, sit in on sample lectures, and chat with current students and faculty.', category: 'Career', maxAttendees: 400, rsvpd: false, bookmarked: true },
+  { id: 'e7', title: 'Robotics Club Build Night', date: 'Jun 8', time: '5:30 PM', location: 'Maker Space', school: 'MIT', attendees: 22, isoDate: '2026-06-08', description: 'Weekly build session preparing for the summer invitational. Beginners welcome.', category: 'Club', maxAttendees: 40, rsvpd: true, bookmarked: false },
+  { id: 'e8', title: 'Community Park Cleanup', date: 'Jun 14', time: '8:00 AM', location: 'Walden Pond', school: 'Concord-Carlisle High School', attendees: 31, isoDate: '2026-06-14', description: 'Volunteer morning collecting litter and restoring trails. Snacks and service hours provided.', category: 'Service', maxAttendees: 80, rsvpd: false, bookmarked: false },
 ];
 
 // ============================================
