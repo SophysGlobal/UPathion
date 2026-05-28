@@ -65,9 +65,9 @@ const UpgradeModal = ({ open, onOpenChange }: UpgradeModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/50 p-0 overflow-hidden">
+      <DialogContent className="max-w-md w-[calc(100%-2rem)] bg-card/95 backdrop-blur-xl border-border/50 p-0 overflow-hidden max-h-[90dvh] flex flex-col">
         {/* Header with gradient */}
-        <div className="gradient-bg p-6 text-center">
+        <div className="gradient-bg p-6 text-center flex-shrink-0">
           <Crown className="w-12 h-12 text-primary-foreground mx-auto mb-3" />
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary-foreground">
@@ -79,7 +79,7 @@ const UpgradeModal = ({ open, onOpenChange }: UpgradeModalProps) => {
           </p>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-4">
             <span className={`text-sm ${!isYearly ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
