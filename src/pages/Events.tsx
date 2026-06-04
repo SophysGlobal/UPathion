@@ -158,7 +158,9 @@ const Events = () => {
               return (
                 <section
                   key={key}
-                  ref={(el) => (sectionRefs.current[key] = el)}
+                  ref={(el) => {
+                    sectionRefs.current[key] = el;
+                  }}
                   className="space-y-3 scroll-mt-24"
                 >
                   <div className="flex items-baseline justify-between sticky top-[68px] z-10 bg-background/80 backdrop-blur-sm py-1.5">
