@@ -69,7 +69,7 @@ const Events = () => {
     return map;
   }, [allEvents]);
 
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const jumpTo = (year: number, month: number) => {
     const key = monthKey(year, month);
