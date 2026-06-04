@@ -37,7 +37,7 @@ const Dashboard = () => {
   const quickStats = [
     { icon: Users, label: "Connections", value: "0", action: () => navigate("/connections") },
     { icon: TrendingUp, label: "Profile Views", value: "0", action: () => navigate("/profile-views") },
-    { icon: Calendar, label: "Calendar", value: "0", action: () => navigate("/calendar") },
+    { icon: Calendar, label: "Events", value: "0", action: () => navigate("/events") },
   ];
 
   const hasAbout = !!(profile?.bio && profile.bio.trim());
