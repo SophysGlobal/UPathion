@@ -4,7 +4,7 @@ import BottomNav from "@/components/BottomNav";
 import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import EventDetailModal from "@/components/EventDetailModal";
-import EventCalendar from "@/components/EventCalendar";
+import FullCalendar from "@/components/FullCalendar";
 import { USE_SEED_DATA, seedEvents, type SeedEvent } from "@/data/seedData";
 
 const CalendarPage = () => {
@@ -16,7 +16,7 @@ const CalendarPage = () => {
     <div className="min-h-screen bg-background/80 pb-20 relative">
       <AppHeader title="Calendar" subtitle="Your events at a glance" />
       <main className="relative z-10 px-5 py-6 space-y-6">
-        <EventCalendar events={events} onSelectEvent={setSelected} />
+        <FullCalendar events={events} onSelectEvent={setSelected} />
       </main>
       <EventDetailModal
         event={selected}

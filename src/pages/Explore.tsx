@@ -9,7 +9,7 @@ import { Search, Filter, Users, BookOpen, Calendar, MapPin, Clock, Bookmark } fr
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import EventCalendar from "@/components/EventCalendar";
+import FullCalendar from "@/components/FullCalendar";
 import EventDetailModal from "@/components/EventDetailModal";
 import { cn } from "@/lib/utils";
 import { 
@@ -121,7 +121,7 @@ const Explore = () => {
 
   const renderEvents = () => {
     if (eventsView === 'calendar') {
-      return <EventCalendar events={events} onSelectEvent={setSelectedEvent} />;
+      return <FullCalendar events={events} onSelectEvent={setSelectedEvent} />;
     }
     if (filteredEvents.length === 0) return renderEmptyState('Events');
     return (
