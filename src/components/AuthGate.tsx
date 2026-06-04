@@ -56,6 +56,11 @@ const PROTECTED_APP_ROUTES = [
   '/settings',
   '/plan-management',
   '/privacy-settings',
+  '/calendar',
+  '/events',
+  '/event/',
+  '/connections',
+  '/profile-views',
 ];
 
 const SECONDARY_LOADING_TIMEOUT_MS = 4000;
