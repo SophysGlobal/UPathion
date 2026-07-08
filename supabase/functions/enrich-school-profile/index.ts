@@ -201,6 +201,29 @@ serve(async (req) => {
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // AuthN: require either the service role key (used for internal
+    // function-to-function calls) or a valid authenticated user JWT.
+    // Prevents unauthenticated abuse of paid AI enrichment.
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (token !== serviceKey) {
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const authClient = createClient(supabaseUrl, anonKey);
+      const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(token);
+      if (claimsErr || !claimsData?.claims?.sub) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const { schoolId, forceRefresh = false } = await req.json();
     if (!schoolId) {
       return new Response(JSON.stringify({ error: "schoolId required" }), {
