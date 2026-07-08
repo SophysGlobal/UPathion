@@ -16,6 +16,25 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // Require an authenticated user to prevent AI cost amplification via
+    // enumeration of school IDs by anonymous callers.
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const authClient = createClient(supabaseUrl, anonKey);
+    const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { schoolId } = await req.json();
     if (!schoolId) {
       return new Response(JSON.stringify({ error: "schoolId required" }), {
@@ -55,7 +74,9 @@ serve(async (req) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${anonKey}`,
+        // Internal function-to-function call — use service role so the
+        // enrich function's auth guard accepts it.
+        Authorization: `Bearer ${serviceKey}`,
       },
       body: JSON.stringify({ schoolId }),
     }).then((r) => r.json()).catch((e) => {
