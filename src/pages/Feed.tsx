@@ -5,6 +5,7 @@ import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
+import PostCommentsModal from "@/components/PostCommentsModal";
 import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 import { getDisplaySchoolName } from "@/lib/schoolName";
@@ -13,10 +14,11 @@ interface PostCardProps {
   post: SeedFeedPost;
   onSchoolClick: (schoolName: string) => void;
   onUserClick: (authorName: string) => void;
+  onCommentClick: (postId: string) => void;
   userSchool?: string;
 }
 
-const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCardProps) => {
+const PostCard = memo(({ post, onSchoolClick, onUserClick, onCommentClick, userSchool }: PostCardProps) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -54,7 +56,10 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, userSchool }: PostCar
             <Heart className={`w-5 h-5 ${liked ? 'fill-primary text-primary' : ''}`} />
             <span className="text-sm">{liked ? post.likes + 1 : post.likes}</span>
           </button>
-          <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+          <button
+            onClick={() => onCommentClick(`feed-${post.id}`)}
+            className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+          >
             <MessageCircle className="w-5 h-5" />
             <span className="text-sm">{post.comments}</span>
           </button>
@@ -78,6 +83,7 @@ const Feed = () => {
   const [schoolSheetOpen, setSchoolSheetOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ name: string; role?: string; badge?: string; school?: string } | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
+  const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null);
 
   const hasAspirationalSchool = !!profile?.aspirational_school;
   const userSchool = profile?.school_name || '';
@@ -136,7 +142,7 @@ const Feed = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredPosts.map((post, index) => (
               <div key={post.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}>
-                <PostCard post={post} onSchoolClick={handleSchoolClick} onUserClick={handleUserClick} userSchool={userSchool} />
+                <PostCard post={post} onSchoolClick={handleSchoolClick} onUserClick={handleUserClick} onCommentClick={setOpenCommentsFor} userSchool={userSchool} />
               </div>
             ))}
           </div>
@@ -149,6 +155,12 @@ const Feed = () => {
 
       <UserProfileBottomSheet open={userSheetOpen} onOpenChange={setUserSheetOpen} userId={null}
         seedUser={selectedUser ? { id: selectedUser.name.toLowerCase().replace(/\s+/g, '-'), name: selectedUser.name, role: selectedUser.role, badge: selectedUser.badge, school: selectedUser.school } : null} />
+
+      <PostCommentsModal
+        open={!!openCommentsFor}
+        postId={openCommentsFor}
+        onOpenChange={(o) => !o && setOpenCommentsFor(null)}
+      />
 
       <PremiumChatFAB />
       <BottomNav />

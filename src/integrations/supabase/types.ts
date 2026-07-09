@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -137,16 +166,59 @@ export type Database = {
           },
         ]
       }
+      post_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          like_count: number
+          parent_id: string | null
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          like_count?: number
+          parent_id?: string | null
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          like_count?: number
+          parent_id?: string | null
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           aspirational_school: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
+          degree: string | null
           display_name: string | null
           email: string | null
           extracurriculars: string[] | null
           grade_or_year: string | null
+          graduation_year: number | null
           id: string
           interests: string[] | null
           is_high_school: boolean | null
@@ -157,19 +229,26 @@ export type Database = {
           referral_source_other: string | null
           school_name: string | null
           school_type: string | null
+          student_level: string | null
           subscription_ends_at: string | null
           updated_at: string
           username: string | null
+          verification_status: string
+          verified_at: string | null
+          verified_email: string | null
+          verified_school_id: string | null
         }
         Insert: {
           aspirational_school?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          degree?: string | null
           display_name?: string | null
           email?: string | null
           extracurriculars?: string[] | null
           grade_or_year?: string | null
+          graduation_year?: number | null
           id: string
           interests?: string[] | null
           is_high_school?: boolean | null
@@ -180,19 +259,26 @@ export type Database = {
           referral_source_other?: string | null
           school_name?: string | null
           school_type?: string | null
+          student_level?: string | null
           subscription_ends_at?: string | null
           updated_at?: string
           username?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_email?: string | null
+          verified_school_id?: string | null
         }
         Update: {
           aspirational_school?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          degree?: string | null
           display_name?: string | null
           email?: string | null
           extracurriculars?: string[] | null
           grade_or_year?: string | null
+          graduation_year?: number | null
           id?: string
           interests?: string[] | null
           is_high_school?: boolean | null
@@ -203,11 +289,24 @@ export type Database = {
           referral_source_other?: string | null
           school_name?: string | null
           school_type?: string | null
+          student_level?: string | null
           subscription_ends_at?: string | null
           updated_at?: string
           username?: string | null
+          verification_status?: string
+          verified_at?: string | null
+          verified_email?: string | null
+          verified_school_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_verified_school_id_fkey"
+            columns: ["verified_school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       school_profiles: {
         Row: {
@@ -357,6 +456,7 @@ export type Database = {
           city: string | null
           country: string
           created_at: string
+          domains: string[] | null
           id: string
           is_notable: boolean
           name: string
@@ -367,6 +467,7 @@ export type Database = {
           city?: string | null
           country?: string
           created_at?: string
+          domains?: string[] | null
           id?: string
           is_notable?: boolean
           name: string
@@ -377,6 +478,7 @@ export type Database = {
           city?: string | null
           country?: string
           created_at?: string
+          domains?: string[] | null
           id?: string
           is_notable?: boolean
           name?: string
@@ -384,6 +486,50 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      student_verification_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          school_id: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          school_id?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          school_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_verification_codes_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -414,8 +560,10 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          degree: string | null
           display_name: string | null
           grade_or_year: string | null
+          graduation_year: number | null
           id: string | null
           interests: string[] | null
           is_high_school: boolean | null
@@ -423,16 +571,21 @@ export type Database = {
           onboarding_completed: boolean | null
           school_name: string | null
           school_type: string | null
+          student_level: string | null
           updated_at: string | null
           username: string | null
+          verification_status: string | null
+          verified_at: string | null
         }
         Insert: {
           aspirational_school?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          degree?: string | null
           display_name?: string | null
           grade_or_year?: string | null
+          graduation_year?: number | null
           id?: string | null
           interests?: string[] | null
           is_high_school?: boolean | null
@@ -440,16 +593,21 @@ export type Database = {
           onboarding_completed?: boolean | null
           school_name?: string | null
           school_type?: string | null
+          student_level?: string | null
           updated_at?: string | null
           username?: string | null
+          verification_status?: string | null
+          verified_at?: string | null
         }
         Update: {
           aspirational_school?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          degree?: string | null
           display_name?: string | null
           grade_or_year?: string | null
+          graduation_year?: number | null
           id?: string | null
           interests?: string[] | null
           is_high_school?: boolean | null
@@ -457,8 +615,11 @@ export type Database = {
           onboarding_completed?: boolean | null
           school_name?: string | null
           school_type?: string | null
+          student_level?: string | null
           updated_at?: string | null
           username?: string | null
+          verification_status?: string | null
+          verified_at?: string | null
         }
         Relationships: []
       }

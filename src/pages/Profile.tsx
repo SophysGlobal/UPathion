@@ -10,8 +10,10 @@ import { GradientButton } from "@/components/ui/GradientButton";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import UpgradeModal from "@/components/UpgradeModal";
 import { supabase } from "@/integrations/supabase/client";
-import { School, Settings, LogOut, ChevronRight, User, Crown, MessageSquare, FlaskConical } from "lucide-react";
+import { School, Settings, LogOut, ChevronRight, User, Crown, MessageSquare, FlaskConical, ShieldCheck, GraduationCap } from "lucide-react";
 import { usePlanSimulation } from "@/hooks/usePlanSimulation";
+import { useVerificationStatus } from "@/hooks/useVerificationStatus";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -21,6 +23,7 @@ const Profile = () => {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const { isAdmin, simulatedPlan, togglePlan } = usePlanSimulation();
+  const { status: verificationStatus } = useVerificationStatus();
 
   const isReady = !profileLoading && !onboardingLoading;
 
@@ -65,8 +68,13 @@ const Profile = () => {
       items.push({ icon: Crown, label: "Upgrade to Premium", action: () => setUpgradeOpen(true), hidden: false });
     }
 
+    if (isReady && data.schoolType === 'college') {
+      const verifyLabel = verificationStatus === 'verified' ? "Verified Student" : "Verify Student Status";
+      items.push({ icon: ShieldCheck, label: verifyLabel, action: () => navigate("/verify-student"), hidden: false });
+    }
+
     return items;
-  }, [profile.is_premium, isReady, navigate])
+  }, [profile.is_premium, isReady, navigate, verificationStatus, data.schoolType])
 
   return (
     <div className="min-h-screen bg-background/80 pb-20 relative">
@@ -100,9 +108,12 @@ const Profile = () => {
                           size="lg"
                         />
                         <div className="min-w-0 flex-1">
-                          <h2 className="text-lg font-bold text-foreground truncate">
-                            {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
-                          </h2>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <h2 className="text-lg font-bold text-foreground truncate">
+                              {data.fullName || profile.display_name || user?.email?.split('@')[0] || 'User'}
+                            </h2>
+                            <VerifiedBadge status={verificationStatus} size="md" />
+                          </div>
                           {data.username && (
                             <p className="text-sm text-primary truncate">@{data.username}</p>
                           )}
@@ -170,6 +181,29 @@ const Profile = () => {
                               <span className="px-2.5 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">
                                 +{data.extracurriculars.length - 8}
                               </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Education */}
+                      {isCollege && (data.degree || data.graduationYear || data.studentLevel) && (
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1">
+                            <GraduationCap className="w-3 h-3" /> Education
+                          </p>
+                          <div className="text-sm text-foreground/90 space-y-0.5">
+                            {data.schoolName && <p className="font-medium">{data.schoolName}</p>}
+                            {data.degree && <p className="text-muted-foreground">{data.degree}</p>}
+                            {(data.graduationYear || data.studentLevel) && (
+                              <p className="text-xs text-muted-foreground">
+                                {data.studentLevel === 'alumni'
+                                  ? `Class of ${data.graduationYear || '—'}`
+                                  : data.graduationYear
+                                  ? `Expected ${data.graduationYear}`
+                                  : ''}
+                                {data.studentLevel === 'grad' && (data.graduationYear ? ' · ' : '') + 'Graduate'}
+                              </p>
                             )}
                           </div>
                         </div>

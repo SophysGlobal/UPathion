@@ -3,21 +3,28 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { useOnboarding } from "@/context/OnboardingContext";
+import { useVerificationStatus } from "@/hooks/useVerificationStatus";
 import BottomNav from "@/components/BottomNav";
 import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
-import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass, School, Activity, MessageSquare, Heart, MessageCircle, Megaphone } from "lucide-react";
+import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass, School, Activity, MessageSquare, Heart, MessageCircle, Megaphone, ShieldCheck, BadgeCheck, X } from "lucide-react";
 import { getDisplaySchoolName } from "@/lib/schoolName";
+import PostCommentsModal from "@/components/PostCommentsModal";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { profile, isProfileComplete, hasCompletedOnboarding } = useProfileCompletion();
   const { data } = useOnboarding();
+  const { status: verificationStatus, loading: verifLoading } = useVerificationStatus();
   const navigate = useNavigate();
   
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [promptDismissed, setPromptDismissed] = useState(false);
+  const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null);
+  const [verifyBannerDismissed, setVerifyBannerDismissed] = useState(
+    () => sessionStorage.getItem('verify-banner-dismissed') === 'true'
+  );
 
   useEffect(() => {
     if (user && !hasCompletedOnboarding && !isProfileComplete && !promptDismissed) {
@@ -63,6 +70,49 @@ const Dashboard = () => {
       <AppHeader title="Dashboard" />
 
       <main className="relative z-10 px-5 py-6 space-y-6">
+        {/* Student verification banner */}
+        {!verifLoading && data.schoolType === 'college' && verificationStatus !== 'verified' && !verifyBannerDismissed && (
+          <div className="gradient-border animate-fade-in">
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4 flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center flex-shrink-0">
+                <ShieldCheck className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  {verificationStatus === 'pending' ? 'Finish verifying your student status' : 'Verify your student status'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {verificationStatus === 'pending'
+                    ? "We sent you a code — enter it to earn your verified badge."
+                    : "Confirm you're a current student with your school email to earn a verified badge."}
+                </p>
+                <button
+                  onClick={() => navigate('/verify-student')}
+                  className="text-xs font-semibold text-primary hover:underline mt-1"
+                >
+                  {verificationStatus === 'pending' ? 'Enter code →' : 'Verify now →'}
+                </button>
+              </div>
+              <button
+                onClick={() => { sessionStorage.setItem('verify-banner-dismissed', 'true'); setVerifyBannerDismissed(true); }}
+                className="p-1 text-muted-foreground hover:text-foreground"
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!verifLoading && data.schoolType === 'college' && verificationStatus === 'verified' && (
+          <div className="gradient-border animate-fade-in">
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg px-4 py-3 flex items-center gap-3">
+              <BadgeCheck className="w-5 h-5 text-primary fill-primary/20" />
+              <p className="text-sm text-foreground flex-1">You're a verified student ✨</p>
+            </div>
+          </div>
+        )}
+
         {/* Welcome */}
         <div className="animate-fade-in">
           <h2 className="text-2xl font-bold text-foreground">
@@ -192,9 +242,14 @@ const Dashboard = () => {
         </div>
 
         {/* ===== FEED SECTION — appears below existing dashboard blocks ===== */}
-        <DashboardFeed onExplore={() => navigate('/explore')} />
+        <DashboardFeed onExplore={() => navigate('/explore')} onOpenComments={setOpenCommentsFor} />
       </main>
 
+      <PostCommentsModal
+        open={!!openCommentsFor}
+        postId={openCommentsFor}
+        onOpenChange={(o) => !o && setOpenCommentsFor(null)}
+      />
       <PremiumChatFAB />
       <BottomNav />
     </div>
@@ -246,7 +301,7 @@ const SAMPLE_POSTS = [
   },
 ];
 
-const DashboardFeed = ({ onExplore }: { onExplore: () => void }) => {
+const DashboardFeed = ({ onExplore, onOpenComments }: { onExplore: () => void; onOpenComments: (postId: string) => void }) => {
   return (
     <section className="space-y-5 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
       <div className="flex items-end justify-between pt-2">
@@ -307,7 +362,10 @@ const DashboardFeed = ({ onExplore }: { onExplore: () => void }) => {
                 <button className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors">
                   <Heart className="w-4 h-4" /> {post.likes}
                 </button>
-                <button className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors">
+                <button
+                  onClick={() => onOpenComments(`dashboard-${post.id}`)}
+                  className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors"
+                >
                   <MessageCircle className="w-4 h-4" /> {post.comments}
                 </button>
               </div>
