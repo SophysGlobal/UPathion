@@ -19,6 +19,12 @@ interface OnboardingData {
   studentLevel: 'undergrad' | 'grad' | 'alumni' | '';
   degree: string;
   graduationYear: number | null;
+  educationStatus: 'high_school' | 'college' | 'graduate' | '';
+  undergraduateDegreeType: 'bachelors' | 'associates' | 'both' | '';
+  collegeMajor: string[];
+  associateDegreeMajor: string[];
+  highSchoolPursuingAssociates: boolean | null;
+  intendedMajor: string[];
 }
 
 interface OnboardingContextType {
@@ -44,6 +50,12 @@ const defaultData: OnboardingData = {
   studentLevel: '',
   degree: '',
   graduationYear: null,
+  educationStatus: '',
+  undergraduateDegreeType: '',
+  collegeMajor: [],
+  associateDegreeMajor: [],
+  highSchoolPursuingAssociates: null,
+  intendedMajor: [],
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -61,7 +73,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { data: userData, error } = await supabase
           .from('profiles')
-          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests, extracurriculars, bio, student_level, degree, graduation_year')
+          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests, extracurriculars, bio, student_level, degree, graduation_year, education_status, undergraduate_degree_type, college_major, associate_degree_major, high_school_pursuing_associates, intended_major')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -84,6 +96,15 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
           studentLevel: ((userData as any)?.student_level as OnboardingData['studentLevel']) || '',
           degree: (userData as any)?.degree || '',
           graduationYear: (userData as any)?.graduation_year ?? null,
+          educationStatus: ((userData as any)?.education_status as OnboardingData['educationStatus']) || '',
+          undergraduateDegreeType: ((userData as any)?.undergraduate_degree_type as OnboardingData['undergraduateDegreeType']) || '',
+          collegeMajor: (userData as any)?.college_major || [],
+          associateDegreeMajor: (userData as any)?.associate_degree_major || [],
+          highSchoolPursuingAssociates:
+            typeof (userData as any)?.high_school_pursuing_associates === 'boolean'
+              ? (userData as any).high_school_pursuing_associates
+              : null,
+          intendedMajor: (userData as any)?.intended_major || [],
         };
         
         initialDataRef.current = result;
