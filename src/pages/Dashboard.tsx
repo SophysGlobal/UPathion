@@ -242,9 +242,14 @@ const Dashboard = () => {
         </div>
 
         {/* ===== FEED SECTION — appears below existing dashboard blocks ===== */}
-        <DashboardFeed onExplore={() => navigate('/explore')} />
+        <DashboardFeed onExplore={() => navigate('/explore')} onOpenComments={setOpenCommentsFor} />
       </main>
 
+      <PostCommentsModal
+        open={!!openCommentsFor}
+        postId={openCommentsFor}
+        onOpenChange={(o) => !o && setOpenCommentsFor(null)}
+      />
       <PremiumChatFAB />
       <BottomNav />
     </div>
@@ -296,7 +301,7 @@ const SAMPLE_POSTS = [
   },
 ];
 
-const DashboardFeed = ({ onExplore }: { onExplore: () => void }) => {
+const DashboardFeed = ({ onExplore, onOpenComments }: { onExplore: () => void; onOpenComments: (postId: string) => void }) => {
   return (
     <section className="space-y-5 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
       <div className="flex items-end justify-between pt-2">
@@ -357,7 +362,10 @@ const DashboardFeed = ({ onExplore }: { onExplore: () => void }) => {
                 <button className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors">
                   <Heart className="w-4 h-4" /> {post.likes}
                 </button>
-                <button className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors">
+                <button
+                  onClick={() => onOpenComments(`dashboard-${post.id}`)}
+                  className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors"
+                >
                   <MessageCircle className="w-4 h-4" /> {post.comments}
                 </button>
               </div>
