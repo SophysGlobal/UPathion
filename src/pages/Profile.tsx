@@ -90,11 +90,15 @@ const Profile = () => {
                 RIGHT → action buttons (Edit, School, Settings, Plan, Sign Out)
                 Stacks vertically on mobile. */}
             {(() => {
-              const isCollege = data.schoolType === 'college';
-              const majorsList = isCollege
-                ? (data.major || '').split(',').map((m) => m.trim()).filter(Boolean)
-                : (data.interests || []);
-              const majorsLabel = isCollege ? 'Majors' : 'Intended Majors';
+              const status = data.educationStatus;
+              const isCollege = status === 'college' || (!status && data.schoolType === 'college');
+              const isHs = status === 'high_school' || (!status && data.schoolType === 'high_school');
+              const isGrad = status === 'graduate';
+              const collegeMajors = data.collegeMajor?.length
+                ? data.collegeMajor
+                : (isCollege ? (data.major || '').split(',').map((m) => m.trim()).filter(Boolean) : []);
+              const associateMajors = data.associateDegreeMajor || [];
+              const intendedMajors = data.interests || [];
               const aboutText = (profile.bio || data.about || '').trim();
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in items-start">
@@ -153,15 +157,33 @@ const Profile = () => {
                         )}
                       </div>
 
-                      {/* Majors */}
-                      {majorsList.length > 0 && (
+                      {/* Majors — split by degree track */}
+                      {isCollege && collegeMajors.length > 0 && (
                         <div>
-                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">{majorsLabel}</p>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Bachelor's Major(s)</p>
                           <div className="flex flex-wrap gap-1.5">
-                            {majorsList.map((m) => (
-                              <span key={m} className="px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">
-                                {m}
-                              </span>
+                            {collegeMajors.map((m) => (
+                              <span key={m} className="px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">{m}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(isCollege || isHs) && associateMajors.length > 0 && (
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Associate Major(s)</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {associateMajors.map((m) => (
+                              <span key={m} className="px-2.5 py-0.5 rounded-full bg-accent/15 text-accent text-xs font-medium">{m}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {isHs && intendedMajors.length > 0 && (
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Intended Majors</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {intendedMajors.map((m) => (
+                              <span key={m} className="px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-medium">{m}</span>
                             ))}
                           </div>
                         </div>
@@ -187,22 +209,24 @@ const Profile = () => {
                       )}
 
                       {/* Education */}
-                      {isCollege && (data.degree || data.graduationYear || data.studentLevel) && (
+                      {(isCollege || isGrad) && (data.degree || data.graduationYear || data.undergraduateDegreeType) && (
                         <div>
                           <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1">
                             <GraduationCap className="w-3 h-3" /> Education
                           </p>
                           <div className="text-sm text-foreground/90 space-y-0.5">
                             {data.schoolName && <p className="font-medium">{data.schoolName}</p>}
-                            {data.degree && <p className="text-muted-foreground">{data.degree}</p>}
-                            {(data.graduationYear || data.studentLevel) && (
+                            {isGrad && data.degree && <p className="text-muted-foreground">{data.degree}</p>}
+                            {isCollege && data.undergraduateDegreeType && (
+                              <p className="text-muted-foreground">
+                                {data.undergraduateDegreeType === 'bachelors' ? "Bachelor's"
+                                  : data.undergraduateDegreeType === 'associates' ? 'Associate'
+                                  : "Bachelor's & Associate"}
+                              </p>
+                            )}
+                            {data.graduationYear && (
                               <p className="text-xs text-muted-foreground">
-                                {data.studentLevel === 'alumni'
-                                  ? `Class of ${data.graduationYear || '—'}`
-                                  : data.graduationYear
-                                  ? `Expected ${data.graduationYear}`
-                                  : ''}
-                                {data.studentLevel === 'grad' && (data.graduationYear ? ' · ' : '') + 'Graduate'}
+                                {isGrad ? 'Graduate · ' : ''}Expected {data.graduationYear}
                               </p>
                             )}
                           </div>
