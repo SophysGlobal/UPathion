@@ -186,6 +186,29 @@ const Profile = () => {
                         </div>
                       )}
 
+                      {/* Education */}
+                      {isCollege && (data.degree || data.graduationYear || data.studentLevel) && (
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1">
+                            <GraduationCap className="w-3 h-3" /> Education
+                          </p>
+                          <div className="text-sm text-foreground/90 space-y-0.5">
+                            {data.schoolName && <p className="font-medium">{data.schoolName}</p>}
+                            {data.degree && <p className="text-muted-foreground">{data.degree}</p>}
+                            {(data.graduationYear || data.studentLevel) && (
+                              <p className="text-xs text-muted-foreground">
+                                {data.studentLevel === 'alumni'
+                                  ? `Class of ${data.graduationYear || '—'}`
+                                  : data.graduationYear
+                                  ? `Expected ${data.graduationYear}`
+                                  : ''}
+                                {data.studentLevel === 'grad' && (data.graduationYear ? ' · ' : '') + 'Graduate'}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {/* About */}
                       <div>
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5 flex items-center gap-1">
