@@ -16,6 +16,9 @@ interface OnboardingData {
   interests: string[];
   extracurriculars: string[];
   about: string;
+  studentLevel: 'undergrad' | 'grad' | 'alumni' | '';
+  degree: string;
+  graduationYear: number | null;
 }
 
 interface OnboardingContextType {
@@ -38,6 +41,9 @@ const defaultData: OnboardingData = {
   interests: [],
   extracurriculars: [],
   about: '',
+  studentLevel: '',
+  degree: '',
+  graduationYear: null,
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -55,7 +61,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       try {
         const { data: userData, error } = await supabase
           .from('profiles')
-          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests, extracurriculars, bio')
+          .select('display_name, username, school_type, school_name, grade_or_year, major, aspirational_school, referral_source, referral_source_other, interests, extracurriculars, bio, student_level, degree, graduation_year')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -75,6 +81,9 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
           interests: userData?.interests || [],
           extracurriculars: (userData as any)?.extracurriculars || [],
           about: userData?.bio || '',
+          studentLevel: ((userData as any)?.student_level as OnboardingData['studentLevel']) || '',
+          degree: (userData as any)?.degree || '',
+          graduationYear: (userData as any)?.graduation_year ?? null,
         };
         
         initialDataRef.current = result;
