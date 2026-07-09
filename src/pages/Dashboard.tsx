@@ -11,6 +11,7 @@ import CompleteProfilePrompt from "@/components/CompleteProfilePrompt";
 import { Sparkles, TrendingUp, Users, Calendar, Check, ChevronRight, BookOpen, GraduationCap, Compass, School, Activity, MessageSquare, Heart, MessageCircle, Megaphone, ShieldCheck, BadgeCheck, X } from "lucide-react";
 import { getDisplaySchoolName } from "@/lib/schoolName";
 import PostCommentsModal from "@/components/PostCommentsModal";
+import { useCommentCounts } from "@/hooks/useCommentCounts";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -22,6 +23,8 @@ const Dashboard = () => {
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [promptDismissed, setPromptDismissed] = useState(false);
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null);
+  const dashboardPostIds = SAMPLE_POSTS.map((p) => `dashboard-${p.id}`);
+  const { getCount, setCount } = useCommentCounts(dashboardPostIds);
   const [verifyBannerDismissed, setVerifyBannerDismissed] = useState(
     () => sessionStorage.getItem('verify-banner-dismissed') === 'true'
   );
@@ -242,13 +245,14 @@ const Dashboard = () => {
         </div>
 
         {/* ===== FEED SECTION — appears below existing dashboard blocks ===== */}
-        <DashboardFeed onExplore={() => navigate('/explore')} onOpenComments={setOpenCommentsFor} />
+        <DashboardFeed onExplore={() => navigate('/explore')} onOpenComments={setOpenCommentsFor} getCommentCount={getCount} />
       </main>
 
       <PostCommentsModal
         open={!!openCommentsFor}
         postId={openCommentsFor}
         onOpenChange={(o) => !o && setOpenCommentsFor(null)}
+        onCountChange={setCount}
       />
       <PremiumChatFAB />
       <BottomNav />
@@ -301,7 +305,7 @@ const SAMPLE_POSTS = [
   },
 ];
 
-const DashboardFeed = ({ onExplore, onOpenComments }: { onExplore: () => void; onOpenComments: (postId: string) => void }) => {
+const DashboardFeed = ({ onExplore, onOpenComments, getCommentCount }: { onExplore: () => void; onOpenComments: (postId: string) => void; getCommentCount: (id: string) => number }) => {
   return (
     <section className="space-y-5 animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
       <div className="flex items-end justify-between pt-2">
@@ -366,7 +370,7 @@ const DashboardFeed = ({ onExplore, onOpenComments }: { onExplore: () => void; o
                   onClick={() => onOpenComments(`dashboard-${post.id}`)}
                   className="flex items-center gap-1.5 text-xs hover:text-primary transition-colors"
                 >
-                  <MessageCircle className="w-4 h-4" /> {post.comments}
+                  <MessageCircle className="w-4 h-4" /> {getCommentCount(`dashboard-${post.id}`)}
                 </button>
               </div>
             </div>
