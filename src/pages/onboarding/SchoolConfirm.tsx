@@ -8,7 +8,7 @@ import EditFieldModal from "@/components/EditFieldModal";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { School, GraduationCap, BookOpen, Calendar, Sparkles, Activity, MessageSquare } from "lucide-react";
+import { School, GraduationCap, BookOpen, Calendar, Sparkles, Activity, MessageSquare, Award } from "lucide-react";
 import { toast } from "sonner";
 import { getDisplaySchoolName } from "@/lib/schoolName";
 
@@ -47,6 +47,15 @@ const SchoolConfirm = () => {
         student_level: data.studentLevel || null,
         degree: data.degree?.trim() ? data.degree.trim() : null,
         graduation_year: data.graduationYear ?? null,
+        education_status: data.educationStatus || null,
+        undergraduate_degree_type: data.undergraduateDegreeType || null,
+        college_major: data.collegeMajor?.length ? data.collegeMajor : [],
+        associate_degree_major: data.associateDegreeMajor?.length ? data.associateDegreeMajor : [],
+        high_school_pursuing_associates:
+          typeof data.highSchoolPursuingAssociates === 'boolean'
+            ? data.highSchoolPursuingAssociates
+            : null,
+        intended_major: isHighSchool ? (data.interests?.length ? data.interests : []) : [],
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };
@@ -121,19 +130,116 @@ const SchoolConfirm = () => {
           />
 
           {(() => {
-            const isCollege = data.schoolType === 'college';
-            const majorList = isCollege
-              ? (data.major || '').split(',').map((m) => m.trim()).filter(Boolean)
-              : (data.interests || []);
-            if (majorList.length === 0) return null;
-            return (
-              <DetailCard
-                icon={<BookOpen className="w-4 h-4 text-accent" />}
-                iconBg="bg-secondary"
-                label={isCollege ? 'Major(s)' : 'Intended Major(s)'}
-                value={majorList.join(', ')}
-              />
-            );
+            const s = data.educationStatus;
+            const cards: React.ReactNode[] = [];
+            if (s) {
+              const label =
+                s === 'high_school' ? 'High School' : s === 'college' ? 'College' : 'Graduate';
+              cards.push(
+                <DetailCard
+                  key="edu-status"
+                  icon={<GraduationCap className="w-4 h-4 text-primary" />}
+                  iconBg="bg-secondary"
+                  label="Education"
+                  value={label}
+                />,
+              );
+            }
+            if (s === 'college' && data.undergraduateDegreeType) {
+              const label =
+                data.undergraduateDegreeType === 'bachelors'
+                  ? "Bachelor's degree"
+                  : data.undergraduateDegreeType === 'associates'
+                  ? 'Associate degree'
+                  : "Bachelor's & Associate";
+              cards.push(
+                <DetailCard
+                  key="deg-type"
+                  icon={<Award className="w-4 h-4 text-accent" />}
+                  iconBg="bg-secondary"
+                  label="Degree type"
+                  value={label}
+                />,
+              );
+            }
+            if (s === 'college' && data.collegeMajor?.length) {
+              cards.push(
+                <DetailCard
+                  key="col-major"
+                  icon={<BookOpen className="w-4 h-4 text-accent" />}
+                  iconBg="bg-secondary"
+                  label="Bachelor's major(s)"
+                  value={data.collegeMajor.join(', ')}
+                />,
+              );
+            }
+            if (s === 'college' && data.associateDegreeMajor?.length) {
+              cards.push(
+                <DetailCard
+                  key="col-assoc"
+                  icon={<BookOpen className="w-4 h-4 text-accent" />}
+                  iconBg="bg-secondary"
+                  label="Associate major(s)"
+                  value={data.associateDegreeMajor.join(', ')}
+                />,
+              );
+            }
+            if (s === 'high_school') {
+              cards.push(
+                <DetailCard
+                  key="hs-assoc"
+                  icon={<Award className="w-4 h-4 text-accent" />}
+                  iconBg="bg-secondary"
+                  label="Pursuing associate degree"
+                  value={data.highSchoolPursuingAssociates ? 'Yes' : 'No'}
+                />,
+              );
+              if (data.highSchoolPursuingAssociates && data.associateDegreeMajor?.length) {
+                cards.push(
+                  <DetailCard
+                    key="hs-assoc-major"
+                    icon={<BookOpen className="w-4 h-4 text-accent" />}
+                    iconBg="bg-secondary"
+                    label="Associate major(s)"
+                    value={data.associateDegreeMajor.join(', ')}
+                  />,
+                );
+              }
+              if (data.interests?.length) {
+                cards.push(
+                  <DetailCard
+                    key="intended"
+                    icon={<BookOpen className="w-4 h-4 text-accent" />}
+                    iconBg="bg-secondary"
+                    label="Intended major(s)"
+                    value={data.interests.join(', ')}
+                  />,
+                );
+              }
+            }
+            if (s === 'graduate' && data.degree) {
+              cards.push(
+                <DetailCard
+                  key="grad-degree"
+                  icon={<Award className="w-4 h-4 text-accent" />}
+                  iconBg="bg-secondary"
+                  label="Degree"
+                  value={data.degree}
+                />,
+              );
+            }
+            if ((s === 'graduate' || s === 'college') && data.graduationYear) {
+              cards.push(
+                <DetailCard
+                  key="grad-year"
+                  icon={<Calendar className="w-4 h-4 text-primary" />}
+                  iconBg="bg-secondary"
+                  label="Graduation year"
+                  value={String(data.graduationYear)}
+                />,
+              );
+            }
+            return cards;
           })()}
 
           {data.extracurriculars && data.extracurriculars.length > 0 && (
