@@ -210,16 +210,21 @@ export type Database = {
       profiles: {
         Row: {
           aspirational_school: string | null
+          associate_degree_major: string[] | null
           avatar_url: string | null
           bio: string | null
+          college_major: string[] | null
           created_at: string
           degree: string | null
           display_name: string | null
+          education_status: string | null
           email: string | null
           extracurriculars: string[] | null
           grade_or_year: string | null
           graduation_year: number | null
+          high_school_pursuing_associates: boolean | null
           id: string
+          intended_major: string[] | null
           interests: string[] | null
           is_high_school: boolean | null
           is_premium: boolean
@@ -231,6 +236,7 @@ export type Database = {
           school_type: string | null
           student_level: string | null
           subscription_ends_at: string | null
+          undergraduate_degree_type: string | null
           updated_at: string
           username: string | null
           verification_status: string
@@ -240,16 +246,21 @@ export type Database = {
         }
         Insert: {
           aspirational_school?: string | null
+          associate_degree_major?: string[] | null
           avatar_url?: string | null
           bio?: string | null
+          college_major?: string[] | null
           created_at?: string
           degree?: string | null
           display_name?: string | null
+          education_status?: string | null
           email?: string | null
           extracurriculars?: string[] | null
           grade_or_year?: string | null
           graduation_year?: number | null
+          high_school_pursuing_associates?: boolean | null
           id: string
+          intended_major?: string[] | null
           interests?: string[] | null
           is_high_school?: boolean | null
           is_premium?: boolean
@@ -261,6 +272,7 @@ export type Database = {
           school_type?: string | null
           student_level?: string | null
           subscription_ends_at?: string | null
+          undergraduate_degree_type?: string | null
           updated_at?: string
           username?: string | null
           verification_status?: string
@@ -270,16 +282,21 @@ export type Database = {
         }
         Update: {
           aspirational_school?: string | null
+          associate_degree_major?: string[] | null
           avatar_url?: string | null
           bio?: string | null
+          college_major?: string[] | null
           created_at?: string
           degree?: string | null
           display_name?: string | null
+          education_status?: string | null
           email?: string | null
           extracurriculars?: string[] | null
           grade_or_year?: string | null
           graduation_year?: number | null
+          high_school_pursuing_associates?: boolean | null
           id?: string
+          intended_major?: string[] | null
           interests?: string[] | null
           is_high_school?: boolean | null
           is_premium?: boolean
@@ -291,6 +308,7 @@ export type Database = {
           school_type?: string | null
           student_level?: string | null
           subscription_ends_at?: string | null
+          undergraduate_degree_type?: string | null
           updated_at?: string
           username?: string | null
           verification_status?: string

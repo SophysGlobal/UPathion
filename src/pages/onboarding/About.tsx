@@ -14,7 +14,7 @@ const About = () => {
   const { data, updateData } = useOnboarding();
   const [about, setAbout] = useState(data.about || "");
 
-  const nextStep = data.schoolType === 'college' ? "/onboarding/education" : "/onboarding/school-confirm";
+  const nextStep = "/onboarding/education";
 
   const handleContinue = () => {
     updateData({ about: about.trim() });
