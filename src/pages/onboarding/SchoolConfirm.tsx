@@ -42,6 +42,9 @@ const SchoolConfirm = () => {
         interests: data.interests?.length ? data.interests : [],
         extracurriculars: data.extracurriculars?.length ? data.extracurriculars : [],
         bio: data.about?.trim() ? data.about.trim() : null,
+        student_level: data.studentLevel || null,
+        degree: data.degree?.trim() ? data.degree.trim() : null,
+        graduation_year: data.graduationYear ?? null,
         onboarding_completed: true,
         updated_at: new Date().toISOString(),
       };
