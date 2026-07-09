@@ -560,8 +560,10 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          degree: string | null
           display_name: string | null
           grade_or_year: string | null
+          graduation_year: number | null
           id: string | null
           interests: string[] | null
           is_high_school: boolean | null
@@ -569,16 +571,21 @@ export type Database = {
           onboarding_completed: boolean | null
           school_name: string | null
           school_type: string | null
+          student_level: string | null
           updated_at: string | null
           username: string | null
+          verification_status: string | null
+          verified_at: string | null
         }
         Insert: {
           aspirational_school?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          degree?: string | null
           display_name?: string | null
           grade_or_year?: string | null
+          graduation_year?: number | null
           id?: string | null
           interests?: string[] | null
           is_high_school?: boolean | null
@@ -586,16 +593,21 @@ export type Database = {
           onboarding_completed?: boolean | null
           school_name?: string | null
           school_type?: string | null
+          student_level?: string | null
           updated_at?: string | null
           username?: string | null
+          verification_status?: string | null
+          verified_at?: string | null
         }
         Update: {
           aspirational_school?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          degree?: string | null
           display_name?: string | null
           grade_or_year?: string | null
+          graduation_year?: number | null
           id?: string | null
           interests?: string[] | null
           is_high_school?: boolean | null
@@ -603,8 +615,11 @@ export type Database = {
           onboarding_completed?: boolean | null
           school_name?: string | null
           school_type?: string | null
+          student_level?: string | null
           updated_at?: string | null
           username?: string | null
+          verification_status?: string | null
+          verified_at?: string | null
         }
         Relationships: []
       }
