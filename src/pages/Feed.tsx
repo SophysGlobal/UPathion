@@ -6,6 +6,7 @@ import PremiumChatFAB from "@/components/PremiumChatFAB";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PostCommentsModal from "@/components/PostCommentsModal";
+import { useCommentCounts } from "@/hooks/useCommentCounts";
 import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 import { getDisplaySchoolName } from "@/lib/schoolName";
@@ -15,10 +16,11 @@ interface PostCardProps {
   onSchoolClick: (schoolName: string) => void;
   onUserClick: (authorName: string) => void;
   onCommentClick: (postId: string) => void;
+  commentCount: number;
   userSchool?: string;
 }
 
-const PostCard = memo(({ post, onSchoolClick, onUserClick, onCommentClick, userSchool }: PostCardProps) => {
+const PostCard = memo(({ post, onSchoolClick, onUserClick, onCommentClick, commentCount, userSchool }: PostCardProps) => {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -61,7 +63,7 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, onCommentClick, userS
             className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
           >
             <MessageCircle className="w-5 h-5" />
-            <span className="text-sm">{post.comments}</span>
+            <span className="text-sm">{commentCount}</span>
           </button>
           <button onClick={() => setSaved(!saved)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ml-auto">
             <Bookmark className={`w-5 h-5 ${saved ? 'fill-primary text-primary' : ''}`} />
@@ -95,6 +97,9 @@ const Feed = () => {
     if (activeFilter === 'aspirational') return posts.filter((p) => p.schoolScope === 'aspirational' || p.schoolScope === 'general');
     return posts;
   }, [activeFilter, posts]);
+
+  const postIds = useMemo(() => filteredPosts.map((p) => `feed-${p.id}`), [filteredPosts]);
+  const { getCount, setCount } = useCommentCounts(postIds);
 
   const filters: { key: FilterType; label: string; show: boolean }[] = [
     { key: 'all', label: 'All', show: true },
@@ -142,7 +147,7 @@ const Feed = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredPosts.map((post, index) => (
               <div key={post.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}>
-                <PostCard post={post} onSchoolClick={handleSchoolClick} onUserClick={handleUserClick} onCommentClick={setOpenCommentsFor} userSchool={userSchool} />
+                <PostCard post={post} onSchoolClick={handleSchoolClick} onUserClick={handleUserClick} onCommentClick={setOpenCommentsFor} commentCount={getCount(`feed-${post.id}`)} userSchool={userSchool} />
               </div>
             ))}
           </div>
@@ -160,6 +165,7 @@ const Feed = () => {
         open={!!openCommentsFor}
         postId={openCommentsFor}
         onOpenChange={(o) => !o && setOpenCommentsFor(null)}
+        onCountChange={setCount}
       />
 
       <PremiumChatFAB />
