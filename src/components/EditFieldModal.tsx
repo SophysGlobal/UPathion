@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { School, GraduationCap, BookOpen, Activity, Sparkles, User, MessageSquare } from "lucide-react";
+import { School, GraduationCap, BookOpen, Activity, Sparkles, User, MessageSquare, Award } from "lucide-react";
 import { useOnboarding } from "@/context/OnboardingContext";
 
 interface EditFieldModalProps {
@@ -17,10 +17,27 @@ const EditFieldModal = ({ open, onOpenChange }: EditFieldModalProps) => {
   const navigate = useNavigate();
   const { data } = useOnboarding();
 
-  const isCollege = data.schoolType === 'college';
-  const majorList = isCollege
-    ? (data.major || '').split(',').map((m) => m.trim()).filter(Boolean)
-    : (data.interests || []);
+  const status = data.educationStatus;
+  const isCollege = status === 'college' || (!status && data.schoolType === 'college');
+  const isHs = status === 'high_school' || (!status && data.schoolType === 'high_school');
+  const isGrad = status === 'graduate';
+
+  const educationValue =
+    status === 'college'
+      ? `College${data.undergraduateDegreeType ? ` · ${
+          data.undergraduateDegreeType === 'bachelors' ? "Bachelor's"
+            : data.undergraduateDegreeType === 'associates' ? 'Associate'
+            : "Bachelor's & Associate"
+        }` : ''}`
+      : status === 'high_school'
+      ? `High School${data.highSchoolPursuingAssociates ? ' · Assoc.' : ''}`
+      : status === 'graduate'
+      ? 'Graduate'
+      : 'Not set';
+
+  const collegeMajors = data.collegeMajor || [];
+  const associateMajors = data.associateDegreeMajor || [];
+  const intendedMajors = data.interests || [];
 
   const fields = [
     {
@@ -41,21 +58,45 @@ const EditFieldModal = ({ open, onOpenChange }: EditFieldModalProps) => {
       route: "/onboarding/school",
       value: data.schoolName || "Not set",
     },
-    ...(data.schoolType === 'high_school' ? [{
+    ...(isHs ? [{
       label: "Dream School",
       icon: Sparkles,
       route: "/onboarding/aspirational-school",
       value: data.aspirationalSchool || "Not set",
     }] : []),
     {
-      label: isCollege ? "Major(s)" : "Intended Major(s)",
-      icon: BookOpen,
-      // College users edit their major on the school selection step
-      // (majors are captured inline there). High schoolers use the
-      // standalone intended-majors step.
-      route: isCollege ? "/onboarding/school" : "/onboarding/interests",
-      value: majorList.length ? majorList.slice(0, 2).join(", ") : "Not set",
+      label: "Education",
+      icon: GraduationCap,
+      route: "/onboarding/education",
+      value: educationValue,
     },
+    ...(isCollege && (data.undergraduateDegreeType === 'bachelors' || data.undergraduateDegreeType === 'both' || collegeMajors.length) ? [{
+      label: "Bachelor's Major(s)",
+      icon: BookOpen,
+      route: "/onboarding/education",
+      value: collegeMajors.length ? collegeMajors.slice(0, 2).join(', ') : 'Not set',
+    }] : []),
+    ...((isCollege && (data.undergraduateDegreeType === 'associates' || data.undergraduateDegreeType === 'both')) ||
+        (isHs && data.highSchoolPursuingAssociates)
+      ? [{
+          label: "Associate Major(s)",
+          icon: BookOpen,
+          route: "/onboarding/education",
+          value: associateMajors.length ? associateMajors.slice(0, 2).join(', ') : 'Not set',
+        }]
+      : []),
+    ...(isHs ? [{
+      label: "Intended Major(s)",
+      icon: BookOpen,
+      route: "/onboarding/interests",
+      value: intendedMajors.length ? intendedMajors.slice(0, 2).join(', ') : 'Not set',
+    }] : []),
+    ...(isGrad ? [{
+      label: "Degree",
+      icon: Award,
+      route: "/onboarding/education",
+      value: data.degree || 'Not set',
+    }] : []),
     {
       label: "Extracurriculars",
       icon: Activity,
