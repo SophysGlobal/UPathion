@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
 import EditFieldModal from "@/components/EditFieldModal";
@@ -15,6 +16,7 @@ const SchoolConfirm = () => {
   const navigate = useNavigate();
   const { data } = useOnboarding();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
 
@@ -57,6 +59,13 @@ const SchoolConfirm = () => {
       if (error) throw error;
 
       window.dispatchEvent(new CustomEvent('admin-questionnaire-complete'));
+
+      // Invalidate cached profile lookups so AuthGate sees onboarding_completed=true
+      // immediately, preventing a redirect loop back into onboarding.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['profile-completion', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['onboarding-data', user.id] }),
+      ]);
 
       toast.success("Profile saved!", {
         description: "Just one more step...",
