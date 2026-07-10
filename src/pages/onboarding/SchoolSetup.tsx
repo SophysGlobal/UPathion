@@ -5,20 +5,19 @@ import { GradientButton } from "@/components/ui/GradientButton";
 import { Input } from "@/components/ui/input";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { toast } from "sonner";
-import { GraduationCap, ShieldCheck, Mail, IdCard } from "lucide-react";
+import { GraduationCap, School, ShieldCheck, Mail, IdCard } from "lucide-react";
 import SchoolSearchDropdown from "@/components/SchoolSearchDropdown";
 import MajorMultiSelect from "@/components/MajorMultiSelect";
 import BackSkipRow from "@/components/onboarding/BackSkipRow";
 import { cn } from "@/lib/utils";
 
 type Status = 'high_school' | 'college' | 'graduate' | 'alumni' | 'not_student';
+type DegreeType = 'bachelors' | 'associates' | 'both';
 
-const STATUS_OPTIONS: { key: Status; label: string; hint: string }[] = [
-  { key: 'high_school', label: 'High School Student', hint: 'Currently in high school' },
-  { key: 'college', label: 'Undergraduate Student', hint: 'Pursuing a bachelor\'s or associate degree' },
-  { key: 'graduate', label: 'Graduate Student', hint: "Master's, PhD, or professional program" },
-  { key: 'alumni', label: 'Alumni / Graduate', hint: 'Finished school' },
-  { key: 'not_student', label: 'Not a Student', hint: 'Just here to connect' },
+const OTHER_OPTIONS: { key: Status; label: string }[] = [
+  { key: 'graduate', label: 'Graduate Student' },
+  { key: 'alumni', label: 'Alumni' },
+  { key: 'not_student', label: 'Not a Student' },
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -51,6 +50,17 @@ const SchoolSetup = () => {
   const [graduationYear, setGraduationYear] = useState<string>(
     data.graduationYear ? String(data.graduationYear) : ''
   );
+  const [degreeType, setDegreeType] = useState<DegreeType | ''>(
+    (data.undergraduateDegreeType as DegreeType) || ''
+  );
+  const [associateMajor, setAssociateMajor] = useState<string>(
+    (data.associateDegreeMajor || []).join(', ')
+  );
+  const [hsPursuingAssociates, setHsPursuingAssociates] = useState<boolean | null>(
+    typeof data.highSchoolPursuingAssociates === 'boolean'
+      ? data.highSchoolPursuingAssociates
+      : null
+  );
 
   const isHS = status === 'high_school';
   const isUG = status === 'college';
@@ -59,11 +69,17 @@ const SchoolSetup = () => {
   const isStudent = isHS || isUG || isGrad;
   const needsSchool = isHS || isUG || isGrad || isAlum;
 
+  const showAssociateMajor =
+    (isUG && (degreeType === 'associates' || degreeType === 'both')) ||
+    (isHS && hsPursuingAssociates === true);
+
   const canContinue = (): boolean => {
     if (!status) return false;
     if (status === 'not_student') return true;
     if (!schoolName.trim()) return false;
     if (!graduationYear) return false;
+    if (isUG && !degreeType) return false;
+    if (isHS && hsPursuingAssociates === null) return false;
     return true;
   };
 
@@ -72,6 +88,8 @@ const SchoolSetup = () => {
       isHS ? 'high_school' : needsSchool ? 'college' : 'other';
     const studentLevel: 'undergrad' | 'grad' | 'alumni' | '' =
       isUG ? 'undergrad' : isGrad ? 'grad' : isAlum ? 'alumni' : '';
+    const parseMajors = (s: string) =>
+      s.split(',').map((v) => v.trim()).filter(Boolean);
     return {
       educationStatus: (status || '') as Status | '',
       schoolType,
@@ -80,16 +98,14 @@ const SchoolSetup = () => {
       major: (isUG || isGrad || isAlum) ? major.trim() : '',
       degree: (isGrad || isAlum) ? degree.trim() : '',
       graduationYear: needsSchool && graduationYear ? parseInt(graduationYear, 10) : null,
-      // Keep gradeOrYear cleared — deprecated by this consolidated screen.
       gradeOrYear: '',
-      // Clear undergrad/associate detail from the old questionnaire so
-      // confirm and profile screens don't show stale values.
-      undergraduateDegreeType: '' as const,
-      collegeMajor: isUG && major.trim() ? major.split(',').map((s) => s.trim()).filter(Boolean) : [],
-      associateDegreeMajor: [],
-      highSchoolPursuingAssociates: null,
-      // High-schoolers still get the aspirational-school step; clear any
-      // stale "intended major" for other paths.
+      undergraduateDegreeType: (isUG ? (degreeType || '') : '') as DegreeType | '',
+      collegeMajor:
+        isUG && (degreeType === 'bachelors' || degreeType === 'both') && major.trim()
+          ? parseMajors(major)
+          : [],
+      associateDegreeMajor: showAssociateMajor ? parseMajors(associateMajor) : [],
+      highSchoolPursuingAssociates: isHS ? hsPursuingAssociates : null,
       intendedMajor: isHS ? data.intendedMajor || [] : [],
     };
   };
@@ -98,6 +114,9 @@ const SchoolSetup = () => {
     if (!canContinue()) {
       if (!status) toast.error('Please select what best describes you');
       else if (!schoolName.trim()) toast.error('Please enter your school name');
+      else if (isUG && !degreeType) toast.error('Please select your degree type');
+      else if (isHS && hsPursuingAssociates === null)
+        toast.error('Please tell us if you\'re pursuing an associate degree');
       else toast.error('Please select your graduation year');
       return;
     }
@@ -140,29 +159,53 @@ const SchoolSetup = () => {
 
       <div className="space-y-5 animate-fade-in" onKeyDown={handleKeyDown}>
         <div>
-          <p className="text-sm font-medium text-foreground mb-2">What best describes you?</p>
-          <div className="grid grid-cols-1 gap-2">
-            {STATUS_OPTIONS.map((opt) => (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => setStatus(opt.key)}
-                className={cn(
-                  'gradient-border text-left',
-                  status === opt.key && 'ring-2 ring-primary/50 rounded-lg',
-                )}
-              >
-                <div
+          <p className="text-sm font-medium text-foreground mb-2">I'm currently in…</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setStatus('high_school')}
+              className={cn('gradient-border text-left', isHS && 'ring-2 ring-primary/50 rounded-lg')}
+            >
+              <div className={cn('bg-card rounded-lg p-4 flex flex-col items-center gap-2 transition-colors', isHS ? 'bg-primary/10' : 'hover:bg-secondary/40')}>
+                <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center">
+                  <School className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">High School</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatus('college')}
+              className={cn('gradient-border text-left', isUG && 'ring-2 ring-primary/50 rounded-lg')}
+            >
+              <div className={cn('bg-card rounded-lg p-4 flex flex-col items-center gap-2 transition-colors', isUG ? 'bg-primary/10' : 'hover:bg-secondary/40')}>
+                <div className="w-10 h-10 rounded-full gradient-bg flex items-center justify-center">
+                  <GraduationCap className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">College</p>
+              </div>
+            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="text-xs text-muted-foreground self-center mr-1">Something else?</span>
+            {OTHER_OPTIONS.map((opt) => {
+              const active = status === opt.key;
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setStatus(opt.key)}
                   className={cn(
-                    'bg-card rounded-lg px-4 py-3 transition-colors',
-                    status === opt.key ? 'bg-primary/10' : 'hover:bg-secondary/40',
+                    'px-3 py-1.5 rounded-full text-xs font-medium transition-colors border',
+                    active
+                      ? 'bg-primary/15 text-foreground border-primary/40'
+                      : 'bg-secondary/40 text-muted-foreground border-transparent hover:bg-secondary',
                   )}
                 >
-                  <p className="text-sm font-semibold text-foreground">{opt.label}</p>
-                  <p className="text-xs text-muted-foreground">{opt.hint}</p>
-                </div>
-              </button>
-            ))}
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -181,13 +224,91 @@ const SchoolSetup = () => {
             {isUG && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
-                  Major <span className="text-muted-foreground">(optional)</span>
+                  What are you pursuing?
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { k: 'bachelors', l: "Bachelor's" },
+                    { k: 'associates', l: 'Associate' },
+                    { k: 'both', l: 'Both' },
+                  ] as { k: DegreeType; l: string }[]).map((o) => {
+                    const active = degreeType === o.k;
+                    return (
+                      <button
+                        key={o.k}
+                        type="button"
+                        onClick={() => setDegreeType(o.k)}
+                        className={cn(
+                          'rounded-lg py-2 text-sm font-medium transition-colors border',
+                          active
+                            ? 'bg-primary/15 text-foreground border-primary/50'
+                            : 'bg-card text-muted-foreground border-border hover:bg-secondary/50',
+                        )}
+                      >
+                        {o.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {isUG && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  {degreeType === 'associates' ? "Bachelor's major " : "Major "}
+                  <span className="text-muted-foreground">(optional)</span>
                 </label>
                 <MajorMultiSelect
                   value={major}
                   onChange={setMajor}
                   placeholder="Search majors..."
                   maxSelections={3}
+                />
+              </div>
+            )}
+
+            {isHS && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Are you also pursuing an associate degree?
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { k: true, l: 'Yes' },
+                    { k: false, l: 'No' },
+                  ].map((o) => {
+                    const active = hsPursuingAssociates === o.k;
+                    return (
+                      <button
+                        key={String(o.k)}
+                        type="button"
+                        onClick={() => setHsPursuingAssociates(o.k)}
+                        className={cn(
+                          'rounded-lg py-2 text-sm font-medium transition-colors border',
+                          active
+                            ? 'bg-primary/15 text-foreground border-primary/50'
+                            : 'bg-card text-muted-foreground border-border hover:bg-secondary/50',
+                        )}
+                      >
+                        {o.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {showAssociateMajor && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Associate degree major <span className="text-muted-foreground">(optional)</span>
+                </label>
+                <MajorMultiSelect
+                  value={associateMajor}
+                  onChange={setAssociateMajor}
+                  placeholder="Search majors..."
+                  maxSelections={2}
                 />
               </div>
             )}
