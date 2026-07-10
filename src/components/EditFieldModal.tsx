@@ -67,13 +67,13 @@ const EditFieldModal = ({ open, onOpenChange }: EditFieldModalProps) => {
     {
       label: "Education",
       icon: GraduationCap,
-      route: "/onboarding/education",
+      route: "/onboarding/school",
       value: educationValue,
     },
     ...(isCollege && (data.undergraduateDegreeType === 'bachelors' || data.undergraduateDegreeType === 'both' || collegeMajors.length) ? [{
       label: "Bachelor's Major(s)",
       icon: BookOpen,
-      route: "/onboarding/education",
+      route: "/onboarding/school",
       value: collegeMajors.length ? collegeMajors.slice(0, 2).join(', ') : 'Not set',
     }] : []),
     ...((isCollege && (data.undergraduateDegreeType === 'associates' || data.undergraduateDegreeType === 'both')) ||
@@ -81,7 +81,7 @@ const EditFieldModal = ({ open, onOpenChange }: EditFieldModalProps) => {
       ? [{
           label: "Associate Major(s)",
           icon: BookOpen,
-          route: "/onboarding/education",
+          route: "/onboarding/school",
           value: associateMajors.length ? associateMajors.slice(0, 2).join(', ') : 'Not set',
         }]
       : []),
@@ -94,7 +94,7 @@ const EditFieldModal = ({ open, onOpenChange }: EditFieldModalProps) => {
     ...(isGrad ? [{
       label: "Degree",
       icon: Award,
-      route: "/onboarding/education",
+      route: "/onboarding/school",
       value: data.degree || 'Not set',
     }] : []),
     {

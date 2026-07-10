@@ -34,7 +34,6 @@ const ONBOARDING_ROUTES = [
   '/onboarding/name-confirm',
   '/onboarding/how-did-you-hear',
   '/onboarding/school',
-  '/onboarding/education',
   '/onboarding/aspirational-school',
   '/onboarding/interests',
   '/onboarding/extracurriculars',
