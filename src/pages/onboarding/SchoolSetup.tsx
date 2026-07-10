@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -76,6 +76,16 @@ const SchoolSetup = () => {
   const isStudent = isHS || isUG || isGrad;
   const canVerify = isUG || isGrad; // Student verification is college-only
   const needsSchool = isHS || isUG || isGrad || isAlum;
+
+  // If the user switches level, drop a graduation year that isn't valid for the new list.
+  useEffect(() => {
+    if (!graduationYear) return;
+    const allowed = isHS ? HS_YEARS : COLLEGE_YEARS;
+    if (!allowed.includes(Number(graduationYear))) {
+      setGraduationYear('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   const showAssociateMajor =
     (isUG && (degreeType === 'associates' || degreeType === 'both')) ||
