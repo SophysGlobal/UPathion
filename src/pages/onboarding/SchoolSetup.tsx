@@ -73,7 +73,7 @@ const SchoolSetup = () => {
     const studentLevel: 'undergrad' | 'grad' | 'alumni' | '' =
       isUG ? 'undergrad' : isGrad ? 'grad' : isAlum ? 'alumni' : '';
     return {
-      educationStatus: status || '',
+      educationStatus: (status || '') as Status | '',
       schoolType,
       schoolName: needsSchool ? schoolName.trim() : '',
       studentLevel,
