@@ -7,7 +7,7 @@ import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PostCommentsModal from "@/components/PostCommentsModal";
 import { useCommentCounts } from "@/hooks/useCommentCounts";
-import { Heart, MessageCircle, Bookmark, User } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, User, Search, X } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 import { getDisplaySchoolName } from "@/lib/schoolName";
 
@@ -78,9 +78,16 @@ PostCard.displayName = 'PostCard';
 
 type FilterType = 'all' | 'current' | 'aspirational';
 
+const RECOMMENDED_HASHTAGS = [
+  '#StudyTips', '#Homework', '#STEM', '#Biology', '#Chemistry', '#Math',
+  '#Physics', '#Engineering', '#ComputerScience', '#History', '#English', '#Economics',
+];
+
 const Feed = () => {
   const { profile } = useProfileCompletion();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeHashtag, setActiveHashtag] = useState<string | null>(null);
   const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
   const [schoolSheetOpen, setSchoolSheetOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<{ name: string; role?: string; badge?: string; school?: string } | null>(null);
@@ -92,11 +99,37 @@ const Feed = () => {
   const posts = USE_SEED_DATA ? seedFeedPosts : [];
 
   const filteredPosts = useMemo(() => {
-    if (activeFilter === 'all') return posts;
-    if (activeFilter === 'current') return posts.filter((p) => p.schoolScope === 'current' || p.schoolScope === 'general');
-    if (activeFilter === 'aspirational') return posts.filter((p) => p.schoolScope === 'aspirational' || p.schoolScope === 'general');
-    return posts;
-  }, [activeFilter, posts]);
+    let list = posts;
+    if (activeFilter === 'current') {
+      list = list.filter((p) => p.schoolScope === 'current' || p.schoolScope === 'general');
+    } else if (activeFilter === 'aspirational') {
+      list = list.filter((p) => p.schoolScope === 'aspirational' || p.schoolScope === 'general');
+    }
+
+    const normTag = (t: string) => t.replace(/^#/, '').toLowerCase();
+
+    if (activeHashtag) {
+      const target = normTag(activeHashtag);
+      list = list.filter((p) => p.tags?.some((t) => normTag(t) === target));
+    }
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      const hashtagQuery = q.startsWith('#') ? q.slice(1) : null;
+      list = list.filter((p) => {
+        const inTags = p.tags?.some((t) =>
+          hashtagQuery ? normTag(t) === hashtagQuery : normTag(t).includes(q),
+        );
+        if (hashtagQuery) return inTags;
+        const inBody = p.bodyText?.toLowerCase().includes(q);
+        const inAuthor = p.authorName?.toLowerCase().includes(q);
+        const inSchool = p.schoolName?.toLowerCase().includes(q);
+        return inTags || inBody || inAuthor || inSchool;
+      });
+    }
+
+    return list;
+  }, [activeFilter, activeHashtag, searchQuery, posts]);
 
   const postIds = useMemo(() => filteredPosts.map((p) => `feed-${p.id}`), [filteredPosts]);
   const { getCount, setCount } = useCommentCounts(postIds);
@@ -128,8 +161,51 @@ const Feed = () => {
     <div className="min-h-screen bg-background/80 pb-20 relative">
       <AppHeader title="Feed" subtitle="Tailored to you" />
 
-      {/* Filter Pills */}
-      <div className="sticky top-[57px] z-30 bg-background/80 backdrop-blur-xl px-5 pb-3 pt-2 border-b border-border/50">
+      {/* Search + Hashtag + School Filter */}
+      <div className="sticky top-[57px] z-30 bg-background/80 backdrop-blur-xl px-5 pt-3 pb-3 border-b border-border/50 space-y-2.5">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search posts, hashtags, or topics..."
+            aria-label="Search feed"
+            className="w-full h-10 pl-9 pr-9 rounded-full bg-secondary/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
+          <button
+            onClick={() => setActiveHashtag(null)}
+            className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              activeHashtag === null ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+            }`}
+          >
+            All Posts
+          </button>
+          {RECOMMENDED_HASHTAGS.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setActiveHashtag(activeHashtag === tag ? null : tag)}
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+                activeHashtag === tag ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {filters.filter(f => f.show).map((filter) => (
             <button key={filter.key} onClick={() => setActiveFilter(filter.key)}
