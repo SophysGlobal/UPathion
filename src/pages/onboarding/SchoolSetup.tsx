@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import OnboardingLayout from "@/components/OnboardingLayout";
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -21,7 +21,14 @@ const OTHER_OPTIONS: { key: Status; label: string }[] = [
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
-const YEARS = Array.from({ length: 20 }, (_, i) => CURRENT_YEAR - 10 + i);
+const HS_MAX_YEAR = 2030;
+// High schoolers: current year through 2030 (never beyond).
+const HS_YEARS = Array.from(
+  { length: Math.max(HS_MAX_YEAR - CURRENT_YEAR + 1, 1) },
+  (_, i) => CURRENT_YEAR + i,
+);
+// College / grad / alumni: broader window including past + future years.
+const COLLEGE_YEARS = Array.from({ length: 20 }, (_, i) => CURRENT_YEAR - 10 + i);
 
 const deriveInitialStatus = (data: {
   educationStatus: string;
@@ -67,7 +74,18 @@ const SchoolSetup = () => {
   const isGrad = status === 'graduate';
   const isAlum = status === 'alumni';
   const isStudent = isHS || isUG || isGrad;
+  const canVerify = isUG || isGrad; // Student verification is college-only
   const needsSchool = isHS || isUG || isGrad || isAlum;
+
+  // If the user switches level, drop a graduation year that isn't valid for the new list.
+  useEffect(() => {
+    if (!graduationYear) return;
+    const allowed = isHS ? HS_YEARS : COLLEGE_YEARS;
+    if (!allowed.includes(Number(graduationYear))) {
+      setGraduationYear('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   const showAssociateMajor =
     (isUG && (degreeType === 'associates' || degreeType === 'both')) ||
@@ -214,6 +232,7 @@ const SchoolSetup = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">{schoolLabel}</label>
               <SchoolSearchDropdown
+                key={isHS ? 'hs' : 'uni'}
                 value={schoolName}
                 onChange={setSchoolName}
                 schoolType={isHS ? 'high_school' : 'university'}
@@ -356,7 +375,7 @@ const SchoolSetup = () => {
                   className="w-full h-11 px-3 rounded-lg bg-card text-sm text-foreground focus:outline-none appearance-none cursor-pointer"
                 >
                   <option value="">Select a year</option>
-                  {YEARS.map((y) => (
+                  {(isHS ? HS_YEARS : COLLEGE_YEARS).map((y) => (
                     <option key={y} value={y}>
                       {y}
                     </option>
@@ -367,7 +386,7 @@ const SchoolSetup = () => {
           </div>
         )}
 
-        {isStudent && (
+        {canVerify && (
           <div className="animate-fade-in gradient-border">
             <div className="bg-card rounded-lg p-4 space-y-3">
               <div className="flex items-start gap-3">
