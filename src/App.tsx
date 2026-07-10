@@ -50,7 +50,6 @@ import Events from "./pages/Events";
 import UserProfile from "./pages/UserProfile";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
-import Education from "./pages/onboarding/Education";
 import StudentVerification from "./pages/StudentVerification";
 
 const queryClient = new QueryClient({
@@ -92,7 +91,6 @@ const App = () => (
                     <Route path="/onboarding/interests" element={<Interests />} />
                     <Route path="/onboarding/extracurriculars" element={<Extracurriculars />} />
                     <Route path="/onboarding/about" element={<About />} />
-                    <Route path="/onboarding/education" element={<Education />} />
                     <Route path="/onboarding/school-confirm" element={<SchoolConfirm />} />
                     <Route path="/subscription" element={<Subscription />} />
                     <Route path="/dashboard" element={<Dashboard />} />
