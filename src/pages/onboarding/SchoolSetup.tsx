@@ -51,7 +51,15 @@ const SchoolSetup = () => {
   const { data, updateData } = useOnboarding();
 
   const [status, setStatus] = useState<Status | ''>(deriveInitialStatus(data));
-  const [schoolName, setSchoolName] = useState(data.schoolName || '');
+  // Independent state per school type so switching College <-> High School
+  // never leaks a previously selected school across categories.
+  const initialSavedType: 'high_school' | 'college' | 'other' | '' = data.schoolType || '';
+  const [collegeSchoolName, setCollegeSchoolName] = useState(
+    initialSavedType === 'college' ? data.schoolName || '' : ''
+  );
+  const [highSchoolName, setHighSchoolName] = useState(
+    initialSavedType === 'high_school' ? data.schoolName || '' : ''
+  );
   const [major, setMajor] = useState(data.major || '');
   const [degree, setDegree] = useState(data.degree || '');
   const [graduationYear, setGraduationYear] = useState<string>(
@@ -77,6 +85,10 @@ const SchoolSetup = () => {
   const canVerify = isUG || isGrad; // Student verification is college-only
   const needsSchool = isHS || isUG || isGrad || isAlum;
 
+  // Active value shown in the search input — derived from status, never shared.
+  const activeSchoolName = isHS ? highSchoolName : collegeSchoolName;
+  const setActiveSchoolName = isHS ? setHighSchoolName : setCollegeSchoolName;
+
   // If the user switches level, drop a graduation year that isn't valid for the new list.
   useEffect(() => {
     if (!graduationYear) return;
@@ -94,7 +106,7 @@ const SchoolSetup = () => {
   const canContinue = (): boolean => {
     if (!status) return false;
     if (status === 'not_student') return true;
-    if (!schoolName.trim()) return false;
+    if (!activeSchoolName.trim()) return false;
     if (!graduationYear) return false;
     if (isUG && !degreeType) return false;
     if (isHS && hsPursuingAssociates === null) return false;
@@ -108,10 +120,13 @@ const SchoolSetup = () => {
       isUG ? 'undergrad' : isGrad ? 'grad' : isAlum ? 'alumni' : '';
     const parseMajors = (s: string) =>
       s.split(',').map((v) => v.trim()).filter(Boolean);
+    // Only the ACTIVE education type's school is saved. The inactive draft
+    // stays in local state but is never persisted as the current school.
+    const activeName = needsSchool ? activeSchoolName.trim() : '';
     return {
       educationStatus: (status || '') as Status | '',
       schoolType,
-      schoolName: needsSchool ? schoolName.trim() : '',
+      schoolName: activeName,
       studentLevel,
       major: (isUG || isGrad || isAlum) ? major.trim() : '',
       degree: (isGrad || isAlum) ? degree.trim() : '',
@@ -131,7 +146,7 @@ const SchoolSetup = () => {
   const handleContinue = () => {
     if (!canContinue()) {
       if (!status) toast.error('Please select what best describes you');
-      else if (!schoolName.trim()) toast.error('Please enter your school name');
+      else if (!activeSchoolName.trim()) toast.error('Please enter your school name');
       else if (isUG && !degreeType) toast.error('Please select your degree type');
       else if (isHS && hsPursuingAssociates === null)
         toast.error('Please tell us if you\'re pursuing an associate degree');
@@ -161,7 +176,9 @@ const SchoolSetup = () => {
   };
 
   const schoolLabel = isHS ? 'High School' : 'College / University';
-  const schoolPlaceholder = isHS ? 'e.g. Lincoln High School' : 'e.g. University of Michigan';
+  const schoolPlaceholder = isHS
+    ? 'Search for your high school'
+    : 'Search for your college or university';
 
   return (
     <OnboardingLayout>
@@ -233,8 +250,8 @@ const SchoolSetup = () => {
               <label className="text-sm font-medium text-foreground">{schoolLabel}</label>
               <SchoolSearchDropdown
                 key={isHS ? 'hs' : 'uni'}
-                value={schoolName}
-                onChange={setSchoolName}
+                value={activeSchoolName}
+                onChange={setActiveSchoolName}
                 schoolType={isHS ? 'high_school' : 'university'}
                 placeholder={schoolPlaceholder}
               />
