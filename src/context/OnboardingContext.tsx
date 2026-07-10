@@ -19,7 +19,7 @@ interface OnboardingData {
   studentLevel: 'undergrad' | 'grad' | 'alumni' | '';
   degree: string;
   graduationYear: number | null;
-  educationStatus: 'high_school' | 'college' | 'graduate' | '';
+  educationStatus: 'high_school' | 'college' | 'graduate' | 'alumni' | 'not_student' | '';
   undergraduateDegreeType: 'bachelors' | 'associates' | 'both' | '';
   collegeMajor: string[];
   associateDegreeMajor: string[];
