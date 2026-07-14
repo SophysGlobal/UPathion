@@ -6,6 +6,7 @@ import PremiumChatFAB from "@/components/PremiumChatFAB";
 import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PostCommentsModal from "@/components/PostCommentsModal";
+import UserSafetyMenu from "@/components/safety/UserSafetyMenu";
 import { useCommentCounts } from "@/hooks/useCommentCounts";
 import { Heart, MessageCircle, Bookmark, User, Search, X } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
@@ -46,6 +47,12 @@ const PostCard = memo(({ post, onSchoolClick, onUserClick, onCommentClick, comme
             </div>
             <span className="text-xs text-muted-foreground">{post.createdAt}</span>
           </div>
+          <UserSafetyMenu
+            targetUserId={null}
+            targetType="post"
+            targetId={`seed-${post.id}`}
+            targetLabel="post"
+          />
         </div>
         <p className="text-foreground text-sm leading-relaxed mb-3">{post.bodyText}</p>
         <div className="flex flex-wrap gap-2 mb-4">

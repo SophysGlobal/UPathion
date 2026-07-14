@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect, memo, useMemo } from "react";
-import { User, Users, Send, SmilePlus } from "lucide-react";
+import { User, Users, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import UserSafetyMenu from "@/components/safety/UserSafetyMenu";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import {
   USE_SEED_DATA,
   seedConversations,
@@ -23,8 +26,10 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
   const { user } = useAuth();
   const [inputValue, setInputValue] = useState('');
   const [seedFallbackMessages, setSeedFallbackMessages] = useState<SeedMessage[]>([]);
+  const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { isBlocked } = useBlockedUsers();
 
   // Detect if this conversation is a real DB conversation (uuid) or a seed id.
   const isRealConversation = useMemo(() => {
@@ -41,6 +46,31 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
 
   const conversation = seedConversations.find(c => c.id === conversationId);
   const isGroup = conversation?.type === 'group';
+
+  // Look up the other participant's user_id for real conversations so we can
+  // wire report/block/mute against them.
+  useEffect(() => {
+    if (!isRealConversation || !conversationId || !user?.id) {
+      setOtherUserId(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("conversation_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+      if (!cancelled) setOtherUserId((data?.user_id as string) ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isRealConversation, conversationId, user?.id]);
+
+  const otherIsBlocked = isBlocked(otherUserId);
 
   // Load seed messages for selected seed conversation only.
   useEffect(() => {
@@ -178,6 +208,12 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
             }
           </p>
         </div>
+        <UserSafetyMenu
+          targetUserId={otherUserId}
+          targetType={isGroup ? "group" : "conversation"}
+          targetId={conversationId ?? "unknown"}
+          targetLabel={isGroup ? "group chat" : "conversation"}
+        />
       </div>
 
       {/* Messages Area */}
@@ -219,7 +255,12 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
 
       {/* Input */}
       <div className="px-4 py-3 border-t border-border/50 bg-background/80 backdrop-blur-sm flex-shrink-0">
-        <div className="flex items-center gap-2">
+        {otherIsBlocked ? (
+          <p className="text-center text-xs text-muted-foreground py-2">
+            You've blocked this user. Unblock them from their profile to resume messaging.
+          </p>
+        ) : (
+          <div className="flex items-center gap-2">
           <input
             type="text"
             value={inputValue}
@@ -236,7 +277,8 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
           >
             <Send className="w-4 h-4" />
           </Button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
