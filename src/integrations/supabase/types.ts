@@ -222,6 +222,7 @@ export type Database = {
           extracurriculars: string[] | null
           grade_or_year: string | null
           graduation_year: number | null
+          guidelines_accepted_at: string | null
           high_school_pursuing_associates: boolean | null
           id: string
           intended_major: string[] | null
@@ -258,6 +259,7 @@ export type Database = {
           extracurriculars?: string[] | null
           grade_or_year?: string | null
           graduation_year?: number | null
+          guidelines_accepted_at?: string | null
           high_school_pursuing_associates?: boolean | null
           id: string
           intended_major?: string[] | null
@@ -294,6 +296,7 @@ export type Database = {
           extracurriculars?: string[] | null
           grade_or_year?: string | null
           graduation_year?: number | null
+          guidelines_accepted_at?: string | null
           high_school_pursuing_associates?: boolean | null
           id?: string
           intended_major?: string[] | null
@@ -325,6 +328,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          moderator_id: string | null
+          moderator_notes: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_owner_id: string | null
+          target_type: Database["public"]["Enums"]["report_target_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          moderator_id?: string | null
+          moderator_notes?: string | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_owner_id?: string | null
+          target_type: Database["public"]["Enums"]["report_target_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          moderator_id?: string | null
+          moderator_notes?: string | null
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reporter_id?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id?: string
+          target_owner_id?: string | null
+          target_type?: Database["public"]["Enums"]["report_target_type"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       school_profiles: {
         Row: {
@@ -549,6 +600,48 @@ export type Database = {
           },
         ]
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_mutes: {
+        Row: {
+          created_at: string
+          id: string
+          muted_id: string
+          muter_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          muted_id: string
+          muter_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          muted_id?: string
+          muter_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -675,6 +768,31 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      report_reason:
+        | "harassment"
+        | "bullying"
+        | "hate_speech"
+        | "spam"
+        | "impersonation"
+        | "threats"
+        | "sexual_content"
+        | "violence"
+        | "illegal_activity"
+        | "self_harm"
+        | "scam_fraud"
+        | "misinformation"
+        | "other"
+      report_status: "pending" | "under_review" | "action_taken" | "dismissed"
+      report_target_type:
+        | "post"
+        | "thread"
+        | "comment"
+        | "message"
+        | "group_message"
+        | "image"
+        | "profile"
+        | "group"
+        | "conversation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -803,6 +921,33 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      report_reason: [
+        "harassment",
+        "bullying",
+        "hate_speech",
+        "spam",
+        "impersonation",
+        "threats",
+        "sexual_content",
+        "violence",
+        "illegal_activity",
+        "self_harm",
+        "scam_fraud",
+        "misinformation",
+        "other",
+      ],
+      report_status: ["pending", "under_review", "action_taken", "dismissed"],
+      report_target_type: [
+        "post",
+        "thread",
+        "comment",
+        "message",
+        "group_message",
+        "image",
+        "profile",
+        "group",
+        "conversation",
+      ],
     },
   },
 } as const
