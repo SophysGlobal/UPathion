@@ -190,6 +190,13 @@ const Settings = () => {
         },
         {
           icon: Shield,
+          label: "Community Guidelines",
+          description: "The rules that keep UPathion safe",
+          action: <ChevronRight className="w-5 h-5 text-muted-foreground" />,
+          onClick: () => navigate("/community-guidelines"),
+        },
+        {
+          icon: Shield,
           label: "Privacy Policy",
           description: "Learn how we protect your data",
           action: <ChevronRight className="w-5 h-5 text-muted-foreground" />,

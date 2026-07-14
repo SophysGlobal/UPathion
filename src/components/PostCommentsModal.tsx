@@ -8,6 +8,7 @@ import { Heart, MessageCircle, Loader2, User, Send, Trash2 } from "lucide-react"
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import VerifiedBadge from "./VerifiedBadge";
+import UserSafetyMenu from "./safety/UserSafetyMenu";
 
 interface CommentRow {
   id: string;
@@ -209,6 +210,16 @@ const PostCommentsModal = ({ postId, open, onOpenChange, onCountChange }: PostCo
                 </span>
                 <VerifiedBadge status={author?.verification_status} />
                 <span className="text-[10px] text-muted-foreground">· {timeAgo(c.created_at)}</span>
+                {!isMine && (
+                  <div className="ml-auto -mr-1 -my-1">
+                    <UserSafetyMenu
+                      targetUserId={c.user_id}
+                      targetType="comment"
+                      targetId={c.id}
+                      targetLabel="comment"
+                    />
+                  </div>
+                )}
               </div>
               <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words">{c.body}</p>
             </div>

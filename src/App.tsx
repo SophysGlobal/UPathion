@@ -51,6 +51,8 @@ import UserProfile from "./pages/UserProfile";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 import StudentVerification from "./pages/StudentVerification";
+import CommunityGuidelines from "./pages/CommunityGuidelines";
+import GuidelinesAcceptGate from "./components/safety/GuidelinesAcceptGate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +77,7 @@ const App = () => (
               <AnimatedBackground />
               <AppEntryGate>
                 <AuthGate>
+                  <GuidelinesAcceptGate />
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/signin" element={<SignIn />} />
@@ -117,6 +120,7 @@ const App = () => (
                     <Route path="/calendar" element={<CalendarPage />} />
                     <Route path="/user/:userId" element={<UserProfile />} />
                     <Route path="/verify-student" element={<StudentVerification />} />
+                    <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                     <Route path="/welcome" element={<Welcome />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

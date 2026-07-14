@@ -8,6 +8,7 @@ import { useUserConnection } from "@/hooks/useUserConnection";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import SchoolBottomSheet from "./SchoolBottomSheet";
+import UserSafetyMenu from "./safety/UserSafetyMenu";
 import {
   Drawer,
   DrawerContent,
@@ -152,11 +153,21 @@ const UserProfileBottomSheet = ({
             <DrawerTitle className="text-lg font-semibold text-foreground">
               Profile Preview
             </DrawerTitle>
-            <DrawerClose asChild>
-              <button className="p-2 hover:bg-secondary/50 rounded-full transition-colors flex-shrink-0">
-                <X className="w-5 h-5 text-muted-foreground" />
-              </button>
-            </DrawerClose>
+            <div className="flex items-center gap-1">
+              {!isOwnProfile && userId && (
+                <UserSafetyMenu
+                  targetUserId={userId}
+                  targetType="profile"
+                  targetLabel={displayData.name}
+                  onBlocked={() => onOpenChange(false)}
+                />
+              )}
+              <DrawerClose asChild>
+                <button className="p-2 hover:bg-secondary/50 rounded-full transition-colors flex-shrink-0">
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </DrawerClose>
+            </div>
           </DrawerHeader>
 
           {/* Content */}
