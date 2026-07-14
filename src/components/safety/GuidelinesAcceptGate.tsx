@@ -64,7 +64,7 @@ const GuidelinesAcceptGate = () => {
   return (
     <Dialog open modal>
       <DialogContent
-        className="max-w-md"
+        className="max-w-md [&>button.absolute]:hidden"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
