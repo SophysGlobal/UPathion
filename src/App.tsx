@@ -55,6 +55,8 @@ import CommunityGuidelines from "./pages/CommunityGuidelines";
 import GuidelinesAcceptGate from "./components/safety/GuidelinesAcceptGate";
 import Moderation from "./pages/admin/Moderation";
 import CreateGroup from "./pages/CreateGroup";
+import CreateEvent from "./pages/CreateEvent";
+import CreatePlace from "./pages/CreatePlace";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -112,6 +114,8 @@ const App = () => (
                     <Route path="/privacy-settings" element={<PrivacySettings />} />
                     <Route path="/group/:groupId" element={<GroupDetail />} />
                     <Route path="/groups/new" element={<CreateGroup />} />
+                    <Route path="/events/new" element={<CreateEvent />} />
+                    <Route path="/places/new" element={<CreatePlace />} />
                     <Route path="/event/:eventId" element={<EventDetail />} />
                     <Route path="/place/:placeId" element={<PlaceDetail />} />
                     <Route path="/messages" element={<Messages />} />
