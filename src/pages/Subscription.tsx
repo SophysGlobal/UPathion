@@ -16,7 +16,7 @@ const Subscription = () => {
   const { isLoading, isWaiting, startCheckout, cancelWaiting } = useStripeCheckout();
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowClose(true), 3000);
+    const timer = setTimeout(() => setShowClose(true), 2000);
     return () => clearTimeout(timer);
   }, []);
 
