@@ -11,6 +11,9 @@ export interface Message {
   created_at: string;
   updated_at: string;
   is_deleted: boolean;
+  read_at?: string | null;
+  expires_at?: string | null;
+  status?: string | null;
   reactions?: MessageReaction[];
   sender?: {
     id: string;
@@ -31,6 +34,7 @@ export interface Conversation {
   id: string;
   created_at: string;
   updated_at: string;
+  expiration_seconds: number | null;
   participants: ConversationParticipant[];
   last_message?: Message;
   unread_count: number;
@@ -118,6 +122,7 @@ export function useConversations() {
             .select('*')
             .eq('conversation_id', conv.id)
             .eq('is_deleted', false)
+            .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
             .order('created_at', { ascending: false })
             .limit(1);
 
@@ -190,11 +195,10 @@ export function useConversations() {
   const markAsRead = useCallback(async (conversationId: string) => {
     if (!user) return;
 
-    await supabase
-      .from('conversation_participants')
-      .update({ last_read_at: new Date().toISOString() })
-      .eq('conversation_id', conversationId)
-      .eq('user_id', user.id);
+    // Uses SECURITY DEFINER RPC so read_at / expires_at get computed atomically
+    await supabase.rpc('mark_conversation_read', {
+      _conversation_id: conversationId,
+    });
 
     setConversations(prev =>
       prev.map(c => c.id === conversationId ? { ...c, unread_count: 0 } : c)
@@ -261,6 +265,7 @@ export function useMessages(conversationId: string | undefined) {
         .select('*')
         .eq('conversation_id', conversationId)
         .eq('is_deleted', false)
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
         .order('created_at', { ascending: true });
 
       if (fetchError) throw fetchError;
@@ -329,6 +334,35 @@ export function useMessages(conversationId: string | undefined) {
       .on(
         'postgres_changes',
         {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as Message;
+          setMessages(prev =>
+            prev.map(m => (m.id === updated.id ? { ...m, ...updated } : m))
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const oldRow = payload.old as { id?: string };
+          if (!oldRow?.id) return;
+          setMessages(prev => prev.filter(m => m.id !== oldRow.id));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: '*',
           schema: 'public',
           table: 'message_reactions',
@@ -343,6 +377,29 @@ export function useMessages(conversationId: string | undefined) {
       supabase.removeChannel(channel);
     };
   }, [conversationId, user, fetchMessages]);
+
+  // Client-side expiration ticker: hides messages once expires_at passes,
+  // even if the server hasn't hard-deleted them yet. Also opportunistically
+  // asks the server to purge every 60s so the disappearance is real for
+  // everyone in the conversation.
+  useEffect(() => {
+    if (!conversationId) return;
+    let purgeCounter = 0;
+    const tick = () => {
+      const now = Date.now();
+      setMessages(prev => {
+        const next = prev.filter(m => !m.expires_at || new Date(m.expires_at).getTime() > now);
+        return next.length === prev.length ? prev : next;
+      });
+      purgeCounter += 1;
+      if (purgeCounter % 12 === 0) {
+        // Every ~60s, hard-purge on the server so peers also lose the row.
+        supabase.rpc('purge_expired_messages').then(() => {});
+      }
+    };
+    const id = window.setInterval(tick, 5000);
+    return () => window.clearInterval(id);
+  }, [conversationId]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!conversationId || !user || !content.trim()) return null;
@@ -451,4 +508,94 @@ export async function findExistingConversation(userId1: string, userId2: string)
     .maybeSingle();
 
   return sharedConversation?.conversation_id || null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Expiration policy helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const EXPIRATION_PRESETS: { label: string; seconds: number | null }[] = [
+  { label: 'Never Delete', seconds: null },
+  { label: '30 Minutes', seconds: 30 * 60 },
+  { label: '1 Hour', seconds: 60 * 60 },
+  { label: '24 Hours', seconds: 24 * 60 * 60 },
+  { label: '7 Days', seconds: 7 * 24 * 60 * 60 },
+  { label: '30 Days', seconds: 30 * 24 * 60 * 60 },
+];
+
+export function formatExpirationLabel(seconds: number | null | undefined): string {
+  if (!seconds) return 'Messages never disappear';
+  if (seconds < 3600) {
+    const m = Math.round(seconds / 60);
+    return `Messages disappear after ${m} minute${m === 1 ? '' : 's'}`;
+  }
+  if (seconds < 86400) {
+    const h = Math.round(seconds / 3600);
+    return `Messages disappear after ${h} hour${h === 1 ? '' : 's'}`;
+  }
+  const d = Math.round(seconds / 86400);
+  return `Messages disappear after ${d} day${d === 1 ? '' : 's'}`;
+}
+
+export function useConversationExpiration(conversationId: string | undefined) {
+  const [expirationSeconds, setExpirationSeconds] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refetch = useCallback(async () => {
+    if (!conversationId) {
+      setExpirationSeconds(null);
+      setLoading(false);
+      return;
+    }
+    const { data } = await supabase
+      .from('conversations')
+      .select('expiration_seconds')
+      .eq('id', conversationId)
+      .maybeSingle();
+    setExpirationSeconds((data?.expiration_seconds as number | null) ?? null);
+    setLoading(false);
+  }, [conversationId]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const channel = supabase
+      .channel(`conv-exp-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversations',
+          filter: `id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const row = payload.new as { expiration_seconds: number | null };
+          setExpirationSeconds(row.expiration_seconds ?? null);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId]);
+
+  const updateExpiration = useCallback(
+    async (seconds: number | null, applyToExisting = false) => {
+      if (!conversationId) return;
+      const { error } = await supabase.rpc('set_conversation_expiration', {
+        _conversation_id: conversationId,
+        _expiration_seconds: seconds,
+        _apply_to_existing: applyToExisting,
+      });
+      if (error) throw error;
+      setExpirationSeconds(seconds);
+    },
+    [conversationId],
+  );
+
+  return { expirationSeconds, loading, updateExpiration, refetch };
 }

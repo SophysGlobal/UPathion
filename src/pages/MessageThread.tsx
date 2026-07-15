@@ -21,9 +21,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMessages, useConversations, type Message } from "@/hooks/useMessages";
+import {
+  useMessages,
+  useConversations,
+  useConversationExpiration,
+  formatExpirationLabel,
+  type Message,
+} from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
 import { formatDistanceToNow, format, isToday, isYesterday } from "date-fns";
+import ChatOptionsMenu from "@/components/messages/ChatOptionsMenu";
+import { Check, CheckCheck } from "lucide-react";
 
 const EMOJI_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
@@ -48,6 +56,7 @@ const MessageThread = () => {
     deleteMessage, 
     addReaction 
   } = useMessages(conversationId);
+  const { expirationSeconds } = useConversationExpiration(conversationId);
 
   // Find the conversation
   const conversation = conversations.find(c => c.id === conversationId);
@@ -223,11 +232,15 @@ const MessageThread = () => {
                 {otherParticipant.profile.school_name}
               </p>
             )}
+            <p className="text-[10px] text-muted-foreground/80 truncate mt-0.5">
+              {formatExpirationLabel(expirationSeconds)}
+            </p>
           </button>
         </div>
       </header>
 
       {/* Messages */}
+      <ChatOptionsMenu conversationId={conversationId}>
       <main className="flex-1 relative z-10 px-4 py-4 space-y-3 overflow-y-auto">
         {messages.length === 0 && (
           <div className="text-center py-12">
@@ -260,6 +273,20 @@ const MessageThread = () => {
                   >
                     <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                   </div>
+                  {isMe && (
+                    <div className="flex items-center justify-end gap-1 mt-0.5 mr-1 text-[10px] text-muted-foreground">
+                      <span>{format(new Date(message.created_at), 'h:mm a')}</span>
+                      {message.read_at ? (
+                        <span className="flex items-center gap-0.5 text-primary">
+                          <CheckCheck className="w-3 h-3" /> Read
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-0.5">
+                          <Check className="w-3 h-3" /> Sent
+                        </span>
+                      )}
+                    </div>
+                  )}
                   
                   {/* Reactions */}
                   {message.reactions && message.reactions.length > 0 && (
@@ -330,6 +357,7 @@ const MessageThread = () => {
         })}
         <div ref={messagesEndRef} />
       </main>
+      </ChatOptionsMenu>
 
       {/* Input Area */}
       <div className="sticky bottom-16 z-40 bg-background/80 backdrop-blur-xl border-t border-border/50 px-4 py-3">
