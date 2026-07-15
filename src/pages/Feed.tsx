@@ -7,8 +7,10 @@ import SchoolBottomSheet from "@/components/SchoolBottomSheet";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PostCommentsModal from "@/components/PostCommentsModal";
 import UserSafetyMenu from "@/components/safety/UserSafetyMenu";
+import PostComposer from "@/components/feed/PostComposer";
+import { useFeedPosts } from "@/hooks/useFeedPosts";
 import { useCommentCounts } from "@/hooks/useCommentCounts";
-import { Heart, MessageCircle, Bookmark, User, Search, X } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, User, Search, X, Plus } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 import { getDisplaySchoolName } from "@/lib/schoolName";
 
@@ -100,6 +102,8 @@ const Feed = () => {
   const [selectedUser, setSelectedUser] = useState<{ name: string; role?: string; badge?: string; school?: string } | null>(null);
   const [userSheetOpen, setUserSheetOpen] = useState(false);
   const [openCommentsFor, setOpenCommentsFor] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const { data: livePosts = [], refresh: refreshLive } = useFeedPosts();
 
   const hasAspirationalSchool = !!profile?.aspirational_school;
   const userSchool = profile?.school_name || '';
@@ -224,6 +228,30 @@ const Feed = () => {
       </div>
 
       <main className="relative z-10 px-5 py-6">
+        {livePosts.length > 0 && (
+          <div className="mb-6 space-y-3">
+            <h2 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              New posts
+            </h2>
+            {livePosts.map((p) => (
+              <div key={p.id} className="gradient-border animate-fade-in">
+                <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                      <User className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(p.created_at).toLocaleString()} · {p.category} · {p.visibility.replace('_', ' ')}
+                    </span>
+                  </div>
+                  {p.title && <h3 className="font-medium text-foreground mb-1">{p.title}</h3>}
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{p.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {filteredPosts.length === 0 ? (
           renderEmptyState()
         ) : (
@@ -252,6 +280,18 @@ const Feed = () => {
       />
 
       <PremiumChatFAB />
+
+      {/* Create post FAB (positioned above the premium chat FAB) */}
+      <button
+        onClick={() => setComposerOpen(true)}
+        aria-label="Create post"
+        className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      <PostComposer open={composerOpen} onOpenChange={setComposerOpen} onPosted={refreshLive} />
+
       <BottomNav />
     </div>
   );

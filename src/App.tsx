@@ -53,6 +53,8 @@ import NotFound from "./pages/NotFound";
 import StudentVerification from "./pages/StudentVerification";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import GuidelinesAcceptGate from "./components/safety/GuidelinesAcceptGate";
+import Moderation from "./pages/admin/Moderation";
+import CreateGroup from "./pages/CreateGroup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,6 +111,7 @@ const App = () => (
                     <Route path="/school/:schoolId" element={<SchoolProfilePage />} />
                     <Route path="/privacy-settings" element={<PrivacySettings />} />
                     <Route path="/group/:groupId" element={<GroupDetail />} />
+                    <Route path="/groups/new" element={<CreateGroup />} />
                     <Route path="/event/:eventId" element={<EventDetail />} />
                     <Route path="/place/:placeId" element={<PlaceDetail />} />
                     <Route path="/messages" element={<Messages />} />
@@ -121,6 +124,7 @@ const App = () => (
                     <Route path="/user/:userId" element={<UserProfile />} />
                     <Route path="/verify-student" element={<StudentVerification />} />
                     <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+                    <Route path="/admin/moderation" element={<Moderation />} />
                     <Route path="/welcome" element={<Welcome />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
