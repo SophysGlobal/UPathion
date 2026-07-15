@@ -2,9 +2,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Calendar, Clock, MapPin, Users, ExternalLink } from "lucide-react";
+import { ChevronLeft, Calendar, Clock, MapPin, Users, ExternalLink, Check, User as UserIcon } from "lucide-react";
 import { USE_SEED_DATA, seedEvents } from "@/data/seedData";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { useEventAttendees, useMyRsvps, useRsvpMutation, type LiveEvent } from "@/hooks/useEvents";
+import { format, parseISO } from "date-fns";
 
 // Helper function to open Google Maps
 const openGoogleMaps = (location: string) => {
@@ -16,10 +21,58 @@ const openGoogleMaps = (location: string) => {
 const EventDetail = () => {
   const navigate = useNavigate();
   const { eventId } = useParams();
-  
-  const event = USE_SEED_DATA 
-    ? seedEvents.find(e => e.id === eventId) 
+  const { user } = useAuth();
+
+  const isUuid = !!eventId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId);
+
+  const { data: liveEvent } = useQuery({
+    queryKey: ["event", eventId],
+    enabled: isUuid,
+    queryFn: async (): Promise<LiveEvent | null> => {
+      const { data } = await supabase.from("events").select("*").eq("id", eventId!).maybeSingle();
+      return (data as LiveEvent) ?? null;
+    },
+  });
+
+  const seedEvent = USE_SEED_DATA ? seedEvents.find((e) => e.id === eventId) : null;
+
+  const event = liveEvent
+    ? {
+        title: liveEvent.title,
+        school: liveEvent.school_name || "",
+        date: format(parseISO(liveEvent.starts_at), "EEE MMM d, yyyy"),
+        time: liveEvent.all_day ? "All day" : format(parseISO(liveEvent.starts_at), "h:mm a"),
+        location: liveEvent.location_name || (liveEvent.location_type === "virtual" ? "Virtual" : "—"),
+        attendees: liveEvent.attendee_count,
+        description: liveEvent.description,
+        capacity: liveEvent.capacity,
+        virtual_link: liveEvent.virtual_link,
+        address: liveEvent.address,
+        creator_id: liveEvent.creator_id,
+        id: liveEvent.id,
+      }
+    : seedEvent
+    ? {
+        title: seedEvent.title,
+        school: seedEvent.school,
+        date: seedEvent.date,
+        time: seedEvent.time,
+        location: seedEvent.location,
+        attendees: seedEvent.attendees,
+        description: seedEvent.description,
+        capacity: seedEvent.maxAttendees,
+        virtual_link: null,
+        address: null,
+        creator_id: null as string | null,
+        id: seedEvent.id,
+      }
     : null;
+
+  const isCreator = !!(user && event?.creator_id === user.id);
+  const { data: myRsvps = [] } = useMyRsvps();
+  const isGoing = !!(isUuid && myRsvps.find((r) => r.event_id === eventId && r.status === "going"));
+  const rsvp = useRsvpMutation();
+  const { data: attendees = [] } = useEventAttendees(isCreator ? eventId : undefined);
 
   const handleGetDirections = () => {
     if (event?.location && event?.school) {
@@ -30,6 +83,16 @@ const EventDetail = () => {
       openGoogleMaps(event.location);
     } else {
       toast.error('Location not available');
+    }
+  };
+
+  const handleRsvp = async () => {
+    if (!isUuid) return toast.info("Seed events don't accept RSVPs");
+    try {
+      await rsvp.mutateAsync({ eventId: eventId!, going: !isGoing });
+      toast.success(isGoing ? "RSVP cancelled" : "You're going!");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not update RSVP");
     }
   };
 
@@ -123,9 +186,9 @@ const EventDetail = () => {
 
         {/* Actions */}
         <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-          <Button className="w-full py-6">
-            <Calendar className="w-4 h-4 mr-2" />
-            RSVP to Event
+          <Button className="w-full py-6" onClick={handleRsvp} disabled={rsvp.isPending}>
+            {isGoing ? <Check className="w-4 h-4 mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
+            {isGoing ? "Going — tap to cancel" : "RSVP to Event"}
           </Button>
           <Button 
             variant="outline" 
@@ -136,6 +199,44 @@ const EventDetail = () => {
             Get Directions
           </Button>
         </div>
+
+        {isCreator && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Attendees ({attendees.length}{event.capacity ? ` / ${event.capacity}` : ""})</h3>
+            </div>
+            {attendees.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No RSVPs yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {attendees.map((a) => (
+                  <button
+                    key={a.user_id}
+                    onClick={() => navigate(`/user/${a.user_id}`)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg bg-card/70 border border-border/50 hover:bg-card text-left transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {a.profile?.avatar_url ? (
+                        <img src={a.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <UserIcon className="w-5 h-5 text-primary" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{a.profile?.display_name || "Unknown"}</p>
+                      {a.profile?.school_name && (
+                        <p className="text-xs text-muted-foreground truncate">{a.profile.school_name}</p>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(a.created_at).toLocaleDateString()}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <PremiumChatFAB />
