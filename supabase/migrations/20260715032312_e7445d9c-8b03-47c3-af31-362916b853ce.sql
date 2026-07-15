@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.bump_ai_conversation_on_message() FROM PUBLIC, anon, authenticated;
