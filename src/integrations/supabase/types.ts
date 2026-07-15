@@ -81,16 +81,19 @@ export type Database = {
       conversations: {
         Row: {
           created_at: string
+          expiration_seconds: number | null
           id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          expiration_seconds?: number | null
           id?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          expiration_seconds?: number | null
           id?: string
           updated_at?: string
         }
@@ -284,27 +287,36 @@ export type Database = {
           content: string
           conversation_id: string
           created_at: string
+          expires_at: string | null
           id: string
           is_deleted: boolean
+          read_at: string | null
           sender_id: string
+          status: string
           updated_at: string
         }
         Insert: {
           content: string
           conversation_id: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           is_deleted?: boolean
+          read_at?: string | null
           sender_id: string
+          status?: string
           updated_at?: string
         }
         Update: {
           content?: string
           conversation_id?: string
           created_at?: string
+          expires_at?: string | null
           id?: string
           is_deleted?: boolean
+          read_at?: string | null
           sender_id?: string
+          status?: string
           updated_at?: string
         }
         Relationships: [
@@ -979,6 +991,11 @@ export type Database = {
         Returns: boolean
       }
       is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
+      mark_conversation_read: {
+        Args: { _conversation_id: string }
+        Returns: undefined
+      }
+      purge_expired_messages: { Args: never; Returns: number }
       search_schools: {
         Args: {
           country_filter?: string
@@ -996,6 +1013,14 @@ export type Database = {
           state: string
           type: string
         }[]
+      }
+      set_conversation_expiration: {
+        Args: {
+          _apply_to_existing?: boolean
+          _conversation_id: string
+          _expiration_seconds: number
+        }
+        Returns: undefined
       }
     }
     Enums: {
