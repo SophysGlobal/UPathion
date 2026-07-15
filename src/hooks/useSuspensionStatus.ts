@@ -18,7 +18,7 @@ export const useSuspensionStatus = () => {
     enabled: !!user?.id,
     staleTime: 1000 * 60,
     queryFn: async (): Promise<SuspensionRecord | null> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_suspensions')
         .select('id, reason, is_permanent, expires_at, lifted_at, created_at')
         .eq('user_id', user!.id)
