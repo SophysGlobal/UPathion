@@ -53,6 +53,7 @@ import NotFound from "./pages/NotFound";
 import StudentVerification from "./pages/StudentVerification";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import GuidelinesAcceptGate from "./components/safety/GuidelinesAcceptGate";
+import Moderation from "./pages/admin/Moderation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -121,6 +122,7 @@ const App = () => (
                     <Route path="/user/:userId" element={<UserProfile />} />
                     <Route path="/verify-student" element={<StudentVerification />} />
                     <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+                    <Route path="/admin/moderation" element={<Moderation />} />
                     <Route path="/welcome" element={<Welcome />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
