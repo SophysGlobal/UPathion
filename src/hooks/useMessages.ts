@@ -265,6 +265,7 @@ export function useMessages(conversationId: string | undefined) {
         .select('*')
         .eq('conversation_id', conversationId)
         .eq('is_deleted', false)
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
         .order('created_at', { ascending: true });
 
       if (fetchError) throw fetchError;
