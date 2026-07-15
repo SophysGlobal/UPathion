@@ -5,13 +5,15 @@ import AppHeader from "@/components/AppHeader";
 import PremiumChatFAB from "@/components/PremiumChatFAB";
 import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PersonCard from "@/components/PersonCard";
-import { Search, Filter, Users, BookOpen, Calendar, MapPin, Clock, Bookmark } from "lucide-react";
+import { Search, Filter, Users, BookOpen, Calendar, MapPin, Clock, Bookmark, Plus } from "lucide-react";
 import { GradientInput } from "@/components/ui/GradientInput";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import FullCalendar from "@/components/FullCalendar";
 import EventDetailModal from "@/components/EventDetailModal";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   USE_SEED_DATA, seedPeople, seedGroups, seedEvents, seedPlaces,
   type SeedPerson, type SeedGroup, type SeedEvent, type SeedPlace
@@ -56,6 +58,24 @@ const Explore = () => {
   const events = USE_SEED_DATA ? seedEvents : [];
   const places = USE_SEED_DATA ? seedPlaces : [];
 
+  // Live user-created groups
+  const { data: liveGroups = [] } = useQuery({
+    queryKey: ['live-groups'],
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('groups')
+        .select('id,name,description,category,visibility,school_name,member_count,created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) {
+        console.error('[live-groups]', error);
+        return [];
+      }
+      return data ?? [];
+    },
+  });
+
   const filteredPeople = useMemo(() => people.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.school.toLowerCase().includes(searchQuery.toLowerCase())), [people, searchQuery]);
   const filteredGroups = useMemo(() => groups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase())), [groups, searchQuery]);
   const filteredEvents = useMemo(() => events.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase()) || e.location.toLowerCase().includes(searchQuery.toLowerCase())), [events, searchQuery]);
@@ -91,9 +111,36 @@ const Explore = () => {
   };
 
   const renderGroups = () => {
-    if (filteredGroups.length === 0) return renderEmptyState('Groups');
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-3">
+        {liveGroups.length > 0 && (
+          <>
+            <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Your community</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {liveGroups.map((g: any) => (
+                <div key={g.id} className="gradient-border">
+                  <button
+                    onClick={() => navigate(`/group/${g.id}`)}
+                    className="w-full text-left bg-card/90 backdrop-blur-sm rounded-lg p-4"
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-foreground">{g.name}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs capitalize">{g.category}</span>
+                    </div>
+                    {g.school_name && <p className="text-xs text-primary truncate">{g.school_name}</p>}
+                    {g.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{g.description}</p>}
+                    <p className="text-xs text-muted-foreground mt-2"><Users className="w-3 h-3 inline mr-1" />{g.member_count} members</p>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {filteredGroups.length === 0 && liveGroups.length === 0 && renderEmptyState('Groups')}
+
+        {filteredGroups.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredGroups.map((group, index) => (
           <div key={group.id} className="gradient-border animate-fade-in" style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}>
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
@@ -115,6 +162,8 @@ const Explore = () => {
             </div>
           </div>
         ))}
+          </div>
+        )}
       </div>
     );
   };
