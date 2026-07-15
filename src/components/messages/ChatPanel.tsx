@@ -13,8 +13,9 @@ import {
   type SeedConversation,
   type SeedMessage,
 } from "@/data/seedData";
-import { useMessages } from "@/hooks/useMessages";
+import { useMessages, useConversationExpiration, formatExpirationLabel } from "@/hooks/useMessages";
 import { useAuth } from "@/context/AuthContext";
+import ChatOptionsMenu from "@/components/messages/ChatOptionsMenu";
 
 interface ChatPanelProps {
   conversationId: string | null;
@@ -43,6 +44,9 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
     messages: dbMessages,
     sendMessage: dbSendMessage,
   } = useMessages(isRealConversation ? conversationId ?? undefined : undefined);
+  const { expirationSeconds } = useConversationExpiration(
+    isRealConversation ? conversationId ?? undefined : undefined,
+  );
 
   const conversation = seedConversations.find(c => c.id === conversationId);
   const isGroup = conversation?.type === 'group';
@@ -207,6 +211,11 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
               : `${conversation.participantSchool}${conversation.participantBadge ? ` • ${conversation.participantBadge}` : ''}`
             }
           </p>
+          {isRealConversation && (
+            <p className="text-[10px] text-muted-foreground/80 truncate">
+              {formatExpirationLabel(expirationSeconds)}
+            </p>
+          )}
         </div>
         <UserSafetyMenu
           targetUserId={otherUserId}
@@ -217,6 +226,7 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
       </div>
 
       {/* Messages Area */}
+      <ChatOptionsMenu conversationId={isRealConversation ? conversationId ?? undefined : undefined}>
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
         {localMessages.length === 0 && (
           <div className="text-center py-12">
@@ -252,6 +262,7 @@ const ChatPanel = memo(({ conversationId }: ChatPanelProps) => {
         })}
         <div ref={messagesEndRef} />
       </div>
+      </ChatOptionsMenu>
 
       {/* Input */}
       <div className="px-4 py-3 border-t border-border/50 bg-background/80 backdrop-blur-sm flex-shrink-0">
