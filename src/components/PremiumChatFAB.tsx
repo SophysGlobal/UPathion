@@ -15,11 +15,16 @@ const PremiumChatFAB = () => {
       <button
         onClick={() => setChatOpen(true)}
         className={cn(
-          "fixed bottom-24 right-4 z-50 w-12 h-12 rounded-full",
+          "fixed z-50 w-12 h-12 rounded-full",
+          "left-[max(1rem,env(safe-area-inset-left))]",
+          "bottom-[calc(6rem+env(safe-area-inset-bottom))]",
+          "md:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]",
           "bg-gradient-to-br from-primary via-accent to-primary",
-          "flex items-center justify-center shadow-lg",
-          "hover:scale-110 transition-transform duration-200",
-          "animate-pulse-slow"
+          "flex items-center justify-center shadow-lg shadow-primary/30",
+          "ring-1 ring-white/10 backdrop-blur-sm",
+          "transition-all duration-300 ease-out",
+          "hover:scale-110 hover:shadow-primary/50 active:scale-95",
+          "animate-fade-in"
         )}
         aria-label="Premium AI Chat"
       >
