@@ -1,88 +1,71 @@
-# Plan: Comment Counter Fix + Education Flow Consolidation
+# Scope & Execution Plan
 
-## Part A — Comment Counter Integrity
+Your message combines **three huge workstreams**. Bundling them into one turn would produce shallow work and likely regressions. Here is how I propose to sequence them. Approve, or tell me to reorder / trim.
 
-**Root cause:** `src/pages/Feed.tsx` and `DashboardFeed` render `post.comments` from `seedFeedPosts` (fake seeded numbers), while `PostCommentsModal` reads real rows from `post_comments`. The two sources never agree.
+---
 
-**Fix approach (single source of truth = `post_comments` table):**
-1. Add a new hook `useCommentCounts(postIds: string[])` that:
-   - Runs one grouped query on `post_comments` (`select post_id` filtered by `post_id in (...)`) and reduces to a `{ postId: count }` map.
-   - Subscribes to the `post_comments` realtime channel; on any insert/delete for a known `postId`, updates the map.
-   - Returns `{ counts, getCount(postId) }` with `0` as the default (never a random fallback).
-2. `Feed.tsx` and `Dashboard.tsx` feed cards read `getCount(feedId)` instead of `post.comments`.
-3. `PostCommentsModal` already exposes `onCountChange`; wire it so the parent's counts map is updated immediately on add/delete without waiting for the realtime round-trip.
-4. Remove the seeded `comments: <number>` value from being rendered (keep the field on the type for other uses if needed, but always show DB count).
-5. Empty state = `0`. Loading (before first fetch resolves) = show `0` too, not a placeholder number.
+## Workstream 1 — Trust & Safety Phases 2 & 3
 
-**Files touched:** new `src/hooks/useCommentCounts.ts`; edited `src/pages/Feed.tsx`, `src/pages/Dashboard.tsx` (feed card), `src/components/PostCommentsModal.tsx` (ensure `onCountChange` fires reliably).
+**Phase 2 — Moderator Dashboard**
+- `/admin/moderation` route, admin-only via `has_role`
+- Reports queue: filter by status (open / reviewed / actioned / dismissed), reason, date
+- Actions: dismiss, warn user, temp-suspend, permanent ban, escalate
+- `moderation_actions` audit table (immutable, admin-only read)
+- `user_suspensions` table + gate that blocks posting/messaging when active
+- Appeals form on suspension screen
 
-## Part B — Consolidated Education Flow
+**Phase 3 — Automated Moderation**
+- Edge function `moderate-content` calling OpenAI `omni-moderation-latest` (text + image)
+- Hook into post create, comment create, message send, profile bio, group description
+- Configurable thresholds; auto-flag → queue, hard-block only on `sexual/minors` or `violence/graphic` above threshold
+- Image blur-gate UI for flagged media with "View anyway" confirm
+- Minor protections: HS users default to private profile, standard discovery/DMs (per your earlier choice)
 
-### New data model (migration on `profiles`)
+---
 
-Add columns:
-- `education_status text` — `high_school` | `college` | `graduate`
-- `undergraduate_degree_type text` — `bachelors` | `associates` | `both` (college only)
-- `college_major text[]` — majors tied to bachelor's / general college
-- `associate_degree_major text[]` — majors for associate track (college OR high-school-pursuing-associate)
-- `high_school_pursuing_associates boolean`
-- `intended_major text[]` — high school future study interest (migrated from existing `interests`)
+## Workstream 2 — Creation Flows
 
-Backfill:
-- Where `school_type = 'high_school'` → `education_status = 'high_school'`, `intended_major = interests`.
-- Where `school_type = 'college'` and `student_level = 'undergrad'` (or empty) → `education_status = 'college'`, `undergraduate_degree_type = 'bachelors'`, `college_major = string_to_array(major, ',')`.
-- Where `student_level = 'grad'` → `education_status = 'graduate'`.
-- Never overwrite with NULL; use `COALESCE`.
+**Groups**
+- `groups`, `group_members` tables (with RLS + GRANTs)
+- `+` button in Explore → Groups header
+- `/groups/new` page: name, description, category, school association (prefilled), visibility (public / school-only / invite-only), acronym fallback avatar
+- Creator auto-added as owner in `group_members`
+- Wire into existing `GroupDetail` page
 
-### New UI: single consolidated step
+**Feed Posts**
+- Detect existing `posts` table or create it (with `like_count`, `comment_count` synced by trigger like `post_comments`)
+- Floating `+` FAB on Feed
+- Composer modal: content, visibility, category, optional title
+- Runs through Phase 3 moderation before insert
+- Optimistic insert into feed list
 
-Replace the current split (`Education.tsx` + separate major/interests logic on `SchoolConfirm`) with **one** progressive-disclosure page: `src/pages/onboarding/EducationStatus.tsx`.
+---
 
-Flow inside the page:
+## Workstream 3 — Full Assurance Audit
 
-```text
-[Status] High school | College | Graduate
+I will drive Playwright against localhost across the 12 areas you listed (auth, onboarding, subscription, dashboard, explore, feed, profile, messages, schools, AI, responsiveness, performance), capture screenshots + console/network signals, then deliver the **Production Readiness Table** (Area / Issue / Severity / Status / Fix / Blocker).
 
-  if College:
-    [Degree type] Bachelor's | Associate | Both
-      if Bachelor's or Both → <MajorMultiSelect> for college_major
-      if Associate  or Both → <MajorMultiSelect> for associate_degree_major
+This step only makes sense **after** Workstreams 1 & 2 land, otherwise the audit re-reports things I'm about to build.
 
-  if High school:
-    [Pursuing an associate degree?] Yes | No
-      if Yes → <MajorMultiSelect> for associate_degree_major
-    (intended_major stays on the existing dedicated HS "what do you want to study" step)
+---
 
-  if Graduate:
-    keep existing degree + graduation_year fields; hide undergrad selectors
-```
+## Proposed order of execution
 
-### OnboardingContext + route wiring
-- Extend `OnboardingContext` state with the 6 new fields; hydrate from profile; persist on `SchoolConfirm` save.
-- Replace the route `/onboarding/education` with the new consolidated step; keep the same URL so `AuthGate`'s allow-list keeps working.
-- Remove the now-dead separate "your education" details step from the flow ordering.
+1. **Turn A** — T&S Phase 2 (migration + dashboard + suspension gate)
+2. **Turn B** — T&S Phase 3 (moderation edge function + wiring + minor defaults)
+3. **Turn C** — Groups creation (migration + button + page + detail wiring)
+4. **Turn D** — Feed post creation (migration if needed + FAB + composer + moderation hook)
+5. **Turn E** — Playwright assurance sweep + Production Readiness Table
 
-### Confirmation screen (`EditFieldModal` + `SchoolConfirm` summary)
-Rewrite the education-related rows to render conditionally:
-- College → `Education: College` · `Degree type: …` · `Major(s): …` (+ Associate major if `both`)
-- HS + associates=Yes → `Education: High School` · `Pursuing associate: Yes` · `Associate major: …` · `Intended major: …`
-- HS + associates=No → `Education: High School` · `Pursuing associate: No` · `Intended major: …`
-- Graduate → `Education: Graduate` · `Degree: …` · `Grad year: …`
+Each turn ends with a build/type check and a short verification note. I will not claim "done" on any phase without evidence.
 
-All rows route to `/onboarding/education` (the consolidated page). Intended-major row still routes to `/onboarding/interests` for HS users.
+---
 
-### Profile page (`src/pages/Profile.tsx`)
-Update the Education section to read the new fields with the same conditional rules above so college users never show "intended major" and HS users' associate major isn't mislabeled as college major.
+## What I need from you
 
-## Testing checklist
-- Post with 0 / 1 / N comments → card count == modal count; add/delete updates both.
-- Onboarding: College→Bachelor's, College→Associate, College→Both, HS→Yes, HS→No, Graduate.
-- Edit-field modal routes never land on removed pages.
-- Existing users load without data loss (backfill migration verified with a `SELECT` after apply).
-- School search + major search still function unchanged.
+1. **Approve the order above**, or reorder (e.g. "creation flows first, T&S later").
+2. **Suspension enforcement scope for Phase 2** — should an active suspension block: posting only, or posting + commenting + messaging + group creation? Default I'll use: all four.
+3. **Auto-moderation strictness for Phase 3** — hard-block threshold. Default: OpenAI category score ≥ 0.85 for `sexual/minors` and `violence/graphic` blocks immediately; anything else ≥ 0.5 flags for review but publishes.
+4. **Group visibility default** — public, school-only, or invite-only? Default: school-only.
 
-## Out of scope
-- No changes to Auth, Stripe, messaging, or the school-search engine.
-- No changes to the existing `MajorMultiSelect` component internals — only new call sites.
-
-Awaiting approval before running the profile migration and touching the onboarding routes.
+Reply with approvals / overrides and I'll start Turn A.
