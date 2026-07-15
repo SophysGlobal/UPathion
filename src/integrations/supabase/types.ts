@@ -166,6 +166,47 @@ export type Database = {
           },
         ]
       }
+      moderation_actions: {
+        Row: {
+          action: Database["public"]["Enums"]["moderation_action_type"]
+          created_at: string
+          id: string
+          metadata: Json | null
+          moderator_id: string
+          reason: string | null
+          report_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["moderation_action_type"]
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          moderator_id: string
+          reason?: string | null
+          report_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["moderation_action_type"]
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          moderator_id?: string
+          reason?: string | null
+          report_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_comments: {
         Row: {
           body: string
@@ -663,6 +704,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_suspensions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_permanent: boolean
+          lifted_at: string | null
+          lifted_by: string | null
+          moderator_id: string
+          reason: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          lifted_at?: string | null
+          lifted_by?: string | null
+          moderator_id: string
+          reason: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          lifted_at?: string | null
+          lifted_by?: string | null
+          moderator_id?: string
+          reason?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_profiles: {
@@ -747,6 +827,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
       search_schools: {
         Args: {
           country_filter?: string
@@ -768,6 +849,15 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      moderation_action_type:
+        | "dismiss"
+        | "warn"
+        | "suspend"
+        | "ban"
+        | "unban"
+        | "unsuspend"
+        | "escalate"
+        | "note"
       report_reason:
         | "harassment"
         | "bullying"
@@ -921,6 +1011,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      moderation_action_type: [
+        "dismiss",
+        "warn",
+        "suspend",
+        "ban",
+        "unban",
+        "unsuspend",
+        "escalate",
+        "note",
+      ],
       report_reason: [
         "harassment",
         "bullying",
