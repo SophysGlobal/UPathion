@@ -93,11 +93,11 @@ const Moderation = () => {
     const { error } = await supabase.from('moderation_actions').insert({
       report_id: report.id,
       moderator_id: user!.id,
-      target_user_id: report.target_owner_id,
+      target_user_id: report.target_owner_id ?? undefined,
       action,
-      reason: reason || null,
-      metadata: extraMeta,
-    });
+      reason: reason || undefined,
+      metadata: extraMeta as never,
+    } as never);
     if (error) throw error;
   };
 
