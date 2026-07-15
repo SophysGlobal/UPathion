@@ -1,263 +1,255 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.95.0';
+import {
+  corsHeaders,
+  jsonError,
+  requirePremiumUser,
+  callLovableChat,
+  handleAiStatus,
+  CHAT_MODEL,
+  LOVABLE_API_KEY,
+  serviceClient,
+} from '../_shared/ai-auth.ts';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+type Attachment = { storagePath: string; mimeType: string };
+type IncomingMessage = { role: 'user' | 'assistant' | 'system'; content: string; attachments?: Attachment[] };
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const MAX_MSG_LEN = 20000;
+const MAX_HISTORY = 30;
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
-    // Extract JWT from Authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('Missing or invalid authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const auth = await requirePremiumUser(req);
+    if (!auth.ok) return auth.response;
+    const { userId, supabase } = auth;
+
+    if (!LOVABLE_API_KEY) return jsonError(500, 'LOVABLE_API_KEY not configured');
+
+    const body = await req.json();
+    let conversationId: string | null = body.conversationId ?? null;
+    const incoming: IncomingMessage[] = Array.isArray(body.messages) ? body.messages : [];
+    if (incoming.length === 0) return jsonError(400, 'messages required');
+    const latest = incoming[incoming.length - 1];
+    if (!latest || latest.role !== 'user' || typeof latest.content !== 'string') {
+      return jsonError(400, 'last message must be user');
+    }
+    if (latest.content.length > MAX_MSG_LEN) return jsonError(400, 'message too long');
+
+    // Create conversation if missing
+    if (!conversationId) {
+      const { data: convo, error: cErr } = await supabase
+        .from('ai_conversations')
+        .insert({ user_id: userId, title: 'New Chat' })
+        .select('id')
+        .single();
+      if (cErr || !convo) return jsonError(500, 'Failed to create conversation');
+      conversationId = convo.id as string;
+    } else {
+      // Verify ownership
+      const { data: exists } = await supabase
+        .from('ai_conversations')
+        .select('id')
+        .eq('id', conversationId)
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (!exists) return jsonError(404, 'Conversation not found');
     }
 
-    // Create Supabase client with the user's JWT
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    // Verify the JWT and get user via claims (compatible with signing-keys system)
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: authError } = await supabaseClient.auth.getClaims(token);
-
-    if (authError || !claimsData?.claims?.sub) {
-      console.log('Invalid or expired token:', authError?.message);
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = claimsData.claims.sub as string;
-    console.log('Authenticated user:', userId);
-
-    // Verify premium subscription status
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('is_premium, subscription_ends_at')
-      .eq('id', userId)
+    // Save user message
+    const { data: userMsg, error: uErr } = await supabase
+      .from('ai_messages')
+      .insert({
+        conversation_id: conversationId,
+        user_id: userId,
+        role: 'user',
+        content: latest.content,
+      })
+      .select('id')
       .single();
+    if (uErr || !userMsg) return jsonError(500, 'Failed to save message');
 
-    if (profileError) {
-      console.error('Failed to fetch profile:', profileError.message);
-      return new Response(
-        JSON.stringify({ error: 'Failed to verify subscription' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!profile) {
-      console.log('Profile not found for user:', userId);
-      return new Response(
-        JSON.stringify({ error: 'Profile not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Admin bypass
-    const { data: isAdmin } = await supabaseClient.rpc('has_role', {
-      _user_id: userId,
-      _role: 'admin',
-    });
-
-    // Check if premium and not expired
-    const now = new Date();
-    const isActive = profile.is_premium &&
-      (!profile.subscription_ends_at || new Date(profile.subscription_ends_at) > now);
-
-    if (!isActive && !isAdmin) {
-      console.log('User is not premium or subscription expired:', userId);
-      return new Response(
-        JSON.stringify({ error: 'Premium subscription required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Parse and validate request body
-    const { messages } = await req.json();
-    
-    // Validate message format - must be a non-empty array
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid messages format' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Limit message history to prevent abuse (last 20 messages)
-    const limitedMessages = messages.slice(-20);
-
-    // Maximum allowed length for a single message content
-    const MAX_MESSAGE_LENGTH = 10000;
-    // Maximum total payload size across all messages
-    const MAX_TOTAL_PAYLOAD = 50000;
-    // Valid message roles
-    const VALID_ROLES = ['user', 'assistant', 'system'];
-
-    let totalPayloadSize = 0;
-
-    // Validate each message structure and content
-    for (const msg of limitedMessages) {
-      // Check message has required fields
-      if (!msg || typeof msg !== 'object') {
-        return new Response(
-          JSON.stringify({ error: 'Invalid message structure' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    // Save attachments referenced on latest user message
+    const attachments = Array.isArray(latest.attachments) ? latest.attachments : [];
+    const svc = serviceClient();
+    const signedImageParts: Array<{ type: 'image_url'; image_url: { url: string } }> = [];
+    for (const att of attachments) {
+      if (!att?.storagePath || typeof att.storagePath !== 'string') continue;
+      // Ensure the path is under the user's folder
+      if (!att.storagePath.startsWith(`${userId}/`)) continue;
+      await supabase.from('ai_message_attachments').insert({
+        message_id: userMsg.id,
+        user_id: userId,
+        storage_path: att.storagePath,
+        mime_type: att.mimeType || 'image/jpeg',
+        size_bytes: 0,
+      });
+      const { data: signed } = await svc.storage
+        .from('ai-chat-uploads')
+        .createSignedUrl(att.storagePath, 60 * 60);
+      if (signed?.signedUrl) {
+        signedImageParts.push({ type: 'image_url', image_url: { url: signed.signedUrl } });
       }
-
-      // Validate role field
-      if (!msg.role || typeof msg.role !== 'string') {
-        return new Response(
-          JSON.stringify({ error: 'Message must have a valid role' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Validate role is one of expected values
-      if (!VALID_ROLES.includes(msg.role)) {
-        return new Response(
-          JSON.stringify({ error: 'Invalid message role. Must be user, assistant, or system' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Validate content field
-      if (!msg.content || typeof msg.content !== 'string') {
-        return new Response(
-          JSON.stringify({ error: 'Message content must be a non-empty string' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Check individual message length
-      if (msg.content.length > MAX_MESSAGE_LENGTH) {
-        return new Response(
-          JSON.stringify({ error: `Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed per message` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      totalPayloadSize += msg.content.length;
     }
 
-    // Check total payload size
-    if (totalPayloadSize > MAX_TOTAL_PAYLOAD) {
-      return new Response(
-        JSON.stringify({ error: `Total message payload too large. Maximum ${MAX_TOTAL_PAYLOAD} characters allowed` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Retrieve memories (top ~8, active) matching keywords in latest message
+    const words = latest.content.toLowerCase().split(/\W+/).filter((w) => w.length > 3);
+    let memories: Array<{ content: string }> = [];
+    if (words.length > 0) {
+      const { data: memoryHits } = await supabase
+        .from('ai_memories')
+        .select('content, updated_at')
+        .eq('user_id', userId)
+        .eq('active', true)
+        .or(words.slice(0, 6).map((w) => `content.ilike.%${w}%`).join(','))
+        .order('updated_at', { ascending: false })
+        .limit(8);
+      memories = memoryHits ?? [];
+    }
+    if (memories.length === 0) {
+      const { data: recent } = await supabase
+        .from('ai_memories')
+        .select('content')
+        .eq('user_id', userId)
+        .eq('active', true)
+        .order('updated_at', { ascending: false })
+        .limit(4);
+      memories = recent ?? [];
     }
 
-    // Sanitize messages to only include expected fields
-    const sanitizedMessages = limitedMessages.map(msg => ({
-      role: msg.role,
-      content: msg.content.trim()
+    // Load recent conversation history for context
+    const { data: historyRows } = await supabase
+      .from('ai_messages')
+      .select('role, content')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+      .limit(MAX_HISTORY);
+    const history = (historyRows ?? []).map((m) => ({
+      role: m.role as 'user' | 'assistant' | 'system',
+      content: m.content ?? '',
     }));
-    
-    console.log('Processing chat request for premium user:', userId, 'messages:', sanitizedMessages.length, 'total chars:', totalPayloadSize);
 
-    if (!lovableApiKey && !openAIApiKey) {
-      throw new Error('No AI provider configured (need LOVABLE_API_KEY or OPENAI_API_KEY)');
-    }
+    const memoryBlock = memories.length
+      ? `\n\nRelevant long-term memory about this user (use only if relevant, do not recite):\n${memories.map((m) => `- ${m.content}`).join('\n')}`
+      : '';
 
     const systemMessage = {
-      role: 'system',
-      content: 'You are a helpful, friendly AI assistant for Upathion premium users. Be concise and helpful.',
+      role: 'system' as const,
+      content:
+        'You are the UPathion Premium AI assistant, helping high school, college, and grad students with academics, careers, and planning. Be warm, concise, and specific. Use markdown when helpful.' +
+        memoryBlock,
     };
 
-    // Try Lovable AI first, fall back to OpenAI on failure
-    async function callLovable() {
-      return await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Lovable-API-Key': lovableApiKey ?? '',
-          Authorization: `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3-flash-preview',
-          messages: [systemMessage, ...sanitizedMessages],
-          stream: true,
-        }),
+    // Attach images to the LAST user message as vision content parts
+    const modelMessages: Array<Record<string, unknown>> = history.slice(0, -1).map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    const lastUser = history[history.length - 1];
+    if (signedImageParts.length > 0 && lastUser) {
+      modelMessages.push({
+        role: 'user',
+        content: [{ type: 'text', text: lastUser.content }, ...signedImageParts],
       });
+    } else if (lastUser) {
+      modelMessages.push({ role: 'user', content: lastUser.content });
     }
 
-    async function callOpenAI() {
-      return await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [systemMessage, ...sanitizedMessages],
-          stream: true,
-        }),
-      });
+    const upstream = await callLovableChat({
+      model: CHAT_MODEL,
+      messages: [systemMessage, ...modelMessages],
+      stream: true,
+    });
+    if (!upstream.ok) {
+      const handled = handleAiStatus(upstream.status);
+      if (handled) return handled;
+      const errText = await upstream.text();
+      console.error('AI upstream error', upstream.status, errText);
+      return jsonError(502, `AI provider error: ${upstream.status}`);
     }
 
-    let response: Response | null = null;
-    if (lovableApiKey) {
-      response = await callLovable();
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('Lovable AI error:', response.status, errText);
-        if (openAIApiKey) {
-          console.log('Falling back to OpenAI');
-          response = await callOpenAI();
+    // Tee the stream: forward to client, collect for saving assistant message
+    const [clientStream, saveStream] = upstream.body!.tee();
+
+    (async () => {
+      try {
+        const reader = saveStream.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        let assistant = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          let nl: number;
+          while ((nl = buf.indexOf('\n')) !== -1) {
+            let line = buf.slice(0, nl);
+            buf = buf.slice(nl + 1);
+            if (line.endsWith('\r')) line = line.slice(0, -1);
+            if (!line.startsWith('data: ')) continue;
+            const j = line.slice(6).trim();
+            if (j === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(j);
+              const delta = parsed?.choices?.[0]?.delta?.content;
+              if (typeof delta === 'string') assistant += delta;
+            } catch { /* ignore */ }
+          }
         }
-      }
-    } else if (openAIApiKey) {
-      response = await callOpenAI();
-    }
+        if (assistant.trim()) {
+          const { data: savedAssistant } = await supabase
+            .from('ai_messages')
+            .insert({
+              conversation_id: conversationId!,
+              user_id: userId,
+              role: 'assistant',
+              content: assistant,
+            })
+            .select('id')
+            .single();
 
-    if (!response || !response.ok) {
-      const status = response?.status ?? 500;
-      const errText = response ? await response.text() : 'No response';
-      console.error('AI provider error:', status, errText);
-      if (status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again shortly.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add funds to your Lovable AI workspace.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error(`AI provider error: ${status}`);
-    }
+          // Async: title generation for first exchange & memory extraction
+          const { count } = await supabase
+            .from('ai_messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('conversation_id', conversationId!);
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+          const supaUrl = Deno.env.get('SUPABASE_URL') ?? '';
+          const authHeader = req.headers.get('Authorization') ?? '';
+          const post = (path: string, body: unknown) =>
+            fetch(`${supaUrl}/functions/v1/${path}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+              body: JSON.stringify(body),
+            }).catch((e) => console.error(`Async ${path} failed`, e));
+
+          if ((count ?? 0) <= 2) {
+            post('generate-chat-title', {
+              conversationId,
+              userMessage: latest.content,
+              assistantMessage: assistant,
+            });
+          }
+          post('extract-chat-memory', {
+            conversationId,
+            sourceMessageId: savedAssistant?.id,
+            userMessage: latest.content,
+            assistantMessage: assistant,
+          });
+        }
+      } catch (e) {
+        console.error('save stream error', e);
+      }
+    })();
+
+    return new Response(clientStream, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'X-Conversation-Id': conversationId,
+      },
     });
-  } catch (error) {
-    console.error('Error in premium-chat function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  } catch (e) {
+    console.error('premium-chat error', e);
+    return jsonError(500, e instanceof Error ? e.message : 'Unknown error');
   }
 });
