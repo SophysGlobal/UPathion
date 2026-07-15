@@ -334,6 +334,35 @@ export function useMessages(conversationId: string | undefined) {
       .on(
         'postgres_changes',
         {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updated = payload.new as Message;
+          setMessages(prev =>
+            prev.map(m => (m.id === updated.id ? { ...m, ...updated } : m))
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const oldRow = payload.old as { id?: string };
+          if (!oldRow?.id) return;
+          setMessages(prev => prev.filter(m => m.id !== oldRow.id));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: '*',
           schema: 'public',
           table: 'message_reactions',
@@ -348,6 +377,29 @@ export function useMessages(conversationId: string | undefined) {
       supabase.removeChannel(channel);
     };
   }, [conversationId, user, fetchMessages]);
+
+  // Client-side expiration ticker: hides messages once expires_at passes,
+  // even if the server hasn't hard-deleted them yet. Also opportunistically
+  // asks the server to purge every 60s so the disappearance is real for
+  // everyone in the conversation.
+  useEffect(() => {
+    if (!conversationId) return;
+    let purgeCounter = 0;
+    const tick = () => {
+      const now = Date.now();
+      setMessages(prev => {
+        const next = prev.filter(m => !m.expires_at || new Date(m.expires_at).getTime() > now);
+        return next.length === prev.length ? prev : next;
+      });
+      purgeCounter += 1;
+      if (purgeCounter % 12 === 0) {
+        // Every ~60s, hard-purge on the server so peers also lose the row.
+        supabase.rpc('purge_expired_messages').then(() => {});
+      }
+    };
+    const id = window.setInterval(tick, 5000);
+    return () => window.clearInterval(id);
+  }, [conversationId]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!conversationId || !user || !content.trim()) return null;
