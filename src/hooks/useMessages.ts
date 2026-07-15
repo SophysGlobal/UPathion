@@ -11,6 +11,9 @@ export interface Message {
   created_at: string;
   updated_at: string;
   is_deleted: boolean;
+  read_at?: string | null;
+  expires_at?: string | null;
+  status?: string | null;
   reactions?: MessageReaction[];
   sender?: {
     id: string;
@@ -31,6 +34,7 @@ export interface Conversation {
   id: string;
   created_at: string;
   updated_at: string;
+  expiration_seconds: number | null;
   participants: ConversationParticipant[];
   last_message?: Message;
   unread_count: number;
