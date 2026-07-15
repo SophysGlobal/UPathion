@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, MapPin, Bookmark, ExternalLink } from "lucide-react";
 import { USE_SEED_DATA, seedPlaces } from "@/data/seedData";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { mapsUrlFor, type LivePlace } from "@/hooks/usePlaces";
 
 // Helper function to open Google Maps
 const openGoogleMaps = (location: string) => {
@@ -16,12 +19,37 @@ const openGoogleMaps = (location: string) => {
 const PlaceDetail = () => {
   const navigate = useNavigate();
   const { placeId } = useParams();
-  
-  const place = USE_SEED_DATA 
-    ? seedPlaces.find(p => p.id === placeId) 
+
+  const isUuid = !!placeId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(placeId);
+  const { data: liveP } = useQuery({
+    queryKey: ["place", placeId],
+    enabled: isUuid,
+    queryFn: async (): Promise<LivePlace | null> => {
+      const { data } = await supabase.from("places").select("*").eq("id", placeId!).maybeSingle();
+      return (data as LivePlace) ?? null;
+    },
+  });
+
+  const seedP = USE_SEED_DATA ? seedPlaces.find((p) => p.id === placeId) : null;
+  const place = liveP
+    ? {
+        name: liveP.name,
+        type: liveP.category || "Place",
+        area: liveP.school_name || liveP.address || "",
+        description: liveP.description || "",
+        _live: liveP,
+      }
+    : seedP
+    ? { ...seedP, _live: null as LivePlace | null }
     : null;
 
   const handleGetDirections = () => {
+    if (place?._live) {
+      const url = mapsUrlFor(place._live);
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      else toast.error("No location");
+      return;
+    }
     if (place?.name && place?.area) {
       const fullLocation = `${place.name}, ${place.area}`;
       openGoogleMaps(fullLocation);
