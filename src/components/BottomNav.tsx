@@ -1,11 +1,13 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Compass, Newspaper, MessageCircle } from "lucide-react";
+import { Home, Compass, Newspaper, MessageCircle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { memo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { usePremiumStatus } from "@/hooks/usePremiumStatus";
+import PremiumChatModal from "@/components/PremiumChatModal";
 
 const BottomNav = memo(() => {
   const location = useLocation();
@@ -13,6 +15,8 @@ const BottomNav = memo(() => {
   const { profile } = useUserProfile();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const { isPremium } = usePremiumStatus();
+  const [aiChatOpen, setAiChatOpen] = useState(false);
 
   // Fetch unread count from Supabase
   useEffect(() => {
@@ -90,6 +94,7 @@ const BottomNav = memo(() => {
   ];
 
   return (
+    <>
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border">
       <div className="flex items-center justify-around h-16 max-w-md mx-auto">
         {navItems.map((item) => {
@@ -144,8 +149,23 @@ const BottomNav = memo(() => {
             <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
           )}
         </button>
+
+        {isPremium && (
+          <button
+            onClick={() => setAiChatOpen(true)}
+            className="flex flex-col items-center gap-1 px-4 py-2 text-muted-foreground hover:text-foreground transition-all duration-200 active:scale-95"
+            aria-label="Premium AI Chat"
+          >
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center shadow-md shadow-primary/30 hover:scale-110 transition-transform duration-200">
+              <Sparkles className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <span className="text-xs font-medium">AI</span>
+          </button>
+        )}
       </div>
     </nav>
+    {isPremium && <PremiumChatModal open={aiChatOpen} onOpenChange={setAiChatOpen} />}
+    </>
   );
 });
 
