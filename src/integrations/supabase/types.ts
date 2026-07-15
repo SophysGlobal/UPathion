@@ -96,6 +96,157 @@ export type Database = {
         }
         Relationships: []
       }
+      feed_posts: {
+        Row: {
+          author_id: string
+          category: Database["public"]["Enums"]["post_category"]
+          comment_count: number
+          content: string
+          created_at: string
+          group_id: string | null
+          id: string
+          is_deleted: boolean
+          like_count: number
+          school_id: string | null
+          title: string | null
+          updated_at: string
+          visibility: Database["public"]["Enums"]["post_visibility"]
+        }
+        Insert: {
+          author_id: string
+          category?: Database["public"]["Enums"]["post_category"]
+          comment_count?: number
+          content: string
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          is_deleted?: boolean
+          like_count?: number
+          school_id?: string | null
+          title?: string | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["post_visibility"]
+        }
+        Update: {
+          author_id?: string
+          category?: Database["public"]["Enums"]["post_category"]
+          comment_count?: number
+          content?: string
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          is_deleted?: boolean
+          like_count?: number
+          school_id?: string | null
+          title?: string | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["post_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_posts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_posts_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          role: Database["public"]["Enums"]["group_member_role"]
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["group_member_role"]
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          role?: Database["public"]["Enums"]["group_member_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          category: Database["public"]["Enums"]["group_category"]
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          member_count: number
+          name: string
+          school_id: string | null
+          school_name: string | null
+          updated_at: string
+          visibility: Database["public"]["Enums"]["group_visibility"]
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["group_category"]
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          member_count?: number
+          name: string
+          school_id?: string | null
+          school_name?: string | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["group_visibility"]
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["group_category"]
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          member_count?: number
+          name?: string
+          school_id?: string | null
+          school_name?: string | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["group_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -849,6 +1000,19 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      group_category:
+        | "academic"
+        | "career"
+        | "social"
+        | "sports"
+        | "arts"
+        | "volunteering"
+        | "research"
+        | "gaming"
+        | "entrepreneurship"
+        | "other"
+      group_member_role: "owner" | "admin" | "member"
+      group_visibility: "public" | "school_only" | "invite_only"
       moderation_action_type:
         | "dismiss"
         | "warn"
@@ -858,6 +1022,14 @@ export type Database = {
         | "unsuspend"
         | "escalate"
         | "note"
+      post_category:
+        | "general"
+        | "question"
+        | "advice"
+        | "event"
+        | "opportunity"
+        | "announcement"
+      post_visibility: "public" | "school_only" | "connections"
       report_reason:
         | "harassment"
         | "bullying"
@@ -1011,6 +1183,20 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      group_category: [
+        "academic",
+        "career",
+        "social",
+        "sports",
+        "arts",
+        "volunteering",
+        "research",
+        "gaming",
+        "entrepreneurship",
+        "other",
+      ],
+      group_member_role: ["owner", "admin", "member"],
+      group_visibility: ["public", "school_only", "invite_only"],
       moderation_action_type: [
         "dismiss",
         "warn",
@@ -1021,6 +1207,15 @@ export const Constants = {
         "escalate",
         "note",
       ],
+      post_category: [
+        "general",
+        "question",
+        "advice",
+        "event",
+        "opportunity",
+        "announcement",
+      ],
+      post_visibility: ["public", "school_only", "connections"],
       report_reason: [
         "harassment",
         "bullying",
