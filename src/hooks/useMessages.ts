@@ -122,6 +122,7 @@ export function useConversations() {
             .select('*')
             .eq('conversation_id', conv.id)
             .eq('is_deleted', false)
+            .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
             .order('created_at', { ascending: false })
             .limit(1);
 
@@ -194,11 +195,10 @@ export function useConversations() {
   const markAsRead = useCallback(async (conversationId: string) => {
     if (!user) return;
 
-    await supabase
-      .from('conversation_participants')
-      .update({ last_read_at: new Date().toISOString() })
-      .eq('conversation_id', conversationId)
-      .eq('user_id', user.id);
+    // Uses SECURITY DEFINER RPC so read_at / expires_at get computed atomically
+    await supabase.rpc('mark_conversation_read', {
+      _conversation_id: conversationId,
+    });
 
     setConversations(prev =>
       prev.map(c => c.id === conversationId ? { ...c, unread_count: 0 } : c)
