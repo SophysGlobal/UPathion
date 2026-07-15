@@ -160,7 +160,7 @@ const Moderation = () => {
           reason,
           is_permanent: false,
           expires_at: expiresAt,
-        });
+        } as never);
         if (sErr) throw sErr;
         await logAction(report, 'suspend', { hours: suspendHours, expires_at: expiresAt });
         await setReportStatus(report, 'action_taken');
@@ -175,7 +175,7 @@ const Moderation = () => {
           moderator_id: user!.id,
           reason,
           is_permanent: true,
-        });
+        } as never);
         if (sErr) throw sErr;
         await logAction(report, 'ban');
         await setReportStatus(report, 'action_taken');
