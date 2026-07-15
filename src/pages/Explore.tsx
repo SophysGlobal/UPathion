@@ -14,6 +14,9 @@ import EventDetailModal from "@/components/EventDetailModal";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useLiveEvents, useMyRsvps, useRsvpMutation } from "@/hooks/useEvents";
+import { useLivePlaces, mapsUrlFor } from "@/hooks/usePlaces";
+import { format, parseISO } from "date-fns";
 import { 
   USE_SEED_DATA, seedPeople, seedGroups, seedEvents, seedPlaces,
   type SeedPerson, type SeedGroup, type SeedEvent, type SeedPlace
@@ -76,15 +79,82 @@ const Explore = () => {
     },
   });
 
+  const { data: liveEvents = [] } = useLiveEvents();
+  const { data: myRsvps = [] } = useMyRsvps();
+  const rsvp = useRsvpMutation();
+  const { data: livePlaces = [] } = useLivePlaces();
+  const rsvpSet = useMemo(
+    () => new Set(myRsvps.filter((r) => r.status === "going").map((r) => r.event_id)),
+    [myRsvps],
+  );
+
+  // Adapt live events into the SeedEvent shape the calendar/list already understand.
+  const liveEventsAsSeed: SeedEvent[] = useMemo(
+    () =>
+      liveEvents.map((e) => {
+        const start = parseISO(e.starts_at);
+        return {
+          id: e.id,
+          title: e.title,
+          date: format(start, "MMM d"),
+          time: e.all_day ? "All day" : format(start, "h:mm a"),
+          location: e.location_name || (e.location_type === "virtual" ? "Virtual" : "—"),
+          school: e.school_name || "",
+          attendees: e.attendee_count,
+          isoDate: format(start, "yyyy-MM-dd"),
+          description: e.description ?? undefined,
+          category:
+            (["Networking","Academic","Club","Social","Career","Service"] as const).find(
+              (c) => c.toLowerCase() === (e.event_type || "").toLowerCase(),
+            ) || "Social",
+          maxAttendees: e.capacity ?? undefined,
+          rsvpd: rsvpSet.has(e.id),
+        };
+      }),
+    [liveEvents, rsvpSet],
+  );
+
   const filteredPeople = useMemo(() => people.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.school.toLowerCase().includes(searchQuery.toLowerCase())), [people, searchQuery]);
   const filteredGroups = useMemo(() => groups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase())), [groups, searchQuery]);
-  const filteredEvents = useMemo(() => events.filter(e => e.title.toLowerCase().includes(searchQuery.toLowerCase()) || e.location.toLowerCase().includes(searchQuery.toLowerCase())), [events, searchQuery]);
-  const filteredPlaces = useMemo(() => places.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.type.toLowerCase().includes(searchQuery.toLowerCase())), [places, searchQuery]);
+  const allEvents = useMemo(
+    () => [...liveEventsAsSeed, ...events],
+    [liveEventsAsSeed, events],
+  );
+  const filteredEvents = useMemo(
+    () =>
+      allEvents.filter(
+        (e) =>
+          e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          e.location.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [allEvents, searchQuery],
+  );
+  const filteredPlaces = useMemo(
+    () =>
+      places.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.type.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [places, searchQuery],
+  );
+  const liveEventIds = useMemo(() => new Set(liveEvents.map((e) => e.id)), [liveEvents]);
 
   const handleUserClick = (person: SeedPerson) => { setSelectedPerson(person); setUserSheetOpen(true); };
   const handleJoinGroup = (group: SeedGroup) => { toast.success(`Joined ${group.name}!`); };
   const handleViewGroup = (group: SeedGroup) => { navigate(`/group/${group.id}`); };
-  const handleRSVP = (event: SeedEvent) => { toast.success(`RSVP'd to ${event.title}!`); };
+  const handleRSVP = async (event: SeedEvent) => {
+    if (!liveEventIds.has(event.id)) {
+      toast.success(`RSVP'd to ${event.title}!`);
+      return;
+    }
+    try {
+      await rsvp.mutateAsync({ eventId: event.id, going: !rsvpSet.has(event.id) });
+      toast.success(rsvpSet.has(event.id) ? "RSVP cancelled" : `RSVP'd to ${event.title}!`);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not update RSVP");
+    }
+  };
   const handleViewEvent = (event: SeedEvent) => { navigate(`/event/${event.id}`); };
   const handleSavePlace = (place: SeedPlace) => { toast.success(`Saved ${place.name}!`); };
   const handleViewPlace = (place: SeedPlace) => { navigate(`/place/${place.id}`); };
@@ -170,7 +240,7 @@ const Explore = () => {
 
   const renderEvents = () => {
     if (eventsView === 'calendar') {
-      return <FullCalendar events={events} onSelectEvent={setSelectedEvent} />;
+      return <FullCalendar events={allEvents} onSelectEvent={setSelectedEvent} />;
     }
     if (filteredEvents.length === 0) return renderEmptyState('Events');
     return (
@@ -202,9 +272,41 @@ const Explore = () => {
   };
 
   const renderPlaces = () => {
-    if (filteredPlaces.length === 0) return renderEmptyState('Places');
+    const showLive = livePlaces.length > 0;
+    if (filteredPlaces.length === 0 && !showLive) return renderEmptyState('Places');
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-3">
+        {showLive && (
+          <>
+            <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Community places</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {livePlaces.map((p) => (
+                <div key={p.id} className="gradient-border">
+                  <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-foreground">{p.name}</span>
+                          {p.category && <span className="px-2 py-0.5 rounded-full bg-secondary text-muted-foreground text-xs">{p.category}</span>}
+                        </div>
+                        {p.school_name && <p className="text-xs text-primary truncate">{p.school_name}</p>}
+                        {p.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                      </div>
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <Button size="sm" onClick={() => {
+                          const url = mapsUrlFor(p);
+                          if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                          else toast.error('No location');
+                        }}>View on map</Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {filteredPlaces.map((place, index) => (
           <div key={place.id} className="gradient-border animate-fade-in" style={{ animationDelay: `${index * 0.04}s`, animationFillMode: 'both' }}>
             <div className="bg-card/90 backdrop-blur-sm rounded-lg p-4">
@@ -225,6 +327,7 @@ const Explore = () => {
             </div>
           </div>
         ))}
+        </div>
       </div>
     );
   };
@@ -305,6 +408,26 @@ const Explore = () => {
         <button
           onClick={() => navigate('/groups/new')}
           aria-label="Create group"
+          className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
+
+      {activeTab === 'events' && (
+        <button
+          onClick={() => navigate('/events/new')}
+          aria-label="Create event"
+          className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
+
+      {activeTab === 'places' && (
+        <button
+          onClick={() => navigate('/places/new')}
+          aria-label="Add place"
           className="fixed bottom-24 right-5 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
         >
           <Plus className="w-6 h-6" />
