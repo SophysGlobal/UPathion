@@ -99,6 +99,146 @@ export type Database = {
         }
         Relationships: []
       }
+      event_rsvps: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          status: Database["public"]["Enums"]["rsvp_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          status?: Database["public"]["Enums"]["rsvp_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          status?: Database["public"]["Enums"]["rsvp_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          address: string | null
+          all_day: boolean
+          attendee_count: number
+          capacity: number | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          ends_at: string | null
+          event_type: string | null
+          group_id: string | null
+          id: string
+          image_url: string | null
+          is_deleted: boolean
+          latitude: number | null
+          location_name: string | null
+          location_type: Database["public"]["Enums"]["event_location_type"]
+          longitude: number | null
+          maps_url: string | null
+          moderation_status: Database["public"]["Enums"]["moderation_status"]
+          school_id: string | null
+          school_name: string | null
+          starts_at: string
+          timezone: string | null
+          title: string
+          updated_at: string
+          virtual_link: string | null
+          visibility: Database["public"]["Enums"]["entity_visibility"]
+        }
+        Insert: {
+          address?: string | null
+          all_day?: boolean
+          attendee_count?: number
+          capacity?: number | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          ends_at?: string | null
+          event_type?: string | null
+          group_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          latitude?: number | null
+          location_name?: string | null
+          location_type?: Database["public"]["Enums"]["event_location_type"]
+          longitude?: number | null
+          maps_url?: string | null
+          moderation_status?: Database["public"]["Enums"]["moderation_status"]
+          school_id?: string | null
+          school_name?: string | null
+          starts_at: string
+          timezone?: string | null
+          title: string
+          updated_at?: string
+          virtual_link?: string | null
+          visibility?: Database["public"]["Enums"]["entity_visibility"]
+        }
+        Update: {
+          address?: string | null
+          all_day?: boolean
+          attendee_count?: number
+          capacity?: number | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          ends_at?: string | null
+          event_type?: string | null
+          group_id?: string | null
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          latitude?: number | null
+          location_name?: string | null
+          location_type?: Database["public"]["Enums"]["event_location_type"]
+          longitude?: number | null
+          maps_url?: string | null
+          moderation_status?: Database["public"]["Enums"]["moderation_status"]
+          school_id?: string | null
+          school_name?: string | null
+          starts_at?: string
+          timezone?: string | null
+          title?: string
+          updated_at?: string
+          virtual_link?: string | null
+          visibility?: Database["public"]["Enums"]["entity_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_posts: {
         Row: {
           author_id: string
@@ -366,6 +506,74 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      places: {
+        Row: {
+          address: string | null
+          category: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          google_maps_url: string | null
+          id: string
+          image_url: string | null
+          is_deleted: boolean
+          latitude: number | null
+          longitude: number | null
+          moderation_status: Database["public"]["Enums"]["moderation_status"]
+          name: string
+          school_id: string | null
+          school_name: string | null
+          updated_at: string
+          visibility: Database["public"]["Enums"]["entity_visibility"]
+        }
+        Insert: {
+          address?: string | null
+          category?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          google_maps_url?: string | null
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          moderation_status?: Database["public"]["Enums"]["moderation_status"]
+          name: string
+          school_id?: string | null
+          school_name?: string | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["entity_visibility"]
+        }
+        Update: {
+          address?: string | null
+          category?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          google_maps_url?: string | null
+          id?: string
+          image_url?: string | null
+          is_deleted?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          moderation_status?: Database["public"]["Enums"]["moderation_status"]
+          name?: string
+          school_id?: string | null
+          school_name?: string | null
+          updated_at?: string
+          visibility?: Database["public"]["Enums"]["entity_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "places_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
             referencedColumns: ["id"]
           },
         ]
@@ -1025,6 +1233,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      entity_visibility: "public" | "school_only" | "private"
+      event_location_type: "physical" | "virtual" | "hybrid"
       group_category:
         | "academic"
         | "career"
@@ -1047,6 +1257,7 @@ export type Database = {
         | "unsuspend"
         | "escalate"
         | "note"
+      moderation_status: "pending" | "approved" | "flagged" | "removed"
       post_category:
         | "general"
         | "question"
@@ -1080,6 +1291,9 @@ export type Database = {
         | "profile"
         | "group"
         | "conversation"
+        | "event"
+        | "place"
+      rsvp_status: "going" | "cancelled" | "waitlist"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1208,6 +1422,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      entity_visibility: ["public", "school_only", "private"],
+      event_location_type: ["physical", "virtual", "hybrid"],
       group_category: [
         "academic",
         "career",
@@ -1232,6 +1448,7 @@ export const Constants = {
         "escalate",
         "note",
       ],
+      moderation_status: ["pending", "approved", "flagged", "removed"],
       post_category: [
         "general",
         "question",
@@ -1267,7 +1484,10 @@ export const Constants = {
         "profile",
         "group",
         "conversation",
+        "event",
+        "place",
       ],
+      rsvp_status: ["going", "cancelled", "waitlist"],
     },
   },
 } as const
