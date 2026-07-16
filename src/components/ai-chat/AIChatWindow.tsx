@@ -33,6 +33,7 @@ const AIChatWindow = ({ onClose }: Props) => {
   const [streamingText, setStreamingText] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [localMessages, setLocalMessages] = useState<AIMessageRow[]>([]);
 
   useEffect(() => { setSidebarOpen(!isMobile); }, [isMobile]);
 
@@ -52,12 +53,14 @@ const AIChatWindow = ({ onClose }: Props) => {
     if (!user) return;
     setActiveId(null);
     setMessages([]);
+    setLocalMessages([]);
     setStreamingText("");
     if (isMobile) setSidebarOpen(false);
   }, [user, setMessages, isMobile]);
 
   const handleSelect = useCallback((id: string) => {
     setActiveId(id);
+    setLocalMessages([]);
     setStreamingText("");
     if (isMobile) setSidebarOpen(false);
   }, [isMobile]);
@@ -86,7 +89,7 @@ const AIChatWindow = ({ onClose }: Props) => {
           signedUrl: a.previewUrl,
         })),
     };
-    setMessages((prev) => [...prev, optimistic]);
+    setLocalMessages((prev) => [...prev, optimistic]);
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -119,14 +122,14 @@ const AIChatWindow = ({ onClose }: Props) => {
       );
 
       if (!resp.ok || !resp.body) {
-        const err = await resp.json().catch(() => ({}));
-        throw new Error(err?.error || `Request failed (${resp.status})`);
+        const raw = await resp.text().catch(() => "");
+        console.error("premium-chat error", resp.status, raw);
+        let m = `Request failed (${resp.status})`;
+        try { const j = JSON.parse(raw); if (j?.error) m = j.error; } catch { /* ignore */ }
+        throw new Error(m);
       }
 
       const newConversationId = resp.headers.get("X-Conversation-Id") ?? activeId;
-      if (newConversationId && newConversationId !== activeId) {
-        setActiveId(newConversationId);
-      }
 
       setSubmitting(false);
       setStreaming(true);
@@ -160,13 +163,29 @@ const AIChatWindow = ({ onClose }: Props) => {
 
       setStreaming(false);
       setStreamingText("");
-      // Reload from DB to get server-persisted user + assistant messages with real ids
-      await reload();
+      // Switch to the persisted conversation and reload from DB
+      if (newConversationId && newConversationId !== activeId) {
+        setActiveId(newConversationId);
+      } else {
+        await reload();
+      }
+      setLocalMessages([]);
       await refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Something went wrong";
+      console.error("AI chat send failed:", e);
       toast.error(msg);
-      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      // Keep user's message and append an inline error bubble so the UI doesn't just "reset"
+      setLocalMessages((prev) => [
+        ...prev,
+        {
+          id: `err-${Date.now()}`,
+          role: "assistant",
+          content: "",
+          error: msg,
+          created_at: new Date().toISOString(),
+        },
+      ]);
       setStreaming(false);
       setStreamingText("");
     } finally {
@@ -245,7 +264,7 @@ const AIChatWindow = ({ onClose }: Props) => {
           </div>
 
           <AIChatPanel
-            messages={messages}
+            messages={[...messages, ...localMessages]}
             streamingText={streamingText}
             streaming={streaming}
             submitting={submitting}
