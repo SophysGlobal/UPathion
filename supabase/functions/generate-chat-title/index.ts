@@ -3,6 +3,7 @@ import {
   corsHeaders,
   jsonError,
   requirePremiumUser,
+  aiRateLimit,
   callLovableChat,
   handleAiStatus,
   CHAT_MODEL,
@@ -16,6 +17,9 @@ serve(async (req) => {
     if (!auth.ok) return auth.response;
     const { userId, supabase } = auth;
     if (!LOVABLE_API_KEY) return jsonError(500, 'LOVABLE_API_KEY not configured');
+
+    const limited = await aiRateLimit(userId, 'generate_chat_title', 60, 3600);
+    if (limited) return limited;
 
     const { conversationId, userMessage, assistantMessage } = await req.json();
     if (!conversationId || typeof conversationId !== 'string') return jsonError(400, 'conversationId required');

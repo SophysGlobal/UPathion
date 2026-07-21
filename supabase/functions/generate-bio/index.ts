@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+import { requirePremiumUser, aiRateLimit } from "../_shared/ai-auth.ts";
 
 const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
 const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
@@ -19,39 +19,13 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return json({ error: "Missing authorization header" }, 401);
-    }
+    const auth = await requirePremiumUser(req);
+    if (!auth.ok) return auth.response;
+    const { userId } = auth;
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } },
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: authError } = await supabase.auth.getClaims(token);
-    if (authError || !claimsData?.claims?.sub) {
-      return json({ error: "Invalid or expired token" }, 401);
-    }
-    const userId = claimsData.claims.sub as string;
-
-    // Premium check (with admin bypass)
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_premium, subscription_ends_at")
-      .eq("id", userId)
-      .single();
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
-    const isActive = profile?.is_premium &&
-      (!profile.subscription_ends_at || new Date(profile.subscription_ends_at) > new Date());
-    if (!isActive && !isAdmin) {
-      return json({ error: "Premium subscription required" }, 403);
-    }
+    // 10 bio generations per hour per user.
+    const limited = await aiRateLimit(userId, "generate_bio", 10, 3600);
+    if (limited) return limited;
 
     const { prompt } = await req.json().catch(() => ({ prompt: "" }));
     if (typeof prompt !== "string" || !prompt.trim() || prompt.length > 1000) {

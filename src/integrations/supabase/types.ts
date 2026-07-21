@@ -913,6 +913,33 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          action: string
+          count: number
+          created_at: string
+          id: string
+          user_id: string | null
+          window_start: string
+        }
+        Insert: {
+          action: string
+          count?: number
+          created_at?: string
+          id?: string
+          user_id?: string | null
+          window_start: string
+        }
+        Update: {
+          action?: string
+          count?: number
+          created_at?: string
+          id?: string
+          user_id?: string | null
+          window_start?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
@@ -1511,6 +1538,20 @@ export type Database = {
         Returns: undefined
       }
       purge_expired_messages: { Args: never; Returns: number }
+      purge_old_rate_limits: { Args: never; Returns: number }
+      rate_limit_check: {
+        Args: {
+          _action: string
+          _max: number
+          _user_id: string
+          _window_sec: number
+        }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
+      }
       search_schools: {
         Args: {
           country_filter?: string

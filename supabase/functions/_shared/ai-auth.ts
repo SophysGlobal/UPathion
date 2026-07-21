@@ -34,6 +34,12 @@ export async function requirePremiumUser(req: Request): Promise<
   }
   const userId = claimsData.claims.sub as string;
 
+  // Block suspended accounts before any billable AI work.
+  const { data: suspended } = await supabase.rpc('is_user_suspended', { _user_id: userId });
+  if (suspended === true) {
+    return { ok: false, response: jsonError(403, 'Your account is currently suspended.') };
+  }
+
   const { data: profile } = await supabase
     .from('profiles')
     .select('is_premium, subscription_ends_at')
@@ -50,6 +56,34 @@ export async function requirePremiumUser(req: Request): Promise<
     return { ok: false, response: jsonError(403, 'Premium subscription required') };
   }
   return { ok: true, userId, supabase };
+}
+
+// Per-user rate limit for AI endpoints. Returns null when allowed,
+// or a 429 response to short-circuit the handler.
+export async function aiRateLimit(
+  userId: string,
+  action: string,
+  max: number,
+  windowSec: number,
+): Promise<Response | null> {
+  const svc = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { persistSession: false } },
+  );
+  const { data, error } = await svc.rpc('rate_limit_check', {
+    _user_id: userId,
+    _action: action,
+    _max: max,
+    _window_sec: windowSec,
+  });
+  if (error) {
+    console.error('rate_limit_check error', error);
+    return null;
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || row.allowed === true) return null;
+  return jsonError(429, 'Too many requests. Please slow down.');
 }
 
 export function serviceClient() {
