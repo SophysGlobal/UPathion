@@ -63,10 +63,10 @@ const PasswordReset = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
             <p className="text-muted-foreground">
-              We've sent a password reset link to <span className="font-medium text-foreground">{email}</span>
+              If <span className="font-medium text-foreground">{email}</span> matches an account, we've sent a password reset link.
             </p>
             <p className="text-sm text-muted-foreground">
-              Didn't receive the email? Check your spam folder or try again.
+              Didn't receive anything? Check your spam folder, or try again.
             </p>
           </div>
 
