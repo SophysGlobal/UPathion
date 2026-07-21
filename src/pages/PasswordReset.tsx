@@ -34,40 +34,18 @@ const PasswordReset = () => {
     
     setIsLoading(true);
 
-    // Pre-check: confirm email is registered in profiles before sending reset link
-    const { data: existing, error: lookupError } = await supabase
-      .from("profiles")
-      .select("id")
-      .ilike("email", trimmedEmail)
-      .maybeSingle();
-
-    if (lookupError) {
-      console.error("Email lookup error:", lookupError);
-      setIsLoading(false);
-      setEmailError("Couldn't verify your email. Please try again.");
-      return;
-    }
-
-    if (!existing) {
-      setIsLoading(false);
-      setEmailError("This email is not registered");
-      return;
-    }
-
+    // Always show the same result regardless of whether the address is registered.
+    // This prevents account-enumeration via the reset endpoint.
     const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
       redirectTo: `${window.location.origin}/update-password`,
     });
-    
-    setIsLoading(false);
-    
     if (error) {
+      // Log server-side errors but do not leak them to the client.
       console.error("Password reset error:", error);
-      setEmailError("Failed to send reset email. Please try again.");
-      return;
     }
-    
+    setIsLoading(false);
     setEmailSent(true);
-    toast.success("Password reset email sent! Check your inbox.");
+    toast.success("If that email is registered, a reset link is on the way.");
   };
 
   if (emailSent) {
