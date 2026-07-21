@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { rateLimit, requireNotSuspended, logSecurityEvent } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,11 +64,19 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (user.email !== email) {
+      await logSecurityEvent("confirmation_email_mismatch", user.id, "warn", { requested: email });
       return new Response(
         JSON.stringify({ error: "Forbidden: email does not match authenticated user" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
+
+    const suspended = await requireNotSuspended(user.id);
+    if (suspended) return suspended;
+
+    // 5 confirmation emails per 10 minutes per user.
+    const limited = await rateLimit({ userId: user.id, action: "send_confirmation_email", max: 5, windowSec: 600 });
+    if (limited) return limited;
 
     if (!isValidEmail(email)) {
       return new Response(
