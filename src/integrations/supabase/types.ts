@@ -961,6 +961,56 @@ export type Database = {
         }
         Relationships: []
       }
+      school_email_domains: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          domain: string
+          domain_type: string
+          id: string
+          manual_review_required: boolean
+          school_id: string
+          school_type: string
+          updated_at: string
+          verification_allowed: boolean
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          domain: string
+          domain_type?: string
+          id?: string
+          manual_review_required?: boolean
+          school_id: string
+          school_type: string
+          updated_at?: string
+          verification_allowed?: boolean
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          domain?: string
+          domain_type?: string
+          id?: string
+          manual_review_required?: boolean
+          school_id?: string
+          school_type?: string
+          updated_at?: string
+          verification_allowed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_email_domains_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_profiles: {
         Row: {
           about_source: string | null
@@ -1139,6 +1189,86 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      security_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          ip_hash: string | null
+          metadata: Json
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_hash?: string | null
+          metadata?: Json
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_hash?: string | null
+          metadata?: Json
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      student_email_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          method: string
+          school_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          verified_at: string
+          verified_domain: string
+          verified_email: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          method?: string
+          school_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          verified_at?: string
+          verified_domain: string
+          verified_email: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          method?: string
+          school_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          verified_at?: string
+          verified_domain?: string
+          verified_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_email_verifications_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_verification_codes: {
         Row: {
@@ -1359,6 +1489,7 @@ export type Database = {
       }
     }
     Functions: {
+      academic_year_expiry: { Args: { _verified_at: string }; Returns: string }
       create_direct_conversation: {
         Args: { other_user_id: string }
         Returns: string
@@ -1368,6 +1499,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_active_verified_student: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
@@ -1402,6 +1537,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      verified_school_id_of: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

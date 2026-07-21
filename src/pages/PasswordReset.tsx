@@ -34,40 +34,18 @@ const PasswordReset = () => {
     
     setIsLoading(true);
 
-    // Pre-check: confirm email is registered in profiles before sending reset link
-    const { data: existing, error: lookupError } = await supabase
-      .from("profiles")
-      .select("id")
-      .ilike("email", trimmedEmail)
-      .maybeSingle();
-
-    if (lookupError) {
-      console.error("Email lookup error:", lookupError);
-      setIsLoading(false);
-      setEmailError("Couldn't verify your email. Please try again.");
-      return;
-    }
-
-    if (!existing) {
-      setIsLoading(false);
-      setEmailError("This email is not registered");
-      return;
-    }
-
+    // Always show the same result regardless of whether the address is registered.
+    // This prevents account-enumeration via the reset endpoint.
     const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
       redirectTo: `${window.location.origin}/update-password`,
     });
-    
-    setIsLoading(false);
-    
     if (error) {
+      // Log server-side errors but do not leak them to the client.
       console.error("Password reset error:", error);
-      setEmailError("Failed to send reset email. Please try again.");
-      return;
     }
-    
+    setIsLoading(false);
     setEmailSent(true);
-    toast.success("Password reset email sent! Check your inbox.");
+    toast.success("If that email is registered, a reset link is on the way.");
   };
 
   if (emailSent) {
@@ -85,10 +63,10 @@ const PasswordReset = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
             <p className="text-muted-foreground">
-              We've sent a password reset link to <span className="font-medium text-foreground">{email}</span>
+              If <span className="font-medium text-foreground">{email}</span> matches an account, we've sent a password reset link.
             </p>
             <p className="text-sm text-muted-foreground">
-              Didn't receive the email? Check your spam folder or try again.
+              Didn't receive anything? Check your spam folder, or try again.
             </p>
           </div>
 
