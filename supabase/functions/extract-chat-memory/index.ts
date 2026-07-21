@@ -3,6 +3,7 @@ import {
   corsHeaders,
   jsonError,
   requirePremiumUser,
+  aiRateLimit,
   callLovableChat,
   handleAiStatus,
   CHAT_MODEL,
@@ -16,6 +17,9 @@ serve(async (req) => {
     if (!auth.ok) return auth.response;
     const { userId, supabase } = auth;
     if (!LOVABLE_API_KEY) return jsonError(500, 'LOVABLE_API_KEY not configured');
+
+    const limited = await aiRateLimit(userId, 'extract_chat_memory', 60, 3600);
+    if (limited) return limited;
 
     const { conversationId, sourceMessageId, userMessage, assistantMessage } = await req.json();
     const prompt = `Extract 0-3 DURABLE facts about the user that would be genuinely useful to remember for future conversations (long-term goals, preferences, academic focus, ongoing projects, target schools/majors, etc.). Ignore trivia, one-time details, and anything the user did not clearly state about themselves.\n\nReturn JSON only, no prose, matching:\n{"memories":[{"content":"short 1-sentence fact","category":"academics|career|preferences|personal|goals|other","importance":1-5}]}\n\nUser message: ${String(userMessage ?? '').slice(0, 2000)}\n\nAssistant reply: ${String(assistantMessage ?? '').slice(0, 2000)}`;

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, jsonError, requirePremiumUser, LOVABLE_API_KEY } from '../_shared/ai-auth.ts';
+import { corsHeaders, jsonError, requirePremiumUser, aiRateLimit, LOVABLE_API_KEY } from '../_shared/ai-auth.ts';
 
 const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
 
@@ -9,6 +9,10 @@ serve(async (req) => {
     const auth = await requirePremiumUser(req);
     if (!auth.ok) return auth.response;
     if (!LOVABLE_API_KEY) return jsonError(500, 'LOVABLE_API_KEY not configured');
+
+    // 20 transcriptions per hour per user.
+    const limited = await aiRateLimit(auth.userId, 'transcribe_audio', 20, 3600);
+    if (limited) return limited;
 
     const contentType = req.headers.get('content-type') ?? '';
     if (!contentType.includes('multipart/form-data')) {

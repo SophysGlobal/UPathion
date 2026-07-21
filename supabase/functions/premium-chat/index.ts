@@ -3,6 +3,7 @@ import {
   corsHeaders,
   jsonError,
   requirePremiumUser,
+  aiRateLimit,
   callLovableChat,
   handleAiStatus,
   CHAT_MODEL,
@@ -24,6 +25,10 @@ serve(async (req) => {
     const { userId, supabase } = auth;
 
     if (!LOVABLE_API_KEY) return jsonError(500, 'LOVABLE_API_KEY not configured');
+
+    // Rate limit: 30 chat requests / minute per user.
+    const limited = await aiRateLimit(userId, 'premium_chat', 30, 60);
+    if (limited) return limited;
 
     const body = await req.json();
     let conversationId: string | null = body.conversationId ?? null;
