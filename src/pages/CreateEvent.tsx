@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { useSuspensionStatus } from "@/hooks/useSuspensionStatus";
+import { useFilteredVisibility, useCanUseSchoolOnly } from "@/hooks/useVisibilityOptions";
 import { ArrowLeft } from "lucide-react";
 
 const EVENT_TYPES = [
@@ -39,6 +40,8 @@ const CreateEvent = () => {
   const { user } = useAuth();
   const { profile } = useProfileCompletion();
   const { isSuspended } = useSuspensionStatus();
+  const { canUseSchoolOnly } = useCanUseSchoolOnly();
+  const visibilityOptions = useFilteredVisibility(VISIBILITY);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -52,7 +55,9 @@ const CreateEvent = () => {
   const [locationName, setLocationName] = useState("");
   const [address, setAddress] = useState("");
   const [virtualLink, setVirtualLink] = useState("");
-  const [visibility, setVisibility] = useState<"public" | "school_only" | "private">("school_only");
+  const [visibility, setVisibility] = useState<"public" | "school_only" | "private">(
+    canUseSchoolOnly ? "school_only" : "public",
+  );
   const [capacityEnabled, setCapacityEnabled] = useState(false);
   const [capacity, setCapacity] = useState("");
   const [attachSchool, setAttachSchool] = useState(true);
@@ -174,7 +179,7 @@ const CreateEvent = () => {
             <Select value={visibility} onValueChange={(v) => setVisibility(v as typeof visibility)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {VISIBILITY.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                {visibilityOptions.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

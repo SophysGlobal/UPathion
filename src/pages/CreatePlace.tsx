@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import { useSuspensionStatus } from "@/hooks/useSuspensionStatus";
+import { useFilteredVisibility } from "@/hooks/useVisibilityOptions";
 import { isValidGoogleMapsUrl } from "@/hooks/usePlaces";
 import { ArrowLeft } from "lucide-react";
 
@@ -36,6 +37,7 @@ const CreatePlace = () => {
   const { user } = useAuth();
   const { profile } = useProfileCompletion();
   const { isSuspended } = useSuspensionStatus();
+  const visibilityOptions = useFilteredVisibility(VISIBILITY);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -139,7 +141,7 @@ const CreatePlace = () => {
             <Select value={visibility} onValueChange={(v) => setVisibility(v as typeof visibility)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {VISIBILITY.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                {visibilityOptions.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

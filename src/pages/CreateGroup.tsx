@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { useSuspensionStatus } from '@/hooks/useSuspensionStatus';
+import { useFilteredVisibility, useCanUseSchoolOnly } from '@/hooks/useVisibilityOptions';
 import { cn } from '@/lib/utils';
 import { ArrowLeft } from 'lucide-react';
 
@@ -37,11 +38,15 @@ const CreateGroup = () => {
   const { user } = useAuth();
   const { profile } = useProfileCompletion();
   const { isSuspended, suspension } = useSuspensionStatus();
+  const { canUseSchoolOnly } = useCanUseSchoolOnly();
+  const visibilityOptions = useFilteredVisibility(VISIBILITY);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>('other');
-  const [visibility, setVisibility] = useState<(typeof VISIBILITY)[number]['value']>('school_only');
+  const [visibility, setVisibility] = useState<(typeof VISIBILITY)[number]['value']>(
+    canUseSchoolOnly ? 'school_only' : 'public',
+  );
   const [attachSchool, setAttachSchool] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -160,7 +165,7 @@ const CreateGroup = () => {
             <div className="space-y-2">
               <label className="text-xs text-muted-foreground">Visibility</label>
               <div className="flex flex-wrap gap-2">
-                {VISIBILITY.map((v) => (
+                {visibilityOptions.map((v) => (
                   <button
                     key={v.value}
                     type="button"
@@ -176,6 +181,11 @@ const CreateGroup = () => {
                   </button>
                 ))}
               </div>
+              {!canUseSchoolOnly && (
+                <p className="text-[11px] text-muted-foreground">
+                  Verify with your school email to create a school-only group.
+                </p>
+              )}
             </div>
 
             {profile?.school_name && (
