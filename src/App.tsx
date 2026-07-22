@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import AppEntryGate from "@/components/AppEntryGate";
 import AuthGate from "@/components/AuthGate";
+import SuspendedGate from "@/components/SuspendedGate";
 import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -54,6 +55,7 @@ import StudentVerification from "./pages/StudentVerification";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import GuidelinesAcceptGate from "./components/safety/GuidelinesAcceptGate";
 import Moderation from "./pages/admin/Moderation";
+import AuditLog from "./pages/admin/AuditLog";
 import CreateGroup from "./pages/CreateGroup";
 import CreateEvent from "./pages/CreateEvent";
 import CreatePlace from "./pages/CreatePlace";
@@ -82,6 +84,7 @@ const App = () => (
               <AppEntryGate>
                 <AuthGate>
                   <GuidelinesAcceptGate />
+                  <SuspendedGate>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/signin" element={<SignIn />} />
@@ -129,9 +132,11 @@ const App = () => (
                     <Route path="/verify-student" element={<StudentVerification />} />
                     <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                     <Route path="/admin/moderation" element={<Moderation />} />
+                    <Route path="/admin/audit" element={<AuditLog />} />
                     <Route path="/welcome" element={<Welcome />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  </SuspendedGate>
                 </AuthGate>
               </AppEntryGate>
             </BrowserRouter>

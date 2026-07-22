@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useSuspensionStatus } from '@/hooks/useSuspensionStatus';
+import { useFilteredVisibility, useCanUseSchoolOnly } from '@/hooks/useVisibilityOptions';
 import { cn } from '@/lib/utils';
 
 const CATEGORIES = [
@@ -33,17 +34,21 @@ interface PostComposerProps {
 const PostComposer = ({ open, onOpenChange, onPosted }: PostComposerProps) => {
   const { user } = useAuth();
   const { isSuspended, suspension } = useSuspensionStatus();
+  const { canUseSchoolOnly } = useCanUseSchoolOnly();
+  const visibilityOptions = useFilteredVisibility(VISIBILITY);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<typeof CATEGORIES[number]['value']>('general');
-  const [visibility, setVisibility] = useState<typeof VISIBILITY[number]['value']>('school_only');
+  const [visibility, setVisibility] = useState<typeof VISIBILITY[number]['value']>(
+    canUseSchoolOnly ? 'school_only' : 'public',
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
     setTitle('');
     setContent('');
     setCategory('general');
-    setVisibility('school_only');
+    setVisibility(canUseSchoolOnly ? 'school_only' : 'public');
   };
 
   const close = (o: boolean) => {
@@ -135,7 +140,7 @@ const PostComposer = ({ open, onOpenChange, onPosted }: PostComposerProps) => {
             <div>
               <label className="text-xs text-muted-foreground">Visibility</label>
               <div className="flex flex-wrap gap-2 mt-1">
-                {VISIBILITY.map((v) => (
+                {visibilityOptions.map((v) => (
                   <button
                     key={v.value}
                     type="button"
@@ -151,6 +156,11 @@ const PostComposer = ({ open, onOpenChange, onPosted }: PostComposerProps) => {
                   </button>
                 ))}
               </div>
+              {!canUseSchoolOnly && (
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Verify with your school email to post to your school community.
+                </p>
+              )}
             </div>
           </div>
         )}
