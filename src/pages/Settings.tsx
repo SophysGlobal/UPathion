@@ -89,6 +89,7 @@ const Settings = () => {
     { icon: Shield, label: "Privacy Settings", path: "/privacy-settings" },
     { icon: Crown, label: "Plan Management", path: "/plan-management" },
     { icon: Shield, label: "Moderation Queue", path: "/admin/moderation" },
+    { icon: Shield, label: "Audit Log", path: "/admin/audit" },
   ];
 
   const settingsSections = [
