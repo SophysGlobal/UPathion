@@ -8,9 +8,10 @@ import UserProfileBottomSheet from "@/components/UserProfileBottomSheet";
 import PostCommentsModal from "@/components/PostCommentsModal";
 import UserSafetyMenu from "@/components/safety/UserSafetyMenu";
 import PostComposer from "@/components/feed/PostComposer";
+import GlobalSearch from "@/components/feed/GlobalSearch";
 import { useFeedPosts } from "@/hooks/useFeedPosts";
 import { useCommentCounts } from "@/hooks/useCommentCounts";
-import { Heart, MessageCircle, Bookmark, User, Search, X, Plus } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, User, Plus } from "lucide-react";
 import { USE_SEED_DATA, seedFeedPosts, type SeedFeedPost } from "@/data/seedData";
 import { getDisplaySchoolName } from "@/lib/schoolName";
 
@@ -174,26 +175,11 @@ const Feed = () => {
 
       {/* Search + Hashtag + School Filter */}
       <div className="sticky top-[57px] z-30 bg-background/80 backdrop-blur-xl px-5 pt-3 pb-3 border-b border-border/50 space-y-2.5">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search posts, hashtags, or topics..."
-            aria-label="Search feed"
-            className="w-full h-10 pl-9 pr-9 rounded-full bg-secondary/50 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+        <GlobalSearch
+          userSchoolName={userSchool}
+          onHashtagPick={(tag) => { setActiveHashtag(tag); setSearchQuery(''); }}
+          onQueryPick={(q) => { setSearchQuery(q); setActiveHashtag(null); }}
+        />
 
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
           <button
