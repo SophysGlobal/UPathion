@@ -1521,6 +1521,15 @@ export type Database = {
         Args: { other_user_id: string }
         Returns: string
       }
+      enforce_user_rate_limit: {
+        Args: {
+          _action: string
+          _max: number
+          _user_id: string
+          _window_sec: number
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
