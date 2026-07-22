@@ -1587,6 +1587,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      unaccent: { Args: { "": string }; Returns: string }
       verified_school_id_of: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
