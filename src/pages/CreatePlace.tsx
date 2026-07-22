@@ -141,7 +141,7 @@ const CreatePlace = () => {
             <Select value={visibility} onValueChange={(v) => setVisibility(v as typeof visibility)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {VISIBILITY.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                {visibilityOptions.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
